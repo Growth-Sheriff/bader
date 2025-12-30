@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
 BADER Derneği - Aidat & Kasa Yönetim Sistemi
-Ana Program - Minimal & Clean Design
+Ana Program - Polaris Design System
 """
 
 import sys
 import os
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont, QPalette, QColor
+from PyQt5.QtCore import Qt, QCoreApplication
+from PyQt5.QtGui import QFont, QFontDatabase
 from main_window import MainWindow
+from ui_styles import MODERN_STYLESHEET
 
 
 def get_resource_path(relative_path):
@@ -26,10 +27,9 @@ def get_resource_path(relative_path):
 
 def main():
     """Ana fonksiyon"""
-    # High DPI desteği
-    QApplication.setHighDpiScaleFactorRoundingPolicy(
-        Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
-    )
+    # High DPI desteği - PyQt5 için
+    QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    QCoreApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
     
     # Uygulama oluştur
     app = QApplication(sys.argv)
@@ -37,32 +37,40 @@ def main():
     # Uygulama bilgileri
     app.setApplicationName("BADER Derneği")
     app.setOrganizationName("BADER")
-    app.setApplicationVersion("1.0.0")
+    app.setApplicationVersion("3.0.0")
     
-    # Modern, temiz font
-    font = QFont("Segoe UI", 10)
-    font.setStyleHint(QFont.StyleHint.SansSerif)
+    # Platform bazlı font seçimi
+    if sys.platform == "darwin":  # macOS
+        font_family = "SF Pro Text"
+        fallback = "Helvetica Neue"
+    elif sys.platform == "win32":  # Windows
+        font_family = "Segoe UI"
+        fallback = "Arial"
+    else:  # Linux
+        font_family = "Ubuntu"
+        fallback = "DejaVu Sans"
+    
+    # Font ayarla
+    font = QFont()
+    font.setFamily(font_family)
+    font.setPointSize(10)
+    font.setStyleStrategy(QFont.PreferAntialias)
+    
+    # Eğer font bulunamazsa fallback kullan
+    if not QFontDatabase().hasFamily(font_family):
+        font.setFamily(fallback)
+    
     app.setFont(font)
     
-    # Temiz, minimal color palette
-    palette = QPalette()
-    palette.setColor(QPalette.ColorRole.Window, QColor("#FAFAFA"))
-    palette.setColor(QPalette.ColorRole.WindowText, QColor("#212121"))
-    palette.setColor(QPalette.ColorRole.Base, QColor("#FFFFFF"))
-    palette.setColor(QPalette.ColorRole.AlternateBase, QColor("#F5F5F5"))
-    palette.setColor(QPalette.ColorRole.Text, QColor("#212121"))
-    palette.setColor(QPalette.ColorRole.Button, QColor("#FFFFFF"))
-    palette.setColor(QPalette.ColorRole.ButtonText, QColor("#212121"))
-    palette.setColor(QPalette.ColorRole.Highlight, QColor("#1976D2"))
-    palette.setColor(QPalette.ColorRole.HighlightedText, QColor("#FFFFFF"))
-    app.setPalette(palette)
+    # ⭐ STYLESHEET UYGULA - BU ÇOK ÖNEMLİ!
+    app.setStyleSheet(MODERN_STYLESHEET)
     
     # Ana pencereyi oluştur ve göster
     window = MainWindow()
     window.showMaximized()
     
     # Uygulama döngüsü
-    sys.exit(app.exec())
+    sys.exit(app.exec_())
 
 
 if __name__ == "__main__":
