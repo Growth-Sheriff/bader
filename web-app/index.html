@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BADER - Dernek Yönetim Sistemi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        [x-cloak] { display: none !important; }
+        .sidebar-transition { transition: all 0.3s ease; }
+        .fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .glass { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .hover-scale { transition: transform 0.2s; }
+        .hover-scale:hover { transform: scale(1.02); }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' },
+                        accent: { 500: '#8b5cf6', 600: '#7c3aed' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 min-h-screen" x-data="app()" x-init="init()">
+    
+    <!-- Loading Screen -->
+    <div x-show="loading" x-cloak class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+        <div class="text-center">
+            <i class="fas fa-circle-notch fa-spin text-5xl text-primary-600 mb-4"></i>
+            <p class="text-gray-600">Yükleniyor...</p>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div x-show="!user && !loading" x-cloak class="min-h-screen gradient-bg flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 fade-in">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-users text-3xl text-primary-600"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">BADER</h1>
+                <p class="text-gray-500">Dernek Yönetim Sistemi</p>
+            </div>
+            
+            <form @submit.prevent="login()" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Lisans ID</label>
+                    <div class="relative">
+                        <i class="fas fa-key absolute left-3 top-3 text-gray-400"></i>
+                        <input type="text" x-model="loginForm.customer_id" 
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                               placeholder="BADER-2025-XXXXXX" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Kullanıcı Adı</label>
+                    <div class="relative">
+                        <i class="fas fa-user absolute left-3 top-3 text-gray-400"></i>
+                        <input type="text" x-model="loginForm.username" 
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                               placeholder="admin" required>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Şifre</label>
+                    <div class="relative">
+                        <i class="fas fa-lock absolute left-3 top-3 text-gray-400"></i>
+                        <input type="password" x-model="loginForm.password" 
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                               placeholder="••••••••" required>
+                    </div>
+                </div>
+                
+                <div x-show="loginError" class="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
+                    <i class="fas fa-exclamation-circle mr-2"></i><span x-text="loginError"></span>
+                </div>
+                
+                <button type="submit" :disabled="loginLoading"
+                        class="w-full py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition flex items-center justify-center">
+                    <i x-show="loginLoading" class="fas fa-circle-notch fa-spin mr-2"></i>
+                    <span x-text="loginLoading ? 'Giriş yapılıyor...' : 'Giriş Yap'"></span>
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center text-sm text-gray-500">
+                <p>Demo: BADER-2024-DEMO-0001 / admin / admin123</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div x-show="user" x-cloak class="min-h-screen flex">
+        
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-900 text-white fixed h-full sidebar-transition"
+               :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
+            <div class="p-4 border-b border-gray-700">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold">BADER</h1>
+                        <p class="text-xs text-gray-400" x-text="user?.full_name"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="p-4 space-y-1">
+                <template x-for="item in menuItems" :key="item.id">
+                    <button @click="currentPage = item.id; sidebarOpen = false"
+                            class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition"
+                            :class="currentPage === item.id ? 'bg-primary-600 text-white' : 'text-gray-300 hover:bg-gray-800'">
+                        <i :class="item.icon"></i>
+                        <span x-text="item.label"></span>
+                        <span x-show="item.badge" x-text="item.badge" 
+                              class="ml-auto bg-red-500 text-white text-xs px-2 py-0.5 rounded-full"></span>
+                    </button>
+                </template>
+            </nav>
+            
+            <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
+                <button @click="logout()" class="w-full flex items-center space-x-3 px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Çıkış Yap</span>
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Overlay for mobile -->
+        <div x-show="sidebarOpen" @click="sidebarOpen = false" 
+             class="fixed inset-0 bg-black/50 z-40 lg:hidden"></div>
+        
+        <!-- Main Content -->
+        <main class="flex-1 lg:ml-64">
+            <!-- Top Bar -->
+            <header class="bg-white shadow-sm sticky top-0 z-30">
+                <div class="flex items-center justify-between px-4 py-3">
+                    <div class="flex items-center space-x-4">
+                        <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden text-gray-600">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <h2 class="text-xl font-semibold text-gray-800" x-text="menuItems.find(m => m.id === currentPage)?.label || 'Dashboard'"></h2>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm text-gray-500" x-text="new Date().toLocaleDateString('tr-TR', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})"></span>
+                        <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-primary-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <div class="p-6">
+                <!-- Dashboard -->
+                <div x-show="currentPage === 'dashboard'" class="fade-in">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                        <div class="bg-white rounded-xl p-6 shadow-sm hover-scale">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500">Toplam Üye</p>
+                                    <p class="text-3xl font-bold text-gray-800" x-text="stats.totalMembers"></p>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-users text-blue-600 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl p-6 shadow-sm hover-scale">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500">Toplam Gelir</p>
+                                    <p class="text-3xl font-bold text-green-600" x-text="formatMoney(stats.totalIncome)"></p>
+                                </div>
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-arrow-up text-green-600 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl p-6 shadow-sm hover-scale">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500">Toplam Gider</p>
+                                    <p class="text-3xl font-bold text-red-600" x-text="formatMoney(stats.totalExpense)"></p>
+                                </div>
+                                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-arrow-down text-red-600 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl p-6 shadow-sm hover-scale">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-500">Net Bakiye</p>
+                                    <p class="text-3xl font-bold" :class="stats.balance >= 0 ? 'text-green-600' : 'text-red-600'" 
+                                       x-text="formatMoney(stats.balance)"></p>
+                                </div>
+                                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-wallet text-purple-600 text-xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold mb-4">Son Gelirler</h3>
+                            <div class="space-y-3">
+                                <template x-for="income in recentIncomes.slice(0,5)" :key="income.id">
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p class="font-medium" x-text="income.description || income.category"></p>
+                                            <p class="text-sm text-gray-500" x-text="formatDate(income.date)"></p>
+                                        </div>
+                                        <span class="text-green-600 font-semibold" x-text="formatMoney(income.amount)"></span>
+                                    </div>
+                                </template>
+                                <p x-show="recentIncomes.length === 0" class="text-gray-500 text-center py-4">Henüz gelir kaydı yok</p>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold mb-4">Son Giderler</h3>
+                            <div class="space-y-3">
+                                <template x-for="expense in recentExpenses.slice(0,5)" :key="expense.id">
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p class="font-medium" x-text="expense.description || expense.category"></p>
+                                            <p class="text-sm text-gray-500" x-text="formatDate(expense.date)"></p>
+                                        </div>
+                                        <span class="text-red-600 font-semibold" x-text="formatMoney(expense.amount)"></span>
+                                    </div>
+                                </template>
+                                <p x-show="recentExpenses.length === 0" class="text-gray-500 text-center py-4">Henüz gider kaydı yok</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Members Page -->
+                <div x-show="currentPage === 'members'" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm">
+                        <div class="p-4 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div class="relative flex-1 max-w-md">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                                <input type="text" x-model="memberSearch" @input="filterMembers()"
+                                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                                       placeholder="Üye ara...">
+                            </div>
+                            <button @click="openMemberModal()" 
+                                    class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg flex items-center space-x-2">
+                                <i class="fas fa-plus"></i>
+                                <span>Yeni Üye</span>
+                            </button>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Üye No</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Ad Soyad</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Telefon</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Durum</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Üyelik Tarihi</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="member in filteredMembers" :key="member.id">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm font-medium" x-text="member.member_no"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="member.full_name"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="member.phone || '-'"></td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-1 text-xs rounded-full"
+                                                      :class="member.status === 'Aktif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                                                      x-text="member.status"></span>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm" x-text="formatDate(member.join_date)"></td>
+                                            <td class="px-4 py-3 text-right">
+                                                <button @click="openMemberDetail(member)" class="text-purple-600 hover:text-purple-800 mr-2" title="Detay">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button @click="editMember(member)" class="text-blue-600 hover:text-blue-800 mr-2">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button @click="deleteMember(member)" class="text-red-600 hover:text-red-800">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div x-show="filteredMembers.length === 0" class="p-8 text-center text-gray-500">
+                            <i class="fas fa-users text-4xl mb-4 text-gray-300"></i>
+                            <p>Üye bulunamadı</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Incomes Page -->
+                <div x-show="currentPage === 'incomes'" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm">
+                        <div class="p-4 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div class="flex items-center space-x-4">
+                                <select x-model="incomeFilter.year" @change="loadIncomes()" 
+                                        class="border border-gray-300 rounded-lg px-3 py-2">
+                                    <option value="2025">2025</option>
+                                    <option value="2024">2024</option>
+                                    <option value="2023">2023</option>
+                                </select>
+                                <select x-model="incomeFilter.category" @change="loadIncomes()"
+                                        class="border border-gray-300 rounded-lg px-3 py-2">
+                                    <option value="">Tüm Kategoriler</option>
+                                    <option value="AİDAT">Aidat</option>
+                                    <option value="BAĞIŞ">Bağış</option>
+                                    <option value="KİRA">Kira</option>
+                                    <option value="ETKİNLİK">Etkinlik</option>
+                                    <option value="DİĞER">Diğer</option>
+                                </select>
+                            </div>
+                            <button @click="openIncomeModal()" 
+                                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center space-x-2">
+                                <i class="fas fa-plus"></i>
+                                <span>Yeni Gelir</span>
+                            </button>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Tarih</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Kategori</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Açıklama</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Kasa</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">Tutar</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="income in incomes" :key="income.id">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm" x-text="formatDate(income.date)"></td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full" x-text="income.category"></span>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm" x-text="income.description || '-'"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="income.cash_account || 'Ana Kasa'"></td>
+                                            <td class="px-4 py-3 text-right font-semibold text-green-600" x-text="formatMoney(income.amount)"></td>
+                                            <td class="px-4 py-3 text-right">
+                                                <button @click="editIncome(income)" class="text-blue-600 hover:text-blue-800 mr-2">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button @click="deleteIncome(income)" class="text-red-600 hover:text-red-800">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="p-4 border-t bg-gray-50 flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Toplam: <strong x-text="incomes.length"></strong> kayıt</span>
+                            <span class="text-lg font-bold text-green-600" x-text="formatMoney(incomes.reduce((a,b) => a + parseFloat(b.amount || 0), 0))"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Expenses Page -->
+                <div x-show="currentPage === 'expenses'" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm">
+                        <div class="p-4 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div class="flex items-center space-x-4">
+                                <select x-model="expenseFilter.year" @change="loadExpenses()" 
+                                        class="border border-gray-300 rounded-lg px-3 py-2">
+                                    <option value="2025">2025</option>
+                                    <option value="2024">2024</option>
+                                    <option value="2023">2023</option>
+                                </select>
+                                <select x-model="expenseFilter.category" @change="loadExpenses()"
+                                        class="border border-gray-300 rounded-lg px-3 py-2">
+                                    <option value="">Tüm Kategoriler</option>
+                                    <option value="ELEKTRİK">Elektrik</option>
+                                    <option value="SU">Su</option>
+                                    <option value="DOĞALGAZ">Doğalgaz</option>
+                                    <option value="KİRA">Kira</option>
+                                    <option value="MALZEME">Malzeme</option>
+                                    <option value="DİĞER">Diğer</option>
+                                </select>
+                            </div>
+                            <button @click="openExpenseModal()" 
+                                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center space-x-2">
+                                <i class="fas fa-plus"></i>
+                                <span>Yeni Gider</span>
+                            </button>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Tarih</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Kategori</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Açıklama</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Firma</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">Tutar</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="expense in expenses" :key="expense.id">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm" x-text="formatDate(expense.date)"></td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-1 text-xs bg-red-100 text-red-700 rounded-full" x-text="expense.category"></span>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm" x-text="expense.description || '-'"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="expense.vendor || '-'"></td>
+                                            <td class="px-4 py-3 text-right font-semibold text-red-600" x-text="formatMoney(expense.amount)"></td>
+                                            <td class="px-4 py-3 text-right">
+                                                <button @click="editExpense(expense)" class="text-blue-600 hover:text-blue-800 mr-2">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button @click="deleteExpense(expense)" class="text-red-600 hover:text-red-800">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="p-4 border-t bg-gray-50 flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Toplam: <strong x-text="expenses.length"></strong> kayıt</span>
+                            <span class="text-lg font-bold text-red-600" x-text="formatMoney(expenses.reduce((a,b) => a + parseFloat(b.amount || 0), 0))"></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dues Page -->
+                <div x-show="currentPage === 'dues'" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold">Aidat Takip</h3>
+                            <select x-model="duesYear" @change="loadDues()" class="border border-gray-300 rounded-lg px-3 py-2">
+                                <option value="2025">2025</option>
+                                <option value="2024">2024</option>
+                                <option value="2023">2023</option>
+                            </select>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-blue-50 rounded-lg p-4">
+                                <p class="text-sm text-blue-600">Toplam Beklenen</p>
+                                <p class="text-2xl font-bold text-blue-700" x-text="formatMoney(duesStats.expected)"></p>
+                            </div>
+                            <div class="bg-green-50 rounded-lg p-4">
+                                <p class="text-sm text-green-600">Toplam Tahsilat</p>
+                                <p class="text-2xl font-bold text-green-700" x-text="formatMoney(duesStats.collected)"></p>
+                            </div>
+                            <div class="bg-red-50 rounded-lg p-4">
+                                <p class="text-sm text-red-600">Kalan Alacak</p>
+                                <p class="text-2xl font-bold text-red-700" x-text="formatMoney(duesStats.remaining)"></p>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Üye</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">Aidat</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">Ödenen</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">Kalan</th>
+                                        <th class="px-4 py-3 text-center text-sm font-medium text-gray-600">Durum</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="due in dues" :key="due.id">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm font-medium" x-text="due.member_name"></td>
+                                            <td class="px-4 py-3 text-sm text-right" x-text="formatMoney(due.yearly_amount)"></td>
+                                            <td class="px-4 py-3 text-sm text-right text-green-600" x-text="formatMoney(due.paid_amount)"></td>
+                                            <td class="px-4 py-3 text-sm text-right text-red-600" x-text="formatMoney(due.remaining)"></td>
+                                            <td class="px-4 py-3 text-center">
+                                                <span class="px-2 py-1 text-xs rounded-full"
+                                                      :class="{
+                                                          'bg-green-100 text-green-700': due.status === 'Tamamlandı',
+                                                          'bg-yellow-100 text-yellow-700': due.status === 'Kısmi',
+                                                          'bg-red-100 text-red-700': due.status === 'Bekliyor'
+                                                      }"
+                                                      x-text="due.status"></span>
+                                            </td>
+                                            <td class="px-4 py-3 text-right">
+                                                <button @click="payDue(due)" class="text-green-600 hover:text-green-800">
+                                                    <i class="fas fa-money-bill"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cash Accounts Page -->
+                <div x-show="currentPage === 'cash'" class="fade-in">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <template x-for="account in cashAccounts" :key="account.id">
+                            <div class="bg-white rounded-xl shadow-sm p-6 hover-scale">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="w-12 h-12 rounded-lg flex items-center justify-center"
+                                         :class="account.type === 'Banka' ? 'bg-blue-100' : 'bg-green-100'">
+                                        <i :class="account.type === 'Banka' ? 'fas fa-university text-blue-600' : 'fas fa-cash-register text-green-600'" class="text-xl"></i>
+                                    </div>
+                                    <span class="text-sm px-2 py-1 rounded-full"
+                                          :class="account.type === 'Banka' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'"
+                                          x-text="account.type"></span>
+                                </div>
+                                <h3 class="font-semibold text-gray-800" x-text="account.name"></h3>
+                                <p class="text-2xl font-bold mt-2" :class="account.balance >= 0 ? 'text-green-600' : 'text-red-600'" 
+                                   x-text="formatMoney(account.balance)"></p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                
+                <!-- Reports Page -->
+                <div x-show="currentPage === 'reports'" class="fade-in">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold mb-4">Aylık Gelir-Gider Özeti</h3>
+                            <div class="space-y-3">
+                                <template x-for="month in monthlyReport" :key="month.month">
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <span class="font-medium" x-text="month.month"></span>
+                                        <div class="flex space-x-4">
+                                            <span class="text-green-600" x-text="formatMoney(month.income)"></span>
+                                            <span class="text-red-600" x-text="formatMoney(month.expense)"></span>
+                                            <span :class="month.net >= 0 ? 'text-green-600' : 'text-red-600'" x-text="formatMoney(month.net)"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold mb-4">Kategori Dağılımı</h3>
+                            <div class="space-y-3">
+                                <template x-for="cat in categoryReport" :key="cat.category">
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <span class="font-medium" x-text="cat.category"></span>
+                                        <span class="font-semibold" x-text="formatMoney(cat.total)"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Settings Page -->
+                <div x-show="currentPage === 'settings'" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm p-6 max-w-2xl">
+                        <h3 class="text-lg font-semibold mb-6">Ayarlar</h3>
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Dernek Adı</label>
+                                <input type="text" x-model="settings.organization_name" 
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Yıllık Aidat Tutarı</label>
+                                <input type="number" x-model="settings.yearly_dues" 
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                            <button @click="saveSettings()" 
+                                    class="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg">
+                                Kaydet
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Inactive Members Page -->
+                <div x-show="currentPage === 'inactive'" x-init="$watch('currentPage', val => val === 'inactive' && loadInactiveMembers())" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm">
+                        <div class="p-4 border-b">
+                            <h3 class="text-lg font-semibold">Ayrılan Üyeler</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Üye No</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Ad Soyad</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Telefon</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Üyelik Tarihi</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Ayrılış Tarihi</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="member in inactiveMembers" :key="member.id">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm font-medium" x-text="member.member_no"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="member.full_name"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="member.phone || '-'"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="formatDate(member.join_date)"></td>
+                                            <td class="px-4 py-3 text-sm text-red-600" x-text="formatDate(member.leave_date)"></td>
+                                            <td class="px-4 py-3 text-right">
+                                                <button @click="reactivateMember(member)" class="text-green-600 hover:text-green-800" title="Tekrar Aktif Et">
+                                                    <i class="fas fa-user-check"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div x-show="inactiveMembers.length === 0" class="p-8 text-center text-gray-500">
+                            <i class="fas fa-user-minus text-4xl mb-4 text-gray-300"></i>
+                            <p>Ayrılan üye bulunamadı</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Transfers (Virman) Page -->
+                <div x-show="currentPage === 'transfers'" x-init="$watch('currentPage', val => val === 'transfers' && loadTransfers())" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm">
+                        <div class="p-4 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div class="flex items-center space-x-4">
+                                <select x-model="transferYear" @change="loadTransfers()" class="border border-gray-300 rounded-lg px-3 py-2">
+                                    <option value="2025">2025</option>
+                                    <option value="2024">2024</option>
+                                </select>
+                            </div>
+                            <button @click="openTransferModal()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center space-x-2">
+                                <i class="fas fa-exchange-alt"></i>
+                                <span>Yeni Virman</span>
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Tarih</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Kaynak Kasa</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Hedef Kasa</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Açıklama</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">Tutar</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="transfer in transfers" :key="transfer.id">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm" x-text="formatDate(transfer.date)"></td>
+                                            <td class="px-4 py-3"><span class="px-2 py-1 text-xs bg-red-100 text-red-700 rounded-full" x-text="transfer.from_account"></span></td>
+                                            <td class="px-4 py-3"><span class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full" x-text="transfer.to_account"></span></td>
+                                            <td class="px-4 py-3 text-sm" x-text="transfer.description || '-'"></td>
+                                            <td class="px-4 py-3 text-right font-semibold text-purple-600" x-text="formatMoney(transfer.amount)"></td>
+                                            <td class="px-4 py-3 text-right">
+                                                <button @click="deleteTransfer(transfer)" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div x-show="transfers.length === 0" class="p-8 text-center text-gray-500">
+                            <i class="fas fa-exchange-alt text-4xl mb-4 text-gray-300"></i>
+                            <p>Virman bulunamadı</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Events Page -->
+                <div x-show="currentPage === 'events'" x-init="$watch('currentPage', val => val === 'events' && loadEvents())" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm">
+                        <div class="p-4 border-b flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Etkinlikler</h3>
+                            <button @click="openEventModal()" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg flex items-center space-x-2">
+                                <i class="fas fa-plus"></i>
+                                <span>Yeni Etkinlik</span>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                            <template x-for="event in events" :key="event.id">
+                                <div class="border rounded-lg p-4 hover:shadow-md transition">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span class="px-2 py-1 text-xs rounded-full" :class="getStatusColor(event.status)" x-text="event.status"></span>
+                                        <span class="text-sm text-gray-500" x-text="event.event_type"></span>
+                                    </div>
+                                    <h4 class="font-semibold text-gray-800 mb-2" x-text="event.title"></h4>
+                                    <p class="text-sm text-gray-600 mb-3" x-text="event.description || 'Açıklama yok'"></p>
+                                    <div class="text-sm text-gray-500 space-y-1">
+                                        <div><i class="fas fa-calendar mr-2"></i><span x-text="formatDate(event.start_date)"></span></div>
+                                        <div x-show="event.location"><i class="fas fa-map-marker-alt mr-2"></i><span x-text="event.location"></span></div>
+                                        <div><i class="fas fa-coins mr-2"></i>Bütçe: <span x-text="formatMoney(event.budget)"></span></div>
+                                    </div>
+                                    <div class="flex justify-end space-x-2 mt-4 pt-3 border-t">
+                                        <button @click="editEvent(event)" class="text-blue-600 hover:text-blue-800"><i class="fas fa-edit"></i></button>
+                                        <button @click="deleteEvent(event)" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <div x-show="events.length === 0" class="p-8 text-center text-gray-500">
+                            <i class="fas fa-calendar-alt text-4xl mb-4 text-gray-300"></i>
+                            <p>Etkinlik bulunamadı</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Meetings Page -->
+                <div x-show="currentPage === 'meetings'" x-init="$watch('currentPage', val => val === 'meetings' && loadMeetings())" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm">
+                        <div class="p-4 border-b flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Toplantılar</h3>
+                            <button @click="openMeetingModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center space-x-2">
+                                <i class="fas fa-plus"></i>
+                                <span>Yeni Toplantı</span>
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Başlık</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Tarih</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Yer</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Durum</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="meeting in meetings" :key="meeting.id">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm font-medium" x-text="meeting.title"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="formatDateTime(meeting.meeting_date)"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="meeting.location || '-'"></td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-1 text-xs rounded-full" :class="getStatusColor(meeting.status)" x-text="meeting.status"></span>
+                                            </td>
+                                            <td class="px-4 py-3 text-right">
+                                                <button @click="editMeeting(meeting)" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button>
+                                                <button @click="deleteMeeting(meeting)" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div x-show="meetings.length === 0" class="p-8 text-center text-gray-500">
+                            <i class="fas fa-handshake text-4xl mb-4 text-gray-300"></i>
+                            <p>Toplantı bulunamadı</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Users Page -->
+                <div x-show="currentPage === 'users'" x-init="$watch('currentPage', val => val === 'users' && loadUsers())" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm">
+                        <div class="p-4 border-b flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Kullanıcılar</h3>
+                            <button @click="openUserModal()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg flex items-center space-x-2">
+                                <i class="fas fa-plus"></i>
+                                <span>Yeni Kullanıcı</span>
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Kullanıcı Adı</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Ad Soyad</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">E-posta</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Rol</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Son Giriş</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="u in users" :key="u.id">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm font-medium" x-text="u.username"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="u.full_name"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="u.email || '-'"></td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-1 text-xs rounded-full" 
+                                                      :class="u.role === 'admin' ? 'bg-red-100 text-red-700' : (u.role === 'manager' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700')"
+                                                      x-text="getRoleLabel(u.role)"></span>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm" x-text="formatDateTime(u.last_login_at)"></td>
+                                            <td class="px-4 py-3 text-right">
+                                                <button @click="editUser(u)" class="text-blue-600 hover:text-blue-800 mr-2"><i class="fas fa-edit"></i></button>
+                                                <button @click="deleteUser(u)" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div x-show="users.length === 0" class="p-8 text-center text-gray-500">
+                            <i class="fas fa-user-cog text-4xl mb-4 text-gray-300"></i>
+                            <p>Kullanıcı bulunamadı</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reports Page - Enhanced -->
+                <div x-show="currentPage === 'reports'" x-init="$watch('currentPage', val => val === 'reports' && loadReports())" class="fade-in">
+                    <div class="mb-4 flex space-x-4">
+                        <button @click="exportData('members')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">
+                            <i class="fas fa-file-excel mr-2"></i>Üye Listesi
+                        </button>
+                        <button @click="exportData('incomes')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">
+                            <i class="fas fa-file-excel mr-2"></i>Gelirler
+                        </button>
+                        <button @click="exportData('expenses')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">
+                            <i class="fas fa-file-excel mr-2"></i>Giderler
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold mb-4">Aylık Gelir-Gider Özeti</h3>
+                            <div class="space-y-3 max-h-96 overflow-y-auto">
+                                <template x-for="month in monthlyReport" :key="month.month">
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <span class="font-medium" x-text="month.month_name"></span>
+                                        <div class="flex space-x-4 text-sm">
+                                            <span class="text-green-600" x-text="formatMoney(month.income)"></span>
+                                            <span class="text-red-600" x-text="formatMoney(month.expense)"></span>
+                                            <span :class="month.net >= 0 ? 'text-green-600 font-bold' : 'text-red-600 font-bold'" x-text="formatMoney(month.net)"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="text-lg font-semibold mb-4">Gider Kategori Dağılımı</h3>
+                            <div class="space-y-3">
+                                <template x-for="cat in categoryReport" :key="cat.category">
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <span class="font-medium" x-text="cat.category"></span>
+                                        <span class="font-semibold text-red-600" x-text="formatMoney(cat.total)"></span>
+                                    </div>
+                                </template>
+                                <div x-show="categoryReport.length === 0" class="text-center text-gray-500 py-4">Veri yok</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tahakkuk Page -->
+                <div x-show="currentPage === 'tahakkuk'" x-init="$watch('currentPage', val => val === 'tahakkuk' && loadTahakkuk())" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm">
+                        <div class="p-4 border-b flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Tahakkuk Raporu</h3>
+                            <select x-model="duesYear" @change="loadTahakkuk()" class="px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="2023">2023</option>
+                                <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                            </select>
+                        </div>
+                        <div class="p-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div class="bg-blue-50 p-4 rounded-lg text-center">
+                                <p class="text-2xl font-bold text-blue-600" x-text="tahakkukData.total_members || 0"></p>
+                                <p class="text-sm text-gray-600">Toplam Üye</p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg text-center">
+                                <p class="text-2xl font-bold text-green-600" x-text="formatMoney(tahakkukData.expected_amount || 0)"></p>
+                                <p class="text-sm text-gray-600">Beklenen Tahsilat</p>
+                            </div>
+                            <div class="bg-emerald-50 p-4 rounded-lg text-center">
+                                <p class="text-2xl font-bold text-emerald-600" x-text="formatMoney(tahakkukData.collected_amount || 0)"></p>
+                                <p class="text-sm text-gray-600">Tahsil Edilen</p>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded-lg text-center">
+                                <p class="text-2xl font-bold text-red-600" x-text="formatMoney(tahakkukData.remaining_amount || 0)"></p>
+                                <p class="text-sm text-gray-600">Kalan Alacak</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Budget Page -->
+                <div x-show="currentPage === 'budget'" x-init="$watch('currentPage', val => val === 'budget' && loadBudget())" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm">
+                        <div class="p-4 border-b flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Bütçe Yönetimi</h3>
+                            <button @click="openBudgetModal()" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg flex items-center space-x-2">
+                                <i class="fas fa-plus"></i>
+                                <span>Bütçe Kalemi Ekle</span>
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Kategori</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Tür</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">Planlanan</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">Gerçekleşen</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">Fark</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="item in budgetItems" :key="item.category">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm font-medium" x-text="item.category"></td>
+                                            <td class="px-4 py-3">
+                                                <span class="px-2 py-1 text-xs rounded-full" 
+                                                      :class="item.type === 'income' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                                                      x-text="item.type === 'income' ? 'Gelir' : 'Gider'"></span>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-right" x-text="formatMoney(item.planned_amount || 0)"></td>
+                                            <td class="px-4 py-3 text-sm text-right" x-text="formatMoney(item.actual_amount || 0)"></td>
+                                            <td class="px-4 py-3 text-sm text-right font-medium" 
+                                                :class="(item.actual_amount - item.planned_amount) >= 0 ? 'text-green-600' : 'text-red-600'"
+                                                x-text="formatMoney((item.actual_amount || 0) - (item.planned_amount || 0))"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div x-show="budgetItems.length === 0" class="p-8 text-center text-gray-500">
+                            <i class="fas fa-chart-pie text-4xl mb-4 text-gray-300"></i>
+                            <p>Bütçe kalemi bulunamadı</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Documents Page -->
+                <div x-show="currentPage === 'documents'" x-init="$watch('currentPage', val => val === 'documents' && loadDocuments())" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm">
+                        <div class="p-4 border-b flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Belgeler</h3>
+                            <label class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg flex items-center space-x-2 cursor-pointer">
+                                <i class="fas fa-upload"></i>
+                                <span>Belge Yükle</span>
+                                <input type="file" @change="uploadDocument($event)" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx">
+                            </label>
+                        </div>
+                        <div class="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <template x-for="doc in documents" :key="doc.id">
+                                <div class="border rounded-lg p-4 hover:shadow-md transition">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fas fa-file-alt text-2xl text-gray-400"></i>
+                                            <div>
+                                                <p class="font-medium text-sm truncate" x-text="doc.filename" :title="doc.filename"></p>
+                                                <p class="text-xs text-gray-500" x-text="(doc.size / 1024).toFixed(1) + ' KB'"></p>
+                                            </div>
+                                        </div>
+                                        <button @click="deleteDocument(doc)" class="text-red-500 hover:text-red-700">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-2" x-text="doc.uploaded_at"></p>
+                                </div>
+                            </template>
+                        </div>
+                        <div x-show="documents.length === 0" class="p-8 text-center text-gray-500">
+                            <i class="fas fa-folder-open text-4xl mb-4 text-gray-300"></i>
+                            <p>Henüz belge yüklenmemiş</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- OCR Page -->
+                <div x-show="currentPage === 'ocr'" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">Belge Tarama (OCR)</h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block w-full border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-primary-500 transition">
+                                    <input type="file" @change="processOCR($event)" class="hidden" accept="image/*,.pdf">
+                                    <i class="fas fa-camera text-4xl text-gray-400 mb-4"></i>
+                                    <p class="text-gray-600">Fatura veya makbuz fotoğrafı yükleyin</p>
+                                    <p class="text-sm text-gray-400 mt-2">PDF, JPG, PNG</p>
+                                </label>
+                                <div x-show="ocrProcessing" class="mt-4 text-center">
+                                    <i class="fas fa-circle-notch fa-spin text-2xl text-primary-600"></i>
+                                    <p class="text-gray-600 mt-2">Belge taranıyor...</p>
+                                </div>
+                            </div>
+                            <div x-show="ocrResult">
+                                <h4 class="font-medium mb-3">Tarama Sonucu</h4>
+                                <div class="bg-gray-50 rounded-lg p-4 space-y-3">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Tarih:</span>
+                                        <span class="font-medium" x-text="ocrResult?.date || '-'"></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Tutar:</span>
+                                        <span class="font-medium" x-text="formatMoney(ocrResult?.amount || 0)"></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Firma:</span>
+                                        <span class="font-medium" x-text="ocrResult?.vendor || '-'"></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Açıklama:</span>
+                                        <span class="font-medium" x-text="ocrResult?.description || '-'"></span>
+                                    </div>
+                                </div>
+                                <button @click="saveOCRAsExpense()" class="mt-4 w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">
+                                    <i class="fas fa-save mr-2"></i>Gider Olarak Kaydet
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Devir Page -->
+                <div x-show="currentPage === 'devir'" x-init="$watch('currentPage', val => val === 'devir' && loadDevir())" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">Yıl Sonu Devir İşlemi</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <div class="bg-blue-50 p-4 rounded-lg text-center">
+                                <p class="text-2xl font-bold text-blue-600" x-text="devirData.year || 2024"></p>
+                                <p class="text-sm text-gray-600">Devir Yılı</p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg text-center">
+                                <p class="text-2xl font-bold text-green-600" x-text="formatMoney(devirData.previous_balance || 0)"></p>
+                                <p class="text-sm text-gray-600">Devredilecek Tutar</p>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg text-center">
+                                <p class="text-2xl font-bold text-purple-600" x-text="devirData.current_year || 2025"></p>
+                                <p class="text-sm text-gray-600">Hedef Yıl</p>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                            <div class="flex justify-between text-sm">
+                                <span>Toplam Gelir:</span>
+                                <span class="text-green-600 font-medium" x-text="formatMoney(devirData.total_income || 0)"></span>
+                            </div>
+                            <div class="flex justify-between text-sm mt-2">
+                                <span>Toplam Gider:</span>
+                                <span class="text-red-600 font-medium" x-text="formatMoney(devirData.total_expense || 0)"></span>
+                            </div>
+                            <hr class="my-2">
+                            <div class="flex justify-between font-medium">
+                                <span>Net Bakiye (Devir):</span>
+                                <span :class="(devirData.previous_balance || 0) >= 0 ? 'text-green-600' : 'text-red-600'" 
+                                      x-text="formatMoney(devirData.previous_balance || 0)"></span>
+                            </div>
+                        </div>
+                        <button @click="createDevir()" class="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg">
+                            <i class="fas fa-arrow-right mr-2"></i>Devir Oluştur
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Export Page -->
+                <div x-show="currentPage === 'export'" class="fade-in">
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">Dışa Aktarma</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <button @click="exportData('members')" class="p-6 border rounded-xl hover:shadow-md transition text-left">
+                                <i class="fas fa-users text-3xl text-primary-600 mb-3"></i>
+                                <h4 class="font-semibold">Üye Listesi</h4>
+                                <p class="text-sm text-gray-500">Tüm üyeleri CSV olarak indir</p>
+                            </button>
+                            <button @click="exportData('incomes')" class="p-6 border rounded-xl hover:shadow-md transition text-left">
+                                <i class="fas fa-arrow-down text-3xl text-green-600 mb-3"></i>
+                                <h4 class="font-semibold">Gelirler</h4>
+                                <p class="text-sm text-gray-500">Tüm gelirleri CSV olarak indir</p>
+                            </button>
+                            <button @click="exportData('expenses')" class="p-6 border rounded-xl hover:shadow-md transition text-left">
+                                <i class="fas fa-arrow-up text-3xl text-red-600 mb-3"></i>
+                                <h4 class="font-semibold">Giderler</h4>
+                                <p class="text-sm text-gray-500">Tüm giderleri CSV olarak indir</p>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Village Page -->
+                <div x-show="currentPage === 'village'" x-init="$watch('currentPage', val => val === 'village' && loadVillage())" class="fade-in">
+                    <!-- Village Stats -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div class="bg-white rounded-xl shadow-sm p-6 text-center">
+                            <p class="text-3xl font-bold text-green-600" x-text="formatMoney(villageStats.totalIncome || 0)"></p>
+                            <p class="text-gray-500">Köy Gelirleri</p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 text-center">
+                            <p class="text-3xl font-bold text-red-600" x-text="formatMoney(villageStats.totalExpense || 0)"></p>
+                            <p class="text-gray-500">Köy Giderleri</p>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 text-center">
+                            <p class="text-3xl font-bold" :class="(villageStats.balance || 0) >= 0 ? 'text-blue-600' : 'text-red-600'" x-text="formatMoney(villageStats.balance || 0)"></p>
+                            <p class="text-gray-500">Köy Bakiyesi</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Village Tabs -->
+                    <div class="bg-white rounded-xl shadow-sm mb-6">
+                        <div class="flex border-b overflow-x-auto">
+                            <button @click="villageTab = 'incomes'" class="px-6 py-3 font-medium transition whitespace-nowrap"
+                                    :class="villageTab === 'incomes' ? 'border-b-2 border-primary-600 text-primary-600' : 'text-gray-500'">
+                                <i class="fas fa-arrow-down mr-2"></i>Gelirler
+                            </button>
+                            <button @click="villageTab = 'expenses'" class="px-6 py-3 font-medium transition whitespace-nowrap"
+                                    :class="villageTab === 'expenses' ? 'border-b-2 border-primary-600 text-primary-600' : 'text-gray-500'">
+                                <i class="fas fa-arrow-up mr-2"></i>Giderler
+                            </button>
+                            <button @click="villageTab = 'cash'" class="px-6 py-3 font-medium transition whitespace-nowrap"
+                                    :class="villageTab === 'cash' ? 'border-b-2 border-primary-600 text-primary-600' : 'text-gray-500'">
+                                <i class="fas fa-wallet mr-2"></i>Kasa
+                            </button>
+                            <button @click="villageTab = 'transfers'" class="px-6 py-3 font-medium transition whitespace-nowrap"
+                                    :class="villageTab === 'transfers' ? 'border-b-2 border-primary-600 text-primary-600' : 'text-gray-500'">
+                                <i class="fas fa-exchange-alt mr-2"></i>Virman
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Village Income Section -->
+                    <div x-show="villageTab === 'incomes'" class="bg-white rounded-xl shadow-sm">
+                        <div class="p-4 border-b flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Köy Gelirleri</h3>
+                            <button @click="openVillageIncomeModal()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">
+                                <i class="fas fa-plus mr-2"></i>Gelir Ekle
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Tarih</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Kategori</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Açıklama</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">Tutar</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="item in villageIncomes" :key="item.id">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm" x-text="formatDate(item.date)"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="item.category"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="item.description"></td>
+                                            <td class="px-4 py-3 text-sm text-right font-medium text-green-600" x-text="formatMoney(item.amount)"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div x-show="villageIncomes.length === 0" class="p-8 text-center text-gray-500">Veri yok</div>
+                    </div>
+                    
+                    <!-- Village Expense Section -->
+                    <div x-show="villageTab === 'expenses'" class="bg-white rounded-xl shadow-sm">
+                        <div class="p-4 border-b flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Köy Giderleri</h3>
+                            <button @click="openVillageExpenseModal()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg">
+                                <i class="fas fa-plus mr-2"></i>Gider Ekle
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Tarih</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Kategori</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Açıklama</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">Tutar</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="item in villageExpenses" :key="item.id">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm" x-text="formatDate(item.date)"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="item.category"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="item.description"></td>
+                                            <td class="px-4 py-3 text-sm text-right font-medium text-red-600" x-text="formatMoney(item.amount)"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div x-show="villageExpenses.length === 0" class="p-8 text-center text-gray-500">Veri yok</div>
+                    </div>
+                    
+                    <!-- Village Cash Section -->
+                    <div x-show="villageTab === 'cash'" class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-semibold mb-4">Köy Kasa Hesapları</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <template x-for="account in villageCash" :key="account.name">
+                                <div class="border rounded-xl p-4">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-coins text-yellow-600"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-medium" x-text="account.name"></p>
+                                                <p class="text-xs text-gray-500" x-text="account.type === 'cash' ? 'Nakit' : 'Banka'"></p>
+                                            </div>
+                                        </div>
+                                        <p class="text-xl font-bold" :class="account.balance >= 0 ? 'text-green-600' : 'text-red-600'" x-text="formatMoney(account.balance)"></p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <div x-show="villageCash.length === 0" class="text-center text-gray-500 py-8">Kasa hesabı bulunamadı</div>
+                    </div>
+                    
+                    <!-- Village Transfers Section -->
+                    <div x-show="villageTab === 'transfers'" class="bg-white rounded-xl shadow-sm">
+                        <div class="p-4 border-b flex justify-between items-center">
+                            <h3 class="text-lg font-semibold">Köy Virmanları</h3>
+                            <button @click="openVillageTransferModal()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg">
+                                <i class="fas fa-exchange-alt mr-2"></i>Virman Ekle
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Tarih</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Kaynak</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Hedef</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">Açıklama</th>
+                                        <th class="px-4 py-3 text-right text-sm font-medium text-gray-600">Tutar</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <template x-for="item in villageTransfers" :key="item.id">
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm" x-text="formatDate(item.date)"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="item.from_account"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="item.to_account"></td>
+                                            <td class="px-4 py-3 text-sm" x-text="item.description"></td>
+                                            <td class="px-4 py-3 text-sm text-right font-medium text-purple-600" x-text="formatMoney(item.amount)"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div x-show="villageTransfers.length === 0" class="p-8 text-center text-gray-500">Veri yok</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Member Modal -->
+    <div x-show="memberModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50" @click="memberModal = false"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg p-6 fade-in">
+            <h3 class="text-xl font-semibold mb-4" x-text="editingMember ? 'Üye Düzenle' : 'Yeni Üye'"></h3>
+            <form @submit.prevent="saveMember()">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ad Soyad *</label>
+                        <input type="text" x-model="memberForm.full_name" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                        <input type="text" x-model="memberForm.phone"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">TC Kimlik</label>
+                        <input type="text" x-model="memberForm.tc_no"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
+                        <input type="email" x-model="memberForm.email"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Durum</label>
+                        <select x-model="memberForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="Aktif">Aktif</option>
+                            <option value="Pasif">Pasif</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Adres</label>
+                        <textarea x-model="memberForm.address" rows="2"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" @click="memberModal = false" 
+                            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">İptal</button>
+                    <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Member Detail Modal -->
+    <div x-show="memberDetailModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50" @click="memberDetailModal = false"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 fade-in max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-semibold mb-4">Üye Detay</h3>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div><span class="text-gray-500">Ad Soyad:</span> <span class="font-medium" x-text="memberDetail.member?.full_name"></span></div>
+                <div><span class="text-gray-500">Üye No:</span> <span class="font-medium" x-text="memberDetail.member?.member_no"></span></div>
+                <div><span class="text-gray-500">Telefon:</span> <span x-text="memberDetail.member?.phone || '-'"></span></div>
+                <div><span class="text-gray-500">E-posta:</span> <span x-text="memberDetail.member?.email || '-'"></span></div>
+                <div><span class="text-gray-500">Üyelik:</span> <span x-text="formatDate(memberDetail.member?.join_date)"></span></div>
+                <div><span class="text-gray-500">Durum:</span> <span :class="memberDetail.member?.status === 'Aktif' ? 'text-green-600' : 'text-red-600'" x-text="memberDetail.member?.status"></span></div>
+            </div>
+            <h4 class="font-semibold mb-2">Aidat Geçmişi</h4>
+            <div class="space-y-2 mb-4">
+                <template x-for="d in memberDetail.dues" :key="d.year">
+                    <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <span x-text="d.year"></span>
+                        <span class="text-green-600" x-text="formatMoney(d.paid_amount)"></span>
+                        <span x-text="'/ ' + formatMoney(d.yearly_amount)"></span>
+                    </div>
+                </template>
+            </div>
+            <h4 class="font-semibold mb-2">Son İşlemler</h4>
+            <div class="space-y-2">
+                <template x-for="i in memberDetail.incomes" :key="i.id">
+                    <div class="flex justify-between items-center p-2 bg-green-50 rounded">
+                        <span x-text="formatDate(i.date)"></span>
+                        <span x-text="i.category"></span>
+                        <span class="text-green-600" x-text="formatMoney(i.amount)"></span>
+                    </div>
+                </template>
+            </div>
+            <div class="flex justify-end mt-6">
+                <button @click="memberDetailModal = false" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Income Modal -->
+    <div x-show="incomeModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50" @click="incomeModal = false"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg p-6 fade-in">
+            <h3 class="text-xl font-semibold mb-4" x-text="editingIncome ? 'Gelir Düzenle' : 'Yeni Gelir'"></h3>
+            <form @submit.prevent="saveIncome()">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tarih *</label>
+                        <input type="date" x-model="incomeForm.date" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kategori *</label>
+                        <select x-model="incomeForm.category" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="AİDAT">Aidat</option>
+                            <option value="BAĞIŞ">Bağış</option>
+                            <option value="KİRA">Kira</option>
+                            <option value="ETKİNLİK">Etkinlik</option>
+                            <option value="DİĞER">Diğer</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tutar (₺) *</label>
+                        <input type="number" step="0.01" x-model="incomeForm.amount" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kasa</label>
+                        <select x-model="incomeForm.cash_account" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="Ana Kasa">Ana Kasa</option>
+                            <option value="Banka">Banka</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                        <input type="text" x-model="incomeForm.description"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" @click="incomeModal = false" 
+                            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">İptal</button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Expense Modal -->
+    <div x-show="expenseModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50" @click="expenseModal = false"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg p-6 fade-in">
+            <h3 class="text-xl font-semibold mb-4" x-text="editingExpense ? 'Gider Düzenle' : 'Yeni Gider'"></h3>
+            <form @submit.prevent="saveExpense()">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tarih *</label>
+                        <input type="date" x-model="expenseForm.date" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kategori *</label>
+                        <select x-model="expenseForm.category" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="ELEKTRİK">Elektrik</option>
+                            <option value="SU">Su</option>
+                            <option value="DOĞALGAZ">Doğalgaz</option>
+                            <option value="KİRA">Kira</option>
+                            <option value="MALZEME">Malzeme</option>
+                            <option value="TAMİRAT">Tamirat</option>
+                            <option value="DİĞER">Diğer</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tutar (₺) *</label>
+                        <input type="number" step="0.01" x-model="expenseForm.amount" required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Firma</label>
+                        <input type="text" x-model="expenseForm.vendor"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                        <input type="text" x-model="expenseForm.description"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" @click="expenseModal = false" 
+                            class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">İptal</button>
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div x-show="toast.show" x-cloak
+         class="fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white fade-in"
+         :class="toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'">
+        <div class="flex items-center space-x-2">
+            <i :class="toast.type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
+            <span x-text="toast.message"></span>
+        </div>
+    </div>
+
+    <!-- Transfer Modal -->
+    <div x-show="transferModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50" @click="transferModal = false"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg p-6 fade-in">
+            <h3 class="text-xl font-semibold mb-4">Yeni Virman</h3>
+            <form @submit.prevent="saveTransfer()">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kaynak Kasa *</label>
+                        <select x-model="transferForm.from_account" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="Ana Kasa">Ana Kasa</option>
+                            <option value="Banka">Banka</option>
+                            <option value="Köy Kasası">Köy Kasası</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Hedef Kasa *</label>
+                        <select x-model="transferForm.to_account" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="Banka">Banka</option>
+                            <option value="Ana Kasa">Ana Kasa</option>
+                            <option value="Köy Kasası">Köy Kasası</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tarih *</label>
+                        <input type="date" x-model="transferForm.date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tutar (₺) *</label>
+                        <input type="number" step="0.01" x-model="transferForm.amount" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                        <input type="text" x-model="transferForm.description" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" @click="transferModal = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">İptal</button>
+                    <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Event Modal -->
+    <div x-show="eventModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50" @click="eventModal = false"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg p-6 fade-in">
+            <h3 class="text-xl font-semibold mb-4" x-text="editingEvent ? 'Etkinlik Düzenle' : 'Yeni Etkinlik'"></h3>
+            <form @submit.prevent="saveEvent()">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Başlık *</label>
+                        <input type="text" x-model="eventForm.title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tür</label>
+                        <select x-model="eventForm.event_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="Genel">Genel</option>
+                            <option value="Sosyal">Sosyal</option>
+                            <option value="Toplantı">Toplantı</option>
+                            <option value="Kültürel">Kültürel</option>
+                            <option value="Spor">Spor</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Durum</label>
+                        <select x-model="eventForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="Planlanan">Planlanan</option>
+                            <option value="Devam Ediyor">Devam Ediyor</option>
+                            <option value="Tamamlandı">Tamamlandı</option>
+                            <option value="İptal">İptal</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Başlangıç *</label>
+                        <input type="date" x-model="eventForm.start_date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Bitiş</label>
+                        <input type="date" x-model="eventForm.end_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Konum</label>
+                        <input type="text" x-model="eventForm.location" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Bütçe (₺)</label>
+                        <input type="number" x-model="eventForm.budget" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                        <textarea x-model="eventForm.description" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" @click="eventModal = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">İptal</button>
+                    <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Meeting Modal -->
+    <div x-show="meetingModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50" @click="meetingModal = false"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg p-6 fade-in max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-semibold mb-4" x-text="editingMeeting ? 'Toplantı Düzenle' : 'Yeni Toplantı'"></h3>
+            <form @submit.prevent="saveMeeting()">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Başlık *</label>
+                        <input type="text" x-model="meetingForm.title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Tarih/Saat *</label>
+                            <input type="datetime-local" x-model="meetingForm.meeting_date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Durum</label>
+                            <select x-model="meetingForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="Planlanan">Planlanan</option>
+                                <option value="Devam Ediyor">Devam Ediyor</option>
+                                <option value="Tamamlandı">Tamamlandı</option>
+                                <option value="İptal">İptal</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Yer</label>
+                        <input type="text" x-model="meetingForm.location" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Gündem (her satır bir madde)</label>
+                        <textarea x-model="meetingForm.agenda" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Gündem maddesi 1&#10;Gündem maddesi 2"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Katılımcılar (her satır bir kişi)</label>
+                        <textarea x-model="meetingForm.attendees" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Ahmet Yılmaz&#10;Mehmet Demir"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Alınan Kararlar</label>
+                        <textarea x-model="meetingForm.decisions" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Toplantı Tutanağı</label>
+                        <textarea x-model="meetingForm.minutes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" @click="meetingModal = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">İptal</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Budget Modal -->
+    <div x-show="budgetModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50" @click="budgetModal = false"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg p-6 fade-in">
+            <h3 class="text-xl font-semibold mb-4">Bütçe Kalemi</h3>
+            <form @submit.prevent="saveBudget()">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kategori *</label>
+                        <input type="text" x-model="budgetForm.category" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tür</label>
+                        <select x-model="budgetForm.type" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="expense">Gider</option>
+                            <option value="income">Gelir</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Planlanan Tutar *</label>
+                        <input type="number" step="0.01" x-model="budgetForm.planned_amount" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Notlar</label>
+                        <textarea x-model="budgetForm.notes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" @click="budgetModal = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">İptal</button>
+                    <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Village Income Modal -->
+    <div x-show="villageIncomeModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50" @click="villageIncomeModal = false"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg p-6 fade-in">
+            <h3 class="text-xl font-semibold mb-4">Köy Geliri Ekle</h3>
+            <form @submit.prevent="saveVillageIncome()">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tarih *</label>
+                        <input type="date" x-model="villageIncomeForm.date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kategori *</label>
+                        <select x-model="villageIncomeForm.category" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="">Seçiniz</option>
+                            <option value="KÖY AİDATI">Köy Aidatı</option>
+                            <option value="HİBE">Hibe</option>
+                            <option value="DEVLET DESTEĞİ">Devlet Desteği</option>
+                            <option value="DİĞER">Diğer</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tutar (₺) *</label>
+                        <input type="number" step="0.01" x-model="villageIncomeForm.amount" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                        <input type="text" x-model="villageIncomeForm.description" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" @click="villageIncomeModal = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">İptal</button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Village Expense Modal -->
+    <div x-show="villageExpenseModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50" @click="villageExpenseModal = false"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg p-6 fade-in">
+            <h3 class="text-xl font-semibold mb-4">Köy Gideri Ekle</h3>
+            <form @submit.prevent="saveVillageExpense()">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tarih *</label>
+                        <input type="date" x-model="villageExpenseForm.date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kategori *</label>
+                        <select x-model="villageExpenseForm.category" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="">Seçiniz</option>
+                            <option value="ALTYAPI">Altyapı</option>
+                            <option value="ÇEVRE DÜZENLEMESİ">Çevre Düzenlemesi</option>
+                            <option value="İŞÇİLİK">İşçilik</option>
+                            <option value="MALZEME">Malzeme</option>
+                            <option value="DİĞER">Diğer</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tutar (₺) *</label>
+                        <input type="number" step="0.01" x-model="villageExpenseForm.amount" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                        <input type="text" x-model="villageExpenseForm.description" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" @click="villageExpenseModal = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">İptal</button>
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Village Transfer Modal -->
+    <div x-show="villageTransferModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50" @click="villageTransferModal = false"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg p-6 fade-in">
+            <h3 class="text-xl font-semibold mb-4">Köy Virmanı Ekle</h3>
+            <form @submit.prevent="saveVillageTransfer()">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tarih *</label>
+                        <input type="date" x-model="villageTransferForm.date" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kaynak Hesap *</label>
+                        <select x-model="villageTransferForm.from_account" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="Ana Kasa">Ana Kasa</option>
+                            <option value="Banka">Banka</option>
+                            <option value="Köy Kasası">Köy Kasası</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Hedef Hesap *</label>
+                        <select x-model="villageTransferForm.to_account" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="Köy Kasası">Köy Kasası</option>
+                            <option value="Ana Kasa">Ana Kasa</option>
+                            <option value="Banka">Banka</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tutar (₺) *</label>
+                        <input type="number" step="0.01" x-model="villageTransferForm.amount" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                        <input type="text" x-model="villageTransferForm.description" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" @click="villageTransferModal = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">İptal</button>
+                    <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div x-show="userModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/50" @click="userModal = false"></div>
+        <div class="relative bg-white rounded-xl shadow-xl w-full max-w-lg p-6 fade-in">
+            <h3 class="text-xl font-semibold mb-4" x-text="editingUser ? 'Kullanıcı Düzenle' : 'Yeni Kullanıcı'"></h3>
+            <form @submit.prevent="saveUser()">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Kullanıcı Adı *</label>
+                        <input type="text" x-model="userForm.username" required :disabled="editingUser" class="w-full px-3 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1" x-text="editingUser ? 'Yeni Şifre' : 'Şifre *'"></label>
+                        <input type="password" x-model="userForm.password" :required="!editingUser" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ad Soyad *</label>
+                        <input type="text" x-model="userForm.full_name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
+                        <input type="email" x-model="userForm.email" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+                        <input type="text" x-model="userForm.phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+                        <select x-model="userForm.role" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                            <option value="admin">Yönetici</option>
+                            <option value="manager">Müdür</option>
+                            <option value="member">Üye</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" @click="userModal = false" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">İptal</button>
+                    <button type="submit" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

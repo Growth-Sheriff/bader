@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Veritabanı
+  postgres:
+    image: postgres:16-alpine
+    container_name: bader-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-bader}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-bader_secure_2025}
+      POSTGRES_DB: ${DB_NAME:-bader}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bader"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: bader-api
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-bader}:${DB_PASSWORD:-bader_secure_2025}@postgres:5432/${DB_NAME:-bader}
+      SECRET_KEY: ${SECRET_KEY:-bader_secret_key_change_in_production}
+      ADMIN_SECRET: ${ADMIN_SECRET:-BADER_ADMIN_2025_SUPER_SECRET}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+      - ./api:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Caddy Reverse Proxy
+  caddy:
+    image: caddy:2-alpine
+    container_name: bader-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./web:/srv/web:ro
+      - ./admin-panel:/srv/admin:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - admin-api
+
+  # Admin API - Süper Admin Paneli için
+  admin-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: bader-admin-api
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-bader}:${DB_PASSWORD:-bader_secure_2025}@postgres:5432/${DB_NAME:-bader}
+      SECRET_KEY: ${ADMIN_SECRET_KEY:-bader-super-admin-secret-key-2025}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-bader-admin-api-key-secure}
+    volumes:
+      - ./api/admin_api.py:/app/main.py:ro
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: uvicorn main:app --host 0.0.0.0 --port 8001
+
+  # Redis (Cache & Session) - Opsiyonel ama ileride lazım olur
+  redis:
+    image: redis:7-alpine
+    container_name: bader-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  uploads:
+  caddy_data:
+  caddy_config:
+  redis_data:
+
+networks:
+  default:
+    name: bader-network

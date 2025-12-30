@@ -1,0 +1,6 @@
+Batch converting remaining modules to drawer system...
+- Gider
+- Virman  
+- Kasa
+- Aidat (3 dialogs)
+- Main Window (Ayarlar)

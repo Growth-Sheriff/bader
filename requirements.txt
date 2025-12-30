@@ -1,0 +1,20 @@
+# BADER Derneği - Gerekli Python Kütüphaneleri
+
+# UI Framework
+PyQt6==6.6.1
+
+# Modern UI Tema (Material Design)
+qt-material==2.14
+
+# Excel Export
+openpyxl==3.1.2
+
+# Grafikler ve Veri Görselleştirme
+matplotlib==3.8.2
+
+# Veritabanı (Python ile birlikte gelir, ekstra kurulum gerekmez)
+# sqlite3 (built-in)
+
+# Not: Bu bağımlılıkları yüklemek için:
+# pip install -r requirements.txt
+
