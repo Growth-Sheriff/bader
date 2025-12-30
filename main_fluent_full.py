@@ -55,7 +55,18 @@ class FluentBADERWindow(FluentWindow):
         session.set_user(kullanici)
         
         self.setWindowTitle("BADER - Dernek Yönetim Sistemi")
-        self.resize(1400, 850)
+        
+        # Ekran boyutuna göre pencere boyutu ayarla (MacBook 13" desteği)
+        from PyQt5.QtWidgets import QDesktopWidget
+        screen = QDesktopWidget().availableGeometry()
+        
+        # Ekran genişliğinin %90'ı, yüksekliğinin %85'i
+        width = min(1400, int(screen.width() * 0.90))
+        height = min(850, int(screen.height() * 0.85))
+        self.resize(width, height)
+        
+        # Minimum boyut (çok küçülmesin)
+        self.setMinimumSize(1024, 600)
         
         # Windows 11 Mica effect
         self.setMicaEffectEnabled(True)
@@ -694,7 +705,23 @@ def main():
     """Ana fonksiyon"""
     global _auto_ops
     
+    # High DPI desteği (MacBook Retina ekranlar için)
+    from PyQt5.QtCore import QCoreApplication
+    QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    QCoreApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    
     app = QApplication(sys.argv)
+    
+    # Platform bazlı font ayarı
+    from PyQt5.QtGui import QFont
+    if sys.platform == "darwin":  # macOS
+        font = QFont("SF Pro Text", 10)
+    elif sys.platform == "win32":  # Windows
+        font = QFont("Segoe UI", 10)
+    else:  # Linux
+        font = QFont("Ubuntu", 10)
+    font.setStyleStrategy(QFont.PreferAntialias)
+    app.setFont(font)
     
     # Fluent tema
     setTheme(Theme.AUTO)
