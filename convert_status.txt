@@ -1,0 +1,14 @@
+DRAWER PANEL DÖNÜŞÜMÜ - TOPLU İŞLEM
+
+✅ TAMAMLANAN:
+1. Üye Yönetimi
+2. Gelir Yönetimi
+
+⏳ ŞİMDİ YAPILIYOR:
+3. Gider Yönetimi
+4. Virman
+5. Kasa
+6. Aidat (3 dialog)
+7. Ayarlar
+
+TOPLAM: 7/7 modül
