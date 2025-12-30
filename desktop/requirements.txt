@@ -5,11 +5,8 @@ PyQt5>=5.15.9
 PyQt5-Qt5>=5.15.2
 PyQt5-sip>=12.13.0
 
-# Modern UI Tema
-qt-material>=2.14
-
-# Fluent Design (Opsiyonel - daha modern görünüm için)
-# pip install "PySide6-Fluent-Widgets>=1.4.0" 
+# Fluent Design Widgets (ZORUNLU!)
+PyQt-Fluent-Widgets>=1.4.0
 
 # Excel Export
 openpyxl>=3.1.2
@@ -23,6 +20,9 @@ pytesseract>=0.3.10
 
 # Grafikler
 matplotlib>=3.8.0
+
+# HTTP İstekleri
+requests>=2.31.0
 
 # Not: Kurulum için:
 # pip install -r requirements.txt

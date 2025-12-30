@@ -1,33 +1,36 @@
 #!/usr/bin/env python3
 """
 BADER Derneği - Aidat & Kasa Yönetim Sistemi
-Ana Program - Polaris Design System
+Ana Program - QFluentWidgets + Polaris Design
 """
 
 import sys
 import os
+
+# PyQt5 import
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt, QCoreApplication
 from PyQt5.QtGui import QFont, QFontDatabase
+
+# QFluentWidgets tema
+from qfluentwidgets import setTheme, Theme, setThemeColor
+from qfluentwidgets import FluentWindow
+
 from main_window import MainWindow
-from ui_styles import MODERN_STYLESHEET
 
 
 def get_resource_path(relative_path):
     """PyInstaller için doğru dosya yolunu al"""
     try:
-        # PyInstaller bundle içinde
         base_path = sys._MEIPASS
     except AttributeError:
-        # Normal Python ortamında
         base_path = os.path.abspath(".")
-    
     return os.path.join(base_path, relative_path)
 
 
 def main():
     """Ana fonksiyon"""
-    # High DPI desteği - PyQt5 için
+    # High DPI desteği
     QCoreApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
     QCoreApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
     
@@ -39,37 +42,26 @@ def main():
     app.setOrganizationName("BADER")
     app.setApplicationVersion("3.0.0")
     
-    # Platform bazlı font seçimi
-    if sys.platform == "darwin":  # macOS
+    # QFluentWidgets tema ayarları
+    setTheme(Theme.LIGHT)
+    setThemeColor("#303030")  # Polaris primary color
+    
+    # Platform bazlı font
+    if sys.platform == "darwin":
         font_family = "SF Pro Text"
-        fallback = "Helvetica Neue"
-    elif sys.platform == "win32":  # Windows
+    elif sys.platform == "win32":
         font_family = "Segoe UI"
-        fallback = "Arial"
-    else:  # Linux
+    else:
         font_family = "Ubuntu"
-        fallback = "DejaVu Sans"
     
-    # Font ayarla
-    font = QFont()
-    font.setFamily(font_family)
-    font.setPointSize(10)
+    font = QFont(font_family, 10)
     font.setStyleStrategy(QFont.PreferAntialias)
-    
-    # Eğer font bulunamazsa fallback kullan
-    if not QFontDatabase().hasFamily(font_family):
-        font.setFamily(fallback)
-    
     app.setFont(font)
-    
-    # ⭐ STYLESHEET UYGULA - BU ÇOK ÖNEMLİ!
-    app.setStyleSheet(MODERN_STYLESHEET)
     
     # Ana pencereyi oluştur ve göster
     window = MainWindow()
     window.showMaximized()
     
-    # Uygulama döngüsü
     sys.exit(app.exec_())
 
 
