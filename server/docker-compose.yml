@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: bader-db
+    environment:
+      POSTGRES_USER: bader
+      POSTGRES_PASSWORD: bader_secure_2025
+      POSTGRES_DB: bader
+    volumes:
+      - bader_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bader-api
+    environment:
+      DATABASE_URL: postgresql://bader:bader_secure_2025@db:5432/bader
+      SECRET_KEY: ${SECRET_KEY:-bader_secret_key_change_in_production}
+      ADMIN_SECRET: ${ADMIN_SECRET:-BADER_ADMIN_2025_SUPER_SECRET}
+    ports:
+      - "8080:8000"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  bader_data:

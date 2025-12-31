@@ -532,14 +532,13 @@ class ServerClient:
             return False, "Sunucu yapılandırılmamış"
         try:
             response = self._session.post(
-                f"{self.config.server_url}/dernek/giderler",
-                params={'customer_id': self.config.customer_id},
+                f"{self.config.server_url}/web/expenses",
                 json={
-                    'tarih': tarih,
-                    'tur': tur,
-                    'aciklama': aciklama,
-                    'tutar': tutar,
-                    'kaynak': 'desktop'
+                    'date': tarih,
+                    'category': tur,
+                    'description': aciklama,
+                    'amount': tutar,
+                    'cash_account': 'Ana Kasa'
                 },
                 headers=self._get_headers(),
                 timeout=30
@@ -556,8 +555,7 @@ class ServerClient:
             return False, "Sunucu yapılandırılmamış"
         try:
             response = self._session.post(
-                f"{self.config.server_url}/dernek/uyeler",
-                params={'customer_id': self.config.customer_id},
+                f"{self.config.server_url}/web/members",
                 json=uye_data,
                 headers=self._get_headers(),
                 timeout=30
@@ -567,6 +565,67 @@ class ServerClient:
             return False, f"Hata: {response.status_code}"
         except Exception as e:
             return False, f"Hata: {str(e)}"
+    
+    # ==================== WEB SYNC API ====================
+    
+    def sync_upload_all(self, members: list, incomes: list, expenses: list) -> Tuple[bool, str, Dict]:
+        """Tüm verileri sunucuya yükle"""
+        if not self.is_configured():
+            return False, "Sunucu yapılandırılmamış", {}
+        try:
+            response = self._session.post(
+                f"{self.config.server_url}/sync/upload",
+                json={
+                    'members': members,
+                    'incomes': incomes,
+                    'expenses': expenses
+                },
+                headers=self._get_headers(),
+                timeout=120
+            )
+            if response.status_code == 200:
+                data = response.json()
+                return True, "Senkronizasyon başarılı", data.get('synced', {})
+            return False, f"Hata: {response.status_code}", {}
+        except Exception as e:
+            return False, f"Hata: {str(e)}", {}
+    
+    def sync_download(self, since: str = None) -> Tuple[bool, str, Dict]:
+        """Sunucudan verileri indir"""
+        if not self.is_configured():
+            return False, "Sunucu yapılandırılmamış", {}
+        try:
+            params = {}
+            if since:
+                params['since'] = since
+            response = self._session.get(
+                f"{self.config.server_url}/sync/download",
+                params=params,
+                headers=self._get_headers(),
+                timeout=120
+            )
+            if response.status_code == 200:
+                data = response.json()
+                return True, "İndirme başarılı", data
+            return False, f"Hata: {response.status_code}", {}
+        except Exception as e:
+            return False, f"Hata: {str(e)}", {}
+    
+    def get_dashboard_stats(self) -> Tuple[bool, str, Dict]:
+        """Dashboard istatistiklerini al"""
+        if not self.is_configured():
+            return False, "Sunucu yapılandırılmamış", {}
+        try:
+            response = self._session.get(
+                f"{self.config.server_url}/web/dashboard",
+                headers=self._get_headers(),
+                timeout=30
+            )
+            if response.status_code == 200:
+                return True, "Başarılı", response.json()
+            return False, f"Hata: {response.status_code}", {}
+        except Exception as e:
+            return False, f"Hata: {str(e)}", {}
 
 
 # Singleton instance

@@ -71,6 +71,10 @@ class FluentBADERWindow(FluentWindow):
         # Windows 11 Mica effect
         self.setMicaEffectEnabled(True)
         
+        # Sol menüyü varsayılan olarak açık tut
+        self.navigationInterface.setExpandWidth(200)
+        self.navigationInterface.expand(useAni=False)
+        
         # Üye detay/aidat widget'ları (navigation dışı)
         self.uye_detay_widget = UyeDetayWidget(self.db)
         self.uye_detay_widget.setObjectName("uye_detay_widget")
