@@ -3,30 +3,77 @@ BADER Derneği - İş Mantığı Katmanı
 Tüm CRUD işlemleri ve hesaplamalar
 """
 
-from database import Database
+from database import Database, get_license_mode, get_api_config
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime, date
 import json
+import requests
 
 
 class UyeYoneticisi:
-    """Üye yönetim işlemleri"""
+    """Üye yönetim işlemleri - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method, endpoint, data=None):
+        """Online API isteği"""
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                resp = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                resp = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                resp = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                resp = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if resp.status_code in [200, 201]:
+                return resp.json()
+            return None
+        except Exception as e:
+            print(f"API Hatası: {e}")
+            return None
         
     def uye_ekle(self, ad_soyad: str, telefon: str = "", email: str = "", 
                  durum: str = "Aktif", notlar: str = "", kan_grubu: str = "",
                  aile_durumu: str = "Bekar", cocuk_sayisi: int = 0,
                  il: str = "", ilce: str = "", mahalle: str = "", 
                  adres: str = "", posta_kodu: str = "", dogum_tarihi: str = None,
-                 # Yeni alanlar
                  uye_no: str = "", tc_kimlik: str = "", telefon2: str = "",
                  uyelik_tipi: str = "Asil", cinsiyet: str = "", dogum_yeri: str = "",
                  meslek: str = "", is_yeri: str = "", egitim_durumu: str = "",
                  referans_uye_id: int = None, ozel_aidat_tutari: float = None,
                  aidat_indirimi_yuzde: float = 0) -> int:
-        """Yeni üye ekle (genişletilmiş alanlarla v2)"""
+        """Yeni üye ekle"""
+        
+        if self.online_mode:
+            data = {
+                'ad_soyad': ad_soyad, 'telefon': telefon, 'telefon2': telefon2,
+                'email': email, 'durum': durum, 'notlar': notlar,
+                'kan_grubu': kan_grubu, 'aile_durumu': aile_durumu,
+                'cocuk_sayisi': cocuk_sayisi, 'il': il, 'ilce': ilce,
+                'mahalle': mahalle, 'adres': adres, 'posta_kodu': posta_kodu,
+                'dogum_tarihi': dogum_tarihi, 'uye_no': uye_no or None,
+                'tc_kimlik': tc_kimlik, 'uyelik_tipi': uyelik_tipi,
+                'cinsiyet': cinsiyet, 'dogum_yeri': dogum_yeri,
+                'meslek': meslek, 'is_yeri': is_yeri, 'egitim_durumu': egitim_durumu,
+                'referans_uye_id': referans_uye_id,
+                'ozel_aidat_tutari': ozel_aidat_tutari,
+                'aidat_indirimi_yuzde': aidat_indirimi_yuzde
+            }
+            data = {k: v for k, v in data.items() if v is not None and v != ''}
+            result = self._api_request('POST', '/db/uyeler', data)
+            return result.get('uye_id', 0) if result else 0
+        
         self.db.cursor.execute("""
             INSERT INTO uyeler (ad_soyad, telefon, telefon2, email, durum, notlar,
                                kan_grubu, aile_durumu, cocuk_sayisi,
@@ -57,6 +104,25 @@ class UyeYoneticisi:
                      referans_uye_id: int = None, ozel_aidat_tutari: float = None,
                      aidat_indirimi_yuzde: float = 0):
         """Üye bilgilerini güncelle (genişletilmiş alanlarla v2)"""
+        
+        if self.online_mode:
+            data = {
+                'ad_soyad': ad_soyad, 'telefon': telefon, 'telefon2': telefon2,
+                'email': email, 'durum': durum, 'notlar': notlar,
+                'kan_grubu': kan_grubu, 'aile_durumu': aile_durumu,
+                'cocuk_sayisi': cocuk_sayisi, 'il': il, 'ilce': ilce,
+                'mahalle': mahalle, 'adres': adres, 'posta_kodu': posta_kodu,
+                'dogum_tarihi': dogum_tarihi, 'uye_no': uye_no or None,
+                'tc_kimlik': tc_kimlik, 'uyelik_tipi': uyelik_tipi,
+                'cinsiyet': cinsiyet, 'dogum_yeri': dogum_yeri,
+                'meslek': meslek, 'is_yeri': is_yeri, 'egitim_durumu': egitim_durumu,
+                'referans_uye_id': referans_uye_id,
+                'ozel_aidat_tutari': ozel_aidat_tutari,
+                'aidat_indirimi_yuzde': aidat_indirimi_yuzde
+            }
+            self._api_request('PUT', f'/db/uyeler/{uye_id}', data)
+            return
+        
         self.db.cursor.execute("""
             UPDATE uyeler 
             SET ad_soyad = ?, telefon = ?, telefon2 = ?, email = ?, durum = ?, notlar = ?,
@@ -77,6 +143,10 @@ class UyeYoneticisi:
     
     def uye_ayir(self, uye_id: int):
         """Üyeyi ayrılan olarak işaretle (soft delete)"""
+        if self.online_mode:
+            self._api_request('PUT', f'/db/uyeler/{uye_id}', {'durum': 'Ayrıldı'})
+            return
+        
         self.db.cursor.execute("SELECT ad_soyad FROM uyeler WHERE uye_id = ?", (uye_id,))
         result = self.db.cursor.fetchone()
         ad_soyad = result['ad_soyad'] if result else "Bilinmeyen"
@@ -95,6 +165,13 @@ class UyeYoneticisi:
         Üye sil 
         mode: 'cascade' = tamamen sil, 'soft_delete' = ayrılan olarak işaretle
         """
+        if self.online_mode:
+            if mode == "cascade":
+                self._api_request('DELETE', f'/db/uyeler/{uye_id}')
+            else:
+                self.uye_ayir(uye_id)
+            return
+        
         self.db.cursor.execute("SELECT ad_soyad FROM uyeler WHERE uye_id = ?", (uye_id,))
         result = self.db.cursor.fetchone()
         ad_soyad = result['ad_soyad'] if result else "Bilinmeyen"
@@ -110,6 +187,15 @@ class UyeYoneticisi:
         
     def uye_listesi(self, durum: Optional[str] = None, dahil_ayrilan: bool = False) -> List[Dict]:
         """Üye listesini getir"""
+        if self.online_mode:
+            params = {}
+            if durum:
+                params['durum'] = durum
+            elif dahil_ayrilan:
+                params['dahil_ayrilan'] = 'true'
+            result = self._api_request('GET', '/db/uyeler', params)
+            return result.get('data', []) if result else []
+        
         if durum:
             self.db.cursor.execute("""
                 SELECT * FROM uyeler WHERE durum = ? ORDER BY ad_soyad
@@ -125,6 +211,10 @@ class UyeYoneticisi:
     
     def ayrilan_uyeler(self) -> List[Dict]:
         """Ayrılan üyeleri listele"""
+        if self.online_mode:
+            result = self._api_request('GET', '/db/uyeler', {'durum': 'Ayrıldı'})
+            return result.get('data', []) if result else []
+        
         self.db.cursor.execute("""
             SELECT * FROM uyeler WHERE durum = 'Ayrıldı' ORDER BY ayrilma_tarihi DESC
         """)
@@ -132,6 +222,10 @@ class UyeYoneticisi:
         
     def uye_getir(self, uye_id: int) -> Optional[Dict]:
         """Tek bir üyeyi getir"""
+        if self.online_mode:
+            result = self._api_request('GET', f'/db/uyeler/{uye_id}')
+            return result.get('data') if result else None
+        
         self.db.cursor.execute("SELECT * FROM uyeler WHERE uye_id = ?", (uye_id,))
         result = self.db.cursor.fetchone()
         return dict(result) if result else None

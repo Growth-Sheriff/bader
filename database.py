@@ -1,6 +1,6 @@
 """
 BADER Derneği - Veritabanı Modelleri
-SQLite tabanlı veritabanı yönetimi
+SQLite tabanlı veritabanı yönetimi + Online PostgreSQL desteği
 """
 
 import sqlite3
@@ -8,6 +8,37 @@ from datetime import datetime
 from typing import Optional, List, Tuple
 import os
 import sys
+import requests
+import json
+
+
+def get_license_mode():
+    """Lisans modunu kontrol et (online/offline)"""
+    try:
+        db_path = get_data_path()
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT deger FROM sistem_ayarlari WHERE anahtar = 'license_mode'")
+        result = cursor.fetchone()
+        conn.close()
+        return result[0] if result else 'offline'
+    except:
+        return 'offline'
+
+
+def get_api_config():
+    """API yapılandırmasını al"""
+    try:
+        db_path = get_data_path()
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT anahtar, deger FROM sistem_ayarlari WHERE anahtar IN ('api_url', 'api_key', 'customer_id')")
+        results = cursor.fetchall()
+        conn.close()
+        config = {row[0]: row[1] for row in results}
+        return config
+    except:
+        return {}
 
 
 def get_data_path():
@@ -19,12 +50,96 @@ def get_data_path():
         os.makedirs(data_dir, exist_ok=True)
         return os.path.join(data_dir, 'bader_dernegi.db')
     else:
-        # Windows/Linux için current directory
         return os.path.join(os.path.dirname(os.path.abspath(__file__)), 'bader_dernegi.db')
 
 
+class OnlineDatabase:
+    """Online PostgreSQL API üzerinden veritabanı işlemleri"""
+    
+    def __init__(self):
+        config = get_api_config()
+        self.api_url = config.get('api_url', 'http://157.90.154.48:8080/api')
+        self.api_key = config.get('api_key', '')
+        self.customer_id = config.get('customer_id', '')
+        self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _request(self, method, endpoint, data=None):
+        """API isteği gönder"""
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                resp = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                resp = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                resp = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                resp = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if resp.status_code in [200, 201]:
+                return resp.json()
+            return None
+        except Exception as e:
+            print(f"API Hatası: {e}")
+            return None
+    
+    def get_uyeler(self, durum='Aktif'):
+        """Üyeleri getir"""
+        result = self._request('GET', '/db/uyeler', {'durum': durum})
+        return result.get('data', []) if result else []
+    
+    def get_uye(self, uye_id):
+        """Tek üye getir"""
+        result = self._request('GET', f'/db/uyeler/{uye_id}')
+        return result.get('data') if result else None
+    
+    def add_uye(self, uye_data):
+        """Üye ekle"""
+        return self._request('POST', '/db/uyeler', uye_data)
+    
+    def update_uye(self, uye_id, uye_data):
+        """Üye güncelle"""
+        return self._request('PUT', f'/db/uyeler/{uye_id}', uye_data)
+    
+    def delete_uye(self, uye_id):
+        """Üye sil"""
+        return self._request('DELETE', f'/db/uyeler/{uye_id}')
+    
+    def get_gelirler(self, limit=100):
+        """Gelirleri getir"""
+        result = self._request('GET', '/db/gelirler', {'limit': limit})
+        return result.get('data', []) if result else []
+    
+    def add_gelir(self, gelir_data):
+        """Gelir ekle"""
+        return self._request('POST', '/db/gelirler', gelir_data)
+    
+    def get_giderler(self, limit=100):
+        """Giderleri getir"""
+        result = self._request('GET', '/db/giderler', {'limit': limit})
+        return result.get('data', []) if result else []
+    
+    def add_gider(self, gider_data):
+        """Gider ekle"""
+        return self._request('POST', '/db/giderler', gider_data)
+    
+    def get_kasalar(self):
+        """Kasaları getir"""
+        result = self._request('GET', '/db/kasalar')
+        return result.get('data', []) if result else []
+    
+    def get_dashboard(self):
+        """Dashboard istatistiklerini getir"""
+        return self._request('GET', '/web/dashboard')
+    
+    def execute_query(self, query, params=None):
+        """Genel SQL sorgusu çalıştır"""
+        return self._request('POST', '/db/query', {'query': query, 'params': params})
+
+
 class Database:
-    """Veritabanı bağlantı ve işlem yöneticisi"""
+    """Veritabanı bağlantı ve işlem yöneticisi - Hybrid (Online/Offline)"""
     
     def __init__(self, db_path: str = None):
         if db_path is None:
@@ -32,6 +147,12 @@ class Database:
         self.db_path = db_path
         self.conn: Optional[sqlite3.Connection] = None
         self.cursor: Optional[sqlite3.Cursor] = None
+        self.online_mode = get_license_mode() == 'online'
+        self.online_db = OnlineDatabase() if self.online_mode else None
+        
+    def is_online(self):
+        """Online mod aktif mi?"""
+        return self.online_mode and self.online_db is not None
         
     def connect(self):
         """Veritabanı bağlantısı oluştur"""
