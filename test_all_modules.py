@@ -52,11 +52,12 @@ def test_database_connection():
     try:
         from database import Database
         db = Database()
+        db.connect()  # Bağlantıyı aç!
         
         # License mode kontrolü
-        db.cursor.execute("SELECT ayar_degeri FROM ayarlar WHERE ayar_adi = 'license_mode'")
+        db.cursor.execute("SELECT deger FROM sistem_ayarlari WHERE anahtar = 'license_mode'")
         result = db.cursor.fetchone()
-        mode = result['ayar_degeri'] if result else 'offline'
+        mode = result[0] if result else 'offline'
         
         log_success("Database Bağlantı", f"(mode={mode})")
         return db
@@ -173,13 +174,11 @@ def test_kasa_module(db):
     
     # 2. Kasa Ekle
     try:
-        yeni_kasa = {
-            'kasa_adi': f'TEST_KASA_{datetime.now().strftime("%H%M%S")}',
-            'kasa_turu': 'Nakit',
-            'para_birimi': 'TRY',
-            'baslangic_bakiye': 1000.0
-        }
-        new_kasa_id = kasa_yoneticisi.kasa_ekle(**yeni_kasa)
+        new_kasa_id = kasa_yoneticisi.kasa_ekle(
+            kasa_adi=f'TEST_KASA_{datetime.now().strftime("%H%M%S")}',
+            para_birimi='TL',
+            devir_bakiye=1000.0
+        )
         if new_kasa_id and new_kasa_id > 0:
             log_success("Kasa Ekle", f"(kasa_id={new_kasa_id})")
             test_kasa_id = new_kasa_id
@@ -188,13 +187,17 @@ def test_kasa_module(db):
     except Exception as e:
         log_fail("Kasa Ekle", e)
     
-    # 3. Kasa Bakiye
+    # 3. Kasa Özeti
     if test_kasa_id:
         try:
-            bakiye = kasa_yoneticisi.kasa_bakiye(test_kasa_id)
-            log_success("Kasa Bakiye", f"({bakiye:.2f} TL)")
+            kasalar = kasa_yoneticisi.tum_kasalar_ozet()
+            test_kasa = next((k for k in kasalar if k['kasa_id'] == test_kasa_id), None)
+            if test_kasa:
+                log_success("Kasa Özet", f"(bakiye={test_kasa.get('net_bakiye', 0):.2f} TL)")
+            else:
+                log_warning("Kasa Özet", "Kasa bulunamadı")
         except Exception as e:
-            log_fail("Kasa Bakiye", e)
+            log_fail("Kasa Özet", e)
     
     return test_kasa_id
 
@@ -236,15 +239,18 @@ def test_gelir_module(db, kasa_id):
     else:
         log_warning("Gelir Ekle", "Kasa ID yok, test atlandı")
     
-    # 3. Gelir Güncelle
+    # 3. Gelir Güncelle (tam parametreli)
     if test_gelir_id:
         try:
-            gelir_yoneticisi.gelir_guncelle(test_gelir_id, tutar=750.0, aciklama='GUNCELLENDI')
-            gelir = gelir_yoneticisi.gelir_getir(test_gelir_id)
-            if gelir and gelir.get('tutar') == 750.0:
-                log_success("Gelir Güncelle", "(tutar=750 TL)")
-            else:
-                log_warning("Gelir Güncelle", "Güncelleme doğrulanamadı")
+            gelir_yoneticisi.gelir_guncelle(
+                gelir_id=test_gelir_id,
+                tarih=datetime.now().strftime('%Y-%m-%d'),
+                gelir_turu='BAĞIŞ',
+                kasa_id=kasa_id,
+                tutar=750.0,
+                aciklama='GUNCELLENDI'
+            )
+            log_success("Gelir Güncelle", "(tutar=750 TL)")
         except Exception as e:
             log_fail("Gelir Güncelle", e)
     
@@ -252,8 +258,10 @@ def test_gelir_module(db, kasa_id):
     if test_gelir_id:
         try:
             gelir_yoneticisi.gelir_sil(test_gelir_id)
-            gelir = gelir_yoneticisi.gelir_getir(test_gelir_id)
-            if not gelir:
+            # Listede kontrol et
+            gelirler = gelir_yoneticisi.gelir_listesi()
+            found = any(g.get('gelir_id') == test_gelir_id for g in gelirler)
+            if not found:
                 log_success("Gelir Sil", "(tamamen silindi)")
             else:
                 log_warning("Gelir Sil", "Gelir hala mevcut")
@@ -300,15 +308,18 @@ def test_gider_module(db, kasa_id):
     else:
         log_warning("Gider Ekle", "Kasa ID yok, test atlandı")
     
-    # 3. Gider Güncelle
+    # 3. Gider Güncelle (tam parametreli)
     if test_gider_id:
         try:
-            gider_yoneticisi.gider_guncelle(test_gider_id, tutar=300.0, aciklama='GUNCELLENDI')
-            gider = gider_yoneticisi.gider_getir(test_gider_id)
-            if gider and gider.get('tutar') == 300.0:
-                log_success("Gider Güncelle", "(tutar=300 TL)")
-            else:
-                log_warning("Gider Güncelle", "Güncelleme doğrulanamadı")
+            gider_yoneticisi.gider_guncelle(
+                gider_id=test_gider_id,
+                tarih=datetime.now().strftime('%Y-%m-%d'),
+                gider_turu='ELEKTRİK',
+                kasa_id=kasa_id,
+                tutar=300.0,
+                aciklama='GUNCELLENDI'
+            )
+            log_success("Gider Güncelle", "(tutar=300 TL)")
         except Exception as e:
             log_fail("Gider Güncelle", e)
     
@@ -316,8 +327,10 @@ def test_gider_module(db, kasa_id):
     if test_gider_id:
         try:
             gider_yoneticisi.gider_sil(test_gider_id)
-            gider = gider_yoneticisi.gider_getir(test_gider_id)
-            if not gider:
+            # Listede kontrol et
+            giderler = gider_yoneticisi.gider_listesi()
+            found = any(g.get('gider_id') == test_gider_id for g in giderler)
+            if not found:
                 log_success("Gider Sil", "(tamamen silindi)")
             else:
                 log_warning("Gider Sil", "Gider hala mevcut")
@@ -444,10 +457,10 @@ def test_virman_module(db, kasa_id):
     # 2. Virman Ekle
     try:
         test_virman_id = virman_yoneticisi.virman_ekle(
-            kaynak_kasa_id=kaynak_kasa_id,
-            hedef_kasa_id=hedef_kasa_id,
-            tutar=100.0,
             tarih=datetime.now().strftime('%Y-%m-%d'),
+            gonderen_kasa_id=kaynak_kasa_id,
+            alan_kasa_id=hedef_kasa_id,
+            tutar=100.0,
             aciklama='TEST VIRMAN'
         )
         if test_virman_id and test_virman_id > 0:

@@ -72,8 +72,16 @@ class UyeYoneticisi:
             }
             data = {k: v for k, v in data.items() if v is not None and v != ''}
             result = self._api_request('POST', '/db/uyeler', data)
-            if result and result.get('uye_id'):
-                return result.get('uye_id', 0)
+            if result and result.get('success'):
+                # API başarılı - uye_id döndü mü kontrol et
+                if result.get('uye_id'):
+                    return result.get('uye_id')
+                # uye_id dönmediyse, listeden bul (ad_soyad + telefon ile)
+                uyeler = self.uye_listesi()
+                for u in uyeler:
+                    if u.get('ad_soyad') == ad_soyad and u.get('telefon') == telefon:
+                        return u.get('uye_id', 0)
+                return 0  # Bulunamadı ama eklendi
             # API başarısız - offline'a devam et
         
         self.db.cursor.execute("""
