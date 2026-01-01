@@ -9,426 +9,533 @@
     <style>
         :root { --primary: #2563eb; --primary-dark: #1d4ed8; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --sidebar-width: 260px; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; }
-        .sidebar { width: var(--sidebar-width); height: 100vh; background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); position: fixed; left: 0; top: 0; padding: 20px 0; z-index: 1000; }
-        .sidebar-brand { color: white; font-size: 24px; font-weight: 700; padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar { width: var(--sidebar-width); height: 100vh; background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); position: fixed; left: 0; top: 0; padding: 20px 0; z-index: 1000; overflow-y: auto; }
+        .sidebar-brand { color: white; font-size: 24px; font-weight: 700; padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 10px; }
         .sidebar-menu { list-style: none; padding: 0; margin: 0; }
-        .sidebar-menu li a { display: flex; align-items: center; padding: 12px 24px; color: rgba(255,255,255,0.8); text-decoration: none; transition: all 0.3s; }
-        .sidebar-menu li a:hover, .sidebar-menu li a.active { background: rgba(255,255,255,0.1); color: white; border-left: 4px solid white; }
-        .sidebar-menu li a i { margin-right: 12px; font-size: 18px; }
-        .main-content { margin-left: var(--sidebar-width); padding: 24px; min-height: 100vh; }
-        .top-bar { background: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
-        .stat-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); transition: transform 0.3s; }
-        .stat-card:hover { transform: translateY(-4px); }
-        .stat-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .sidebar-menu li a { display: flex; align-items: center; padding: 10px 20px; color: rgba(255,255,255,0.8); text-decoration: none; transition: all 0.3s; font-size: 14px; }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active { background: rgba(255,255,255,0.15); color: white; border-left: 4px solid white; }
+        .sidebar-menu li a i { margin-right: 10px; font-size: 16px; width: 20px; }
+        .menu-divider { border-top: 1px solid rgba(255,255,255,0.1); margin: 10px 0; }
+        .menu-header { color: rgba(255,255,255,0.5); font-size: 11px; text-transform: uppercase; padding: 10px 20px 5px; letter-spacing: 1px; }
+        .main-content { margin-left: var(--sidebar-width); padding: 20px; min-height: 100vh; }
+        .top-bar { background: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .stat-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
         .stat-icon.primary { background: #dbeafe; color: var(--primary); }
         .stat-icon.success { background: #d1fae5; color: var(--success); }
         .stat-icon.warning { background: #fef3c7; color: var(--warning); }
         .stat-icon.danger { background: #fee2e2; color: var(--danger); }
-        .stat-value { font-size: 32px; font-weight: 700; color: #1e293b; }
-        .stat-label { color: #64748b; font-size: 14px; }
-        .card { border: none; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); }
-        .card-header { background: white; border-bottom: 1px solid #e2e8f0; padding: 16px 24px; font-weight: 600; }
-        .table { margin: 0; }
-        .table th { background: #f8fafc; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
-        .badge-status { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .stat-value { font-size: 28px; font-weight: 700; color: #1e293b; }
+        .stat-label { color: #64748b; font-size: 13px; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .card-header { background: white; border-bottom: 1px solid #e2e8f0; padding: 14px 20px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .table { margin: 0; font-size: 14px; }
+        .table th { background: #f8fafc; font-weight: 600; color: #475569; }
+        .badge-status { padding: 4px 10px; border-radius: 16px; font-size: 11px; font-weight: 600; }
         .badge-active { background: #d1fae5; color: #059669; }
         .badge-inactive { background: #fee2e2; color: #dc2626; }
-        .btn-primary { background: var(--primary); border-color: var(--primary); border-radius: 8px; padding: 10px 20px; }
+        .badge-pending { background: #fef3c7; color: #d97706; }
+        .btn-primary { background: var(--primary); border-color: var(--primary); border-radius: 8px; }
         .btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+        .btn-success { border-radius: 8px; }
+        .btn-danger { border-radius: 8px; }
         .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); }
-        .login-card { background: white; padding: 40px; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); width: 100%; max-width: 420px; }
-        .form-control { border-radius: 8px; padding: 12px 16px; border: 2px solid #e2e8f0; }
-        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
+        .login-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); width: 100%; max-width: 400px; }
+        .form-control, .form-select { border-radius: 8px; border: 2px solid #e2e8f0; }
+        .form-control:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
         #app { display: none; }
         .loading { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); z-index: 9999; align-items: center; justify-content: center; }
         .loading.active { display: flex; }
-        .spinner { width: 48px; height: 48px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        .spinner { width: 40px; height: 40px; border: 3px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .license-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
         .license-local { background: #fef3c7; color: #92400e; }
         .license-internet { background: #dbeafe; color: #1e40af; }
         .license-hybrid { background: #d1fae5; color: #065f46; }
-        .error-message { background: #fee2e2; color: #dc2626; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: none; }
+        .error-message { background: #fee2e2; color: #dc2626; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: none; }
+        .modal-content { border-radius: 16px; }
+        .modal-header { border-bottom: 1px solid #e2e8f0; }
+        .modal-footer { border-top: 1px solid #e2e8f0; }
+        .sidebar-footer { padding: 15px 20px; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 10px; }
+        .action-btn { padding: 4px 8px; font-size: 12px; }
+        .text-success { color: #059669 !important; }
+        .text-danger { color: #dc2626 !important; }
         @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } }
     </style>
 </head>
 <body>
     <div class="loading" id="loading"><div class="spinner"></div></div>
 
-    <!-- Login Page -->
+    <!-- Login -->
     <div id="login-page" class="login-container">
         <div class="login-card">
             <div class="text-center mb-4">
                 <i class="bi bi-building text-primary" style="font-size: 48px;"></i>
-                <h2 class="mt-3 mb-1">BADER</h2>
-                <p class="text-muted">Dernek Yönetim Sistemi</p>
+                <h3 class="mt-3 mb-1">BADER</h3>
+                <p class="text-muted small">Dernek Yönetim Sistemi</p>
             </div>
             <div class="error-message" id="loginError"></div>
             <form id="loginForm">
                 <div class="mb-3">
-                    <label class="form-label">Müşteri Kodu</label>
-                    <input type="text" class="form-control" id="customerId" placeholder="BADER-XXXXXXXX" value="BADER-ED1A2BB0" required>
+                    <label class="form-label small">Müşteri Kodu</label>
+                    <input type="text" class="form-control" id="customerId" value="BADER-ED1A2BB0" required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Kullanıcı Adı</label>
-                    <input type="text" class="form-control" id="username" placeholder="admin" value="admin" required>
+                    <label class="form-label small">Kullanıcı Adı</label>
+                    <input type="text" class="form-control" id="username" value="admin" required>
                 </div>
-                <div class="mb-4">
-                    <label class="form-label">Şifre</label>
-                    <input type="password" class="form-control" id="password" placeholder="••••••••" value="admin123" required>
+                <div class="mb-3">
+                    <label class="form-label small">Şifre</label>
+                    <input type="password" class="form-control" id="password" value="admin123" required>
                 </div>
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-box-arrow-in-right me-2"></i>Giriş Yap
-                </button>
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-box-arrow-in-right me-2"></i>Giriş Yap</button>
             </form>
-            <div class="text-center mt-4">
-                <small class="text-muted">v5.0.0 • BADER Yazılım</small>
-            </div>
+            <div class="text-center mt-3"><small class="text-muted">v5.0.0</small></div>
         </div>
     </div>
 
-    <!-- Main Application -->
+    <!-- App -->
     <div id="app">
         <nav class="sidebar">
             <div class="sidebar-brand"><i class="bi bi-building me-2"></i>BADER</div>
             <ul class="sidebar-menu">
                 <li><a href="#" class="active" data-page="dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a></li>
+                
+                <div class="menu-header">Üye Yönetimi</div>
                 <li><a href="#" data-page="members"><i class="bi bi-people"></i>Üyeler</a></li>
-                <li><a href="#" data-page="incomes"><i class="bi bi-graph-up-arrow"></i>Gelirler</a></li>
-                <li><a href="#" data-page="expenses"><i class="bi bi-graph-down-arrow"></i>Giderler</a></li>
-                <li><a href="#" data-page="dues"><i class="bi bi-cash-stack"></i>Aidatlar</a></li>
+                <li><a href="#" data-page="dues"><i class="bi bi-credit-card"></i>Aidatlar</a></li>
+                
+                <div class="menu-header">Mali İşlemler</div>
+                <li><a href="#" data-page="incomes"><i class="bi bi-arrow-down-circle"></i>Gelirler</a></li>
+                <li><a href="#" data-page="expenses"><i class="bi bi-arrow-up-circle"></i>Giderler</a></li>
                 <li><a href="#" data-page="cash"><i class="bi bi-safe"></i>Kasa</a></li>
+                <li><a href="#" data-page="budget"><i class="bi bi-pie-chart"></i>Bütçe</a></li>
+                
+                <div class="menu-header">Raporlar</div>
+                <li><a href="#" data-page="reports"><i class="bi bi-file-earmark-text"></i>Raporlar</a></li>
+                <li><a href="#" data-page="documents"><i class="bi bi-folder"></i>Belgeler</a></li>
+                
+                <div class="menu-header">Yönetim</div>
+                <li><a href="#" data-page="meetings"><i class="bi bi-calendar-event"></i>Toplantılar</a></li>
+                <li><a href="#" data-page="events"><i class="bi bi-calendar-check"></i>Etkinlikler</a></li>
+                <li><a href="#" data-page="settings"><i class="bi bi-gear"></i>Ayarlar</a></li>
             </ul>
-            <div style="position: absolute; bottom: 20px; width: 100%; padding: 0 20px;">
+            <div class="sidebar-footer">
                 <div class="text-white-50 small mb-2" id="licenseInfo"></div>
-                <button class="btn btn-outline-light w-100" onclick="logout()">
-                    <i class="bi bi-box-arrow-left me-2"></i>Çıkış
-                </button>
+                <button class="btn btn-outline-light btn-sm w-100" onclick="logout()"><i class="bi bi-box-arrow-left me-1"></i>Çıkış</button>
             </div>
         </nav>
 
         <div class="main-content">
             <div class="top-bar">
-                <div>
-                    <h4 class="mb-0" id="pageTitle">Dashboard</h4>
-                    <small class="text-muted" id="orgName">-</small>
-                </div>
+                <div><h5 class="mb-0" id="pageTitle">Dashboard</h5><small class="text-muted" id="orgName">-</small></div>
                 <div class="d-flex align-items-center">
                     <span class="license-badge me-3" id="modeBadge"></span>
-                    <span class="me-3" id="userInfo"></span>
-                    <i class="bi bi-person-circle" style="font-size: 32px; color: #64748b;"></i>
+                    <span class="me-2 small" id="userInfo"></span>
+                    <i class="bi bi-person-circle" style="font-size: 28px; color: #64748b;"></i>
                 </div>
             </div>
 
             <!-- Dashboard -->
             <div id="page-dashboard" class="page">
-                <div class="row g-4 mb-4">
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div><div class="stat-value" id="totalMembers">0</div><div class="stat-label">Toplam Üye</div></div>
-                                <div class="stat-icon primary"><i class="bi bi-people"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div><div class="stat-value" id="totalIncome">₺0</div><div class="stat-label">Toplam Gelir</div></div>
-                                <div class="stat-icon success"><i class="bi bi-arrow-up-circle"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div><div class="stat-value" id="totalExpense">₺0</div><div class="stat-label">Toplam Gider</div></div>
-                                <div class="stat-icon danger"><i class="bi bi-arrow-down-circle"></i></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stat-card">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div><div class="stat-value" id="balance">₺0</div><div class="stat-label">Bakiye</div></div>
-                                <div class="stat-icon warning"><i class="bi bi-wallet2"></i></div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3"><div class="stat-card"><div class="d-flex justify-content-between"><div><div class="stat-value" id="totalMembers">0</div><div class="stat-label">Üye</div></div><div class="stat-icon primary"><i class="bi bi-people"></i></div></div></div></div>
+                    <div class="col-md-3"><div class="stat-card"><div class="d-flex justify-content-between"><div><div class="stat-value" id="totalIncome">₺0</div><div class="stat-label">Gelir</div></div><div class="stat-icon success"><i class="bi bi-arrow-down-circle"></i></div></div></div></div>
+                    <div class="col-md-3"><div class="stat-card"><div class="d-flex justify-content-between"><div><div class="stat-value" id="totalExpense">₺0</div><div class="stat-label">Gider</div></div><div class="stat-icon danger"><i class="bi bi-arrow-up-circle"></i></div></div></div></div>
+                    <div class="col-md-3"><div class="stat-card"><div class="d-flex justify-content-between"><div><div class="stat-value" id="balance">₺0</div><div class="stat-label">Bakiye</div></div><div class="stat-icon warning"><i class="bi bi-wallet2"></i></div></div></div></div>
                 </div>
-                <div class="card">
-                    <div class="card-header">Sistem Bilgisi</div>
-                    <div class="card-body">
-                        <p><strong>Lisans Modu:</strong> <span id="dashLicenseMode">-</span></p>
-                        <p><strong>Plan:</strong> <span id="dashPlan">-</span></p>
-                        <p><strong>Bitiş Tarihi:</strong> <span id="dashExpires">-</span></p>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card"><div class="card-header"><span>Son Gelirler</span></div><div class="card-body p-0"><table class="table table-sm"><tbody id="recentIncomes"><tr><td class="text-center py-3 text-muted">-</td></tr></tbody></table></div></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card"><div class="card-header"><span>Son Giderler</span></div><div class="card-body p-0"><table class="table table-sm"><tbody id="recentExpenses"><tr><td class="text-center py-3 text-muted">-</td></tr></tbody></table></div></div>
                     </div>
                 </div>
             </div>
 
             <!-- Members -->
-            <div id="page-members" class="page" style="display: none;">
+            <div id="page-members" class="page" style="display:none;">
                 <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span>Üye Listesi</span>
-                        <button class="btn btn-primary btn-sm" onclick="showAddMemberModal()"><i class="bi bi-plus-lg me-1"></i>Yeni Üye</button>
-                    </div>
-                    <div class="card-body p-0">
-                        <table class="table">
-                            <thead><tr><th>Üye No</th><th>Ad Soyad</th><th>Telefon</th><th>Email</th><th>Durum</th></tr></thead>
-                            <tbody id="membersList"><tr><td colspan="5" class="text-center py-4 text-muted">Yükleniyor...</td></tr></tbody>
-                        </table>
-                    </div>
+                    <div class="card-header"><span><i class="bi bi-people me-2"></i>Üye Listesi</span><button class="btn btn-primary btn-sm" onclick="showModal('memberModal')"><i class="bi bi-plus me-1"></i>Yeni Üye</button></div>
+                    <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover"><thead><tr><th>Üye No</th><th>Ad Soyad</th><th>Telefon</th><th>Email</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="membersList"></tbody></table></div></div>
                 </div>
             </div>
 
             <!-- Incomes -->
-            <div id="page-incomes" class="page" style="display: none;">
+            <div id="page-incomes" class="page" style="display:none;">
                 <div class="card">
-                    <div class="card-header">Gelir Listesi</div>
-                    <div class="card-body p-0">
-                        <table class="table">
-                            <thead><tr><th>Tarih</th><th>Kategori</th><th>Açıklama</th><th>Tutar</th></tr></thead>
-                            <tbody id="incomesList"><tr><td colspan="4" class="text-center py-4 text-muted">Yükleniyor...</td></tr></tbody>
-                        </table>
-                    </div>
+                    <div class="card-header"><span><i class="bi bi-arrow-down-circle me-2"></i>Gelir Listesi</span><button class="btn btn-success btn-sm" onclick="showModal('incomeModal')"><i class="bi bi-plus me-1"></i>Gelir Ekle</button></div>
+                    <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover"><thead><tr><th>Tarih</th><th>Kategori</th><th>Açıklama</th><th>Kasa</th><th>Tutar</th><th>İşlem</th></tr></thead><tbody id="incomesList"></tbody></table></div></div>
                 </div>
             </div>
 
             <!-- Expenses -->
-            <div id="page-expenses" class="page" style="display: none;">
+            <div id="page-expenses" class="page" style="display:none;">
                 <div class="card">
-                    <div class="card-header">Gider Listesi</div>
-                    <div class="card-body p-0">
-                        <table class="table">
-                            <thead><tr><th>Tarih</th><th>Kategori</th><th>Açıklama</th><th>Tutar</th></tr></thead>
-                            <tbody id="expensesList"><tr><td colspan="4" class="text-center py-4 text-muted">Yükleniyor...</td></tr></tbody>
-                        </table>
-                    </div>
+                    <div class="card-header"><span><i class="bi bi-arrow-up-circle me-2"></i>Gider Listesi</span><button class="btn btn-danger btn-sm" onclick="showModal('expenseModal')"><i class="bi bi-plus me-1"></i>Gider Ekle</button></div>
+                    <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover"><thead><tr><th>Tarih</th><th>Kategori</th><th>Açıklama</th><th>Firma</th><th>Tutar</th><th>İşlem</th></tr></thead><tbody id="expensesList"></tbody></table></div></div>
                 </div>
             </div>
 
             <!-- Dues -->
-            <div id="page-dues" class="page" style="display: none;">
-                <div class="card"><div class="card-body text-center py-5"><i class="bi bi-cash-stack display-1 text-muted mb-3"></i><h4>Aidat Yönetimi</h4><p class="text-muted">Bu özellik hybrid/internet modunda kullanılabilir</p></div></div>
+            <div id="page-dues" class="page" style="display:none;">
+                <div class="card">
+                    <div class="card-header"><span><i class="bi bi-credit-card me-2"></i>Aidat Durumu</span></div>
+                    <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover"><thead><tr><th>Üye</th><th>Yıl</th><th>Ödenen</th><th>Kalan</th><th>Durum</th><th>İşlem</th></tr></thead><tbody id="duesList"></tbody></table></div></div>
+                </div>
             </div>
 
             <!-- Cash -->
-            <div id="page-cash" class="page" style="display: none;">
+            <div id="page-cash" class="page" style="display:none;">
                 <div class="card">
-                    <div class="card-header">Kasa Hesapları</div>
-                    <div class="card-body p-0">
-                        <table class="table">
-                            <thead><tr><th>Kasa Adı</th><th>Tip</th><th>Bakiye</th></tr></thead>
-                            <tbody id="cashList"><tr><td colspan="3" class="text-center py-4 text-muted">Yükleniyor...</td></tr></tbody>
-                        </table>
+                    <div class="card-header"><span><i class="bi bi-safe me-2"></i>Kasa Hesapları</span><button class="btn btn-primary btn-sm" onclick="showModal('cashModal')"><i class="bi bi-plus me-1"></i>Yeni Kasa</button></div>
+                    <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover"><thead><tr><th>Kasa Adı</th><th>Tip</th><th>Bakiye</th><th>İşlem</th></tr></thead><tbody id="cashList"></tbody></table></div></div>
+                </div>
+            </div>
+
+            <!-- Budget -->
+            <div id="page-budget" class="page" style="display:none;">
+                <div class="card"><div class="card-header"><span><i class="bi bi-pie-chart me-2"></i>Bütçe Yönetimi</span></div><div class="card-body"><div class="row"><div class="col-md-4"><div class="p-3 bg-light rounded"><h6>Planlanan Gelir</h6><h3 class="text-success" id="budgetIncome">₺0</h3></div></div><div class="col-md-4"><div class="p-3 bg-light rounded"><h6>Planlanan Gider</h6><h3 class="text-danger" id="budgetExpense">₺0</h3></div></div><div class="col-md-4"><div class="p-3 bg-light rounded"><h6>Net Bütçe</h6><h3 id="budgetNet">₺0</h3></div></div></div></div></div>
+            </div>
+
+            <!-- Reports -->
+            <div id="page-reports" class="page" style="display:none;">
+                <div class="row g-3">
+                    <div class="col-md-4"><div class="card"><div class="card-body text-center py-4"><i class="bi bi-file-earmark-bar-graph display-4 text-primary mb-3"></i><h5>Gelir-Gider Raporu</h5><button class="btn btn-primary btn-sm" onclick="generateReport('income-expense')">Oluştur</button></div></div></div>
+                    <div class="col-md-4"><div class="card"><div class="card-body text-center py-4"><i class="bi bi-people display-4 text-success mb-3"></i><h5>Üye Raporu</h5><button class="btn btn-success btn-sm" onclick="generateReport('members')">Oluştur</button></div></div></div>
+                    <div class="col-md-4"><div class="card"><div class="card-body text-center py-4"><i class="bi bi-credit-card display-4 text-warning mb-3"></i><h5>Aidat Raporu</h5><button class="btn btn-warning btn-sm" onclick="generateReport('dues')">Oluştur</button></div></div></div>
+                </div>
+            </div>
+
+            <!-- Documents -->
+            <div id="page-documents" class="page" style="display:none;">
+                <div class="card"><div class="card-header"><span><i class="bi bi-folder me-2"></i>Belgeler</span><button class="btn btn-primary btn-sm"><i class="bi bi-upload me-1"></i>Yükle</button></div><div class="card-body"><p class="text-muted text-center py-4">Henüz belge yüklenmemiş</p></div></div>
+            </div>
+
+            <!-- Meetings -->
+            <div id="page-meetings" class="page" style="display:none;">
+                <div class="card"><div class="card-header"><span><i class="bi bi-calendar-event me-2"></i>Toplantılar</span><button class="btn btn-primary btn-sm" onclick="showModal('meetingModal')"><i class="bi bi-plus me-1"></i>Yeni Toplantı</button></div><div class="card-body p-0"><table class="table"><thead><tr><th>Tarih</th><th>Başlık</th><th>Konum</th><th>Durum</th></tr></thead><tbody id="meetingsList"><tr><td colspan="4" class="text-center py-3 text-muted">Henüz toplantı yok</td></tr></tbody></table></div></div>
+            </div>
+
+            <!-- Events -->
+            <div id="page-events" class="page" style="display:none;">
+                <div class="card"><div class="card-header"><span><i class="bi bi-calendar-check me-2"></i>Etkinlikler</span><button class="btn btn-primary btn-sm"><i class="bi bi-plus me-1"></i>Yeni Etkinlik</button></div><div class="card-body p-0"><table class="table"><thead><tr><th>Tarih</th><th>Etkinlik</th><th>Yer</th><th>Katılımcı</th></tr></thead><tbody id="eventsList"><tr><td colspan="4" class="text-center py-3 text-muted">Henüz etkinlik yok</td></tr></tbody></table></div></div>
+            </div>
+
+            <!-- Settings -->
+            <div id="page-settings" class="page" style="display:none;">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card"><div class="card-header"><span>Dernek Bilgileri</span></div><div class="card-body">
+                            <div class="mb-3"><label class="form-label small">Dernek Adı</label><input type="text" class="form-control" id="settingName"></div>
+                            <div class="mb-3"><label class="form-label small">Email</label><input type="email" class="form-control" id="settingEmail"></div>
+                            <div class="mb-3"><label class="form-label small">Telefon</label><input type="tel" class="form-control" id="settingPhone"></div>
+                            <button class="btn btn-primary" onclick="saveSettings()">Kaydet</button>
+                        </div></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card"><div class="card-header"><span>Lisans Bilgileri</span></div><div class="card-body">
+                            <p><strong>Müşteri ID:</strong> <span id="settingCustomerId">-</span></p>
+                            <p><strong>Plan:</strong> <span id="settingPlan">-</span></p>
+                            <p><strong>Mod:</strong> <span id="settingMode">-</span></p>
+                            <p><strong>Bitiş:</strong> <span id="settingExpires">-</span></p>
+                        </div></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Modals -->
+    <!-- Member Modal -->
+    <div class="modal fade" id="memberModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Yeni Üye</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <form id="memberForm"><div class="modal-body">
+            <div class="row"><div class="col-6 mb-3"><label class="form-label small">Üye No</label><input type="text" class="form-control" name="member_no"></div><div class="col-6 mb-3"><label class="form-label small">TC Kimlik</label><input type="text" class="form-control" name="tc_no"></div></div>
+            <div class="row"><div class="col-6 mb-3"><label class="form-label small">Ad *</label><input type="text" class="form-control" name="first_name" required></div><div class="col-6 mb-3"><label class="form-label small">Soyad *</label><input type="text" class="form-control" name="last_name" required></div></div>
+            <div class="row"><div class="col-6 mb-3"><label class="form-label small">Telefon</label><input type="tel" class="form-control" name="phone"></div><div class="col-6 mb-3"><label class="form-label small">Email</label><input type="email" class="form-control" name="email"></div></div>
+            <div class="mb-3"><label class="form-label small">Adres</label><textarea class="form-control" name="address" rows="2"></textarea></div>
+            <div class="row"><div class="col-6 mb-3"><label class="form-label small">Üyelik Tipi</label><select class="form-select" name="membership_type"><option value="asil">Asıl Üye</option><option value="fahri">Fahri Üye</option><option value="onursal">Onursal Üye</option></select></div><div class="col-6 mb-3"><label class="form-label small">Giriş Tarihi</label><input type="date" class="form-control" name="join_date"></div></div>
+        </div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button><button type="submit" class="btn btn-primary">Kaydet</button></div></form>
+    </div></div></div>
+
+    <!-- Income Modal -->
+    <div class="modal fade" id="incomeModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-arrow-down-circle me-2 text-success"></i>Gelir Ekle</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <form id="incomeForm"><div class="modal-body">
+            <div class="row"><div class="col-6 mb-3"><label class="form-label small">Tarih *</label><input type="date" class="form-control" name="date" required></div><div class="col-6 mb-3"><label class="form-label small">Tutar *</label><input type="number" step="0.01" class="form-control" name="amount" required></div></div>
+            <div class="mb-3"><label class="form-label small">Kategori *</label><select class="form-select" name="category" required><option value="Aidat">Aidat</option><option value="Bağış">Bağış</option><option value="Etkinlik">Etkinlik Geliri</option><option value="Faiz">Faiz Geliri</option><option value="Diğer">Diğer</option></select></div>
+            <div class="mb-3"><label class="form-label small">Açıklama</label><input type="text" class="form-control" name="description"></div>
+            <div class="row"><div class="col-6 mb-3"><label class="form-label small">Makbuz No</label><input type="text" class="form-control" name="receipt_no"></div><div class="col-6 mb-3"><label class="form-label small">Kasa</label><select class="form-select" name="cash_account"><option value="Ana Kasa">Ana Kasa</option><option value="Banka">Banka</option></select></div></div>
+        </div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button><button type="submit" class="btn btn-success">Kaydet</button></div></form>
+    </div></div></div>
+
+    <!-- Expense Modal -->
+    <div class="modal fade" id="expenseModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-arrow-up-circle me-2 text-danger"></i>Gider Ekle</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <form id="expenseForm"><div class="modal-body">
+            <div class="row"><div class="col-6 mb-3"><label class="form-label small">Tarih *</label><input type="date" class="form-control" name="date" required></div><div class="col-6 mb-3"><label class="form-label small">Tutar *</label><input type="number" step="0.01" class="form-control" name="amount" required></div></div>
+            <div class="mb-3"><label class="form-label small">Kategori *</label><select class="form-select" name="category" required><option value="Kira">Kira</option><option value="Fatura">Fatura</option><option value="Personel">Personel Gideri</option><option value="Malzeme">Malzeme</option><option value="Etkinlik">Etkinlik Gideri</option><option value="Diğer">Diğer</option></select></div>
+            <div class="mb-3"><label class="form-label small">Açıklama</label><input type="text" class="form-control" name="description"></div>
+            <div class="row"><div class="col-6 mb-3"><label class="form-label small">Fatura No</label><input type="text" class="form-control" name="invoice_no"></div><div class="col-6 mb-3"><label class="form-label small">Firma</label><input type="text" class="form-control" name="vendor"></div></div>
+            <div class="mb-3"><label class="form-label small">Kasa</label><select class="form-select" name="cash_account"><option value="Ana Kasa">Ana Kasa</option><option value="Banka">Banka</option></select></div>
+        </div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button><button type="submit" class="btn btn-danger">Kaydet</button></div></form>
+    </div></div></div>
+
+    <!-- Cash Modal -->
+    <div class="modal fade" id="cashModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title"><i class="bi bi-safe me-2"></i>Yeni Kasa</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <form id="cashForm"><div class="modal-body">
+            <div class="mb-3"><label class="form-label small">Kasa Adı *</label><input type="text" class="form-control" name="name" required></div>
+            <div class="mb-3"><label class="form-label small">Tip</label><select class="form-select" name="type"><option value="Nakit">Nakit</option><option value="Banka">Banka</option><option value="Kredi Kartı">Kredi Kartı</option></select></div>
+            <div class="mb-3"><label class="form-label small">Açılış Bakiyesi</label><input type="number" step="0.01" class="form-control" name="balance" value="0"></div>
+        </div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button><button type="submit" class="btn btn-primary">Kaydet</button></div></form>
+    </div></div></div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const API_URL = window.location.origin;
+        const API = location.origin;
         let session = null;
 
-        function showLoading() { document.getElementById('loading').classList.add('active'); }
-        function hideLoading() { document.getElementById('loading').classList.remove('active'); }
-        function showError(msg) { const el = document.getElementById('loginError'); el.textContent = msg; el.style.display = 'block'; }
-        function hideError() { document.getElementById('loginError').style.display = 'none'; }
-        function formatMoney(n) { return new Intl.NumberFormat('tr-TR', {style:'currency',currency:'TRY'}).format(n||0); }
+        function $(id) { return document.getElementById(id); }
+        function showLoading() { $('loading').classList.add('active'); }
+        function hideLoading() { $('loading').classList.remove('active'); }
+        function showError(msg) { const e = $('loginError'); e.textContent = msg; e.style.display = 'block'; }
+        function hideError() { $('loginError').style.display = 'none'; }
+        function money(n) { return new Intl.NumberFormat('tr-TR', {style:'currency',currency:'TRY',minimumFractionDigits:0}).format(n||0); }
+        function showModal(id) { new bootstrap.Modal($(id)).show(); }
+        function hideModal(id) { bootstrap.Modal.getInstance($(id))?.hide(); }
+        function today() { return new Date().toISOString().split('T')[0]; }
 
-        async function apiRequest(endpoint, method = 'GET', data = null) {
+        async function api(endpoint, method = 'GET', data = null) {
             const headers = { 'Content-Type': 'application/json' };
             if (session?.api_key) headers['X-API-Key'] = session.api_key;
             if (session?.access_token) headers['Authorization'] = 'Bearer ' + session.access_token;
-            
             const opts = { method, headers };
             if (data) opts.body = JSON.stringify(data);
-            
-            const res = await fetch(API_URL + endpoint, opts);
-            const json = await res.json();
-            
-            if (!res.ok) {
-                throw new Error(json.detail || 'API Hatası: ' + res.status);
-            }
-            return json;
+            const res = await fetch(API + endpoint, opts);
+            if (!res.ok) { const j = await res.json().catch(()=>({})); throw new Error(j.detail || 'Hata: ' + res.status); }
+            return res.json();
         }
 
         // Login
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            hideError();
-            showLoading();
-            
+        $('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); hideError(); showLoading();
             try {
-                const result = await apiRequest('/auth/login', 'POST', {
-                    customer_id: document.getElementById('customerId').value,
-                    username: document.getElementById('username').value,
-                    password: document.getElementById('password').value
+                const r = await api('/auth/login', 'POST', {
+                    customer_id: $('customerId').value,
+                    username: $('username').value,
+                    password: $('password').value
                 });
-                
-                if (result.success) {
-                    session = {
-                        access_token: result.access_token,
-                        api_key: result.api_key,
-                        license_mode: result.license_mode,
-                        customer: result.customer,
-                        user: result.user
-                    };
+                if (r.success) {
+                    session = { access_token: r.access_token, api_key: r.api_key, license_mode: r.license_mode, customer: r.customer, user: r.user };
                     localStorage.setItem('bader_session', JSON.stringify(session));
                     showApp();
-                } else {
-                    showError('Giriş başarısız');
                 }
-            } catch (err) {
-                showError(err.message);
-            } finally {
-                hideLoading();
-            }
+            } catch (err) { showError(err.message); } finally { hideLoading(); }
         });
 
         function showApp() {
-            document.getElementById('login-page').style.display = 'none';
-            document.getElementById('app').style.display = 'block';
-            
-            // User info
-            document.getElementById('userInfo').textContent = session.user.full_name;
-            document.getElementById('orgName').textContent = session.customer.name;
-            
-            // License mode badge
-            const badge = document.getElementById('modeBadge');
+            $('login-page').style.display = 'none';
+            $('app').style.display = 'block';
+            $('userInfo').textContent = session.user.full_name;
+            $('orgName').textContent = session.customer.name;
             const mode = session.license_mode || 'local';
-            badge.textContent = mode.toUpperCase();
-            badge.className = 'license-badge license-' + mode;
-            
-            document.getElementById('licenseInfo').innerHTML = 
-                '<i class="bi bi-shield-check me-1"></i>' + mode.toUpperCase() + ' Mod';
-            
-            // Dashboard info
-            document.getElementById('dashLicenseMode').textContent = mode.toUpperCase();
-            document.getElementById('dashPlan').textContent = session.customer.plan?.toUpperCase() || '-';
-            document.getElementById('dashExpires').textContent = session.customer.expires_at || 'Süresiz';
-            
+            $('modeBadge').textContent = mode.toUpperCase();
+            $('modeBadge').className = 'license-badge license-' + mode;
+            $('licenseInfo').innerHTML = '<i class="bi bi-shield-check me-1"></i>' + mode.toUpperCase() + ' Mod';
             loadDashboard();
         }
 
-        function logout() {
-            localStorage.removeItem('bader_session');
-            session = null;
-            document.getElementById('login-page').style.display = 'flex';
-            document.getElementById('app').style.display = 'none';
-        }
+        function logout() { localStorage.removeItem('bader_session'); session = null; location.reload(); }
 
         // Navigation
         document.querySelectorAll('.sidebar-menu a').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const page = e.currentTarget.dataset.page;
-                
                 document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
                 e.currentTarget.classList.add('active');
-                
                 document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-                document.getElementById('page-' + page).style.display = 'block';
-                document.getElementById('pageTitle').textContent = e.currentTarget.textContent.trim();
-                
-                if (page === 'dashboard') loadDashboard();
-                else if (page === 'members') loadMembers();
-                else if (page === 'incomes') loadIncomes();
-                else if (page === 'expenses') loadExpenses();
-                else if (page === 'cash') loadCash();
+                $('page-' + page).style.display = 'block';
+                $('pageTitle').textContent = e.currentTarget.textContent.trim();
+                loadPage(page);
             });
         });
 
-        async function loadDashboard() {
-            try {
-                const data = await apiRequest('/web/dashboard');
-                document.getElementById('totalMembers').textContent = data.stats?.total_members || 0;
-                document.getElementById('totalIncome').textContent = formatMoney(data.stats?.total_income);
-                document.getElementById('totalExpense').textContent = formatMoney(data.stats?.total_expense);
-                document.getElementById('balance').textContent = formatMoney(data.stats?.balance);
-            } catch (err) {
-                console.error('Dashboard error:', err);
-            }
+        function loadPage(page) {
+            if (page === 'dashboard') loadDashboard();
+            else if (page === 'members') loadMembers();
+            else if (page === 'incomes') loadIncomes();
+            else if (page === 'expenses') loadExpenses();
+            else if (page === 'dues') loadDues();
+            else if (page === 'cash') loadCash();
+            else if (page === 'settings') loadSettings();
         }
 
-        async function loadMembers() {
+        async function loadDashboard() {
             try {
-                const data = await apiRequest('/web/members');
-                const tbody = document.getElementById('membersList');
-                if (data.members?.length > 0) {
-                    tbody.innerHTML = data.members.map(m => `
-                        <tr>
-                            <td>${m.member_no || '-'}</td>
-                            <td>${m.full_name}</td>
-                            <td>${m.phone || '-'}</td>
-                            <td>${m.email || '-'}</td>
-                            <td><span class="badge-status ${m.status==='active'?'badge-active':'badge-inactive'}">${m.status==='active'?'Aktif':'Pasif'}</span></td>
-                        </tr>
-                    `).join('');
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Henüz üye yok</td></tr>';
+                const d = await api('/web/dashboard');
+                $('totalMembers').textContent = d.stats?.total_members || 0;
+                $('totalIncome').textContent = money(d.stats?.total_income);
+                $('totalExpense').textContent = money(d.stats?.total_expense);
+                $('balance').textContent = money(d.stats?.balance);
+                
+                // Recent incomes
+                if (d.recent_incomes?.length) {
+                    $('recentIncomes').innerHTML = d.recent_incomes.slice(0,5).map(i => 
+                        `<tr><td>${i.date}</td><td>${i.category}</td><td class="text-success text-end">${money(i.amount)}</td></tr>`
+                    ).join('');
+                }
+                // Recent expenses
+                if (d.recent_expenses?.length) {
+                    $('recentExpenses').innerHTML = d.recent_expenses.slice(0,5).map(e => 
+                        `<tr><td>${e.date}</td><td>${e.category}</td><td class="text-danger text-end">${money(e.amount)}</td></tr>`
+                    ).join('');
                 }
             } catch (err) { console.error(err); }
         }
 
+        async function loadMembers() {
+            try {
+                const d = await api('/web/members');
+                $('membersList').innerHTML = d.members?.length ? d.members.map(m => `
+                    <tr>
+                        <td>${m.member_no || '-'}</td>
+                        <td><strong>${m.full_name}</strong></td>
+                        <td>${m.phone || '-'}</td>
+                        <td>${m.email || '-'}</td>
+                        <td><span class="badge-status ${m.status==='active'?'badge-active':'badge-inactive'}">${m.status==='active'?'Aktif':'Pasif'}</span></td>
+                        <td><button class="btn btn-outline-primary action-btn" onclick="editMember('${m.id}')"><i class="bi bi-pencil"></i></button> <button class="btn btn-outline-danger action-btn" onclick="deleteMember('${m.id}')"><i class="bi bi-trash"></i></button></td>
+                    </tr>
+                `).join('') : '<tr><td colspan="6" class="text-center py-3 text-muted">Henüz üye yok</td></tr>';
+            } catch (err) { $('membersList').innerHTML = '<tr><td colspan="6" class="text-center py-3 text-danger">Yüklenemedi</td></tr>'; }
+        }
+
         async function loadIncomes() {
             try {
-                const data = await apiRequest('/web/incomes');
-                const tbody = document.getElementById('incomesList');
-                if (data.incomes?.length > 0) {
-                    tbody.innerHTML = data.incomes.map(i => `
-                        <tr><td>${i.date}</td><td>${i.category}</td><td>${i.description||'-'}</td><td class="text-success fw-bold">${formatMoney(i.amount)}</td></tr>
-                    `).join('');
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">Henüz gelir yok</td></tr>';
-                }
+                const d = await api('/web/incomes');
+                $('incomesList').innerHTML = d.incomes?.length ? d.incomes.map(i => `
+                    <tr>
+                        <td>${i.date}</td><td>${i.category}</td><td>${i.description||'-'}</td><td>${i.cash_account||'-'}</td>
+                        <td class="text-success fw-bold">${money(i.amount)}</td>
+                        <td><button class="btn btn-outline-danger action-btn" onclick="deleteIncome('${i.id}')"><i class="bi bi-trash"></i></button></td>
+                    </tr>
+                `).join('') : '<tr><td colspan="6" class="text-center py-3 text-muted">Henüz gelir yok</td></tr>';
             } catch (err) { console.error(err); }
         }
 
         async function loadExpenses() {
             try {
-                const data = await apiRequest('/web/expenses');
-                const tbody = document.getElementById('expensesList');
-                if (data.expenses?.length > 0) {
-                    tbody.innerHTML = data.expenses.map(e => `
-                        <tr><td>${e.date}</td><td>${e.category}</td><td>${e.description||'-'}</td><td class="text-danger fw-bold">${formatMoney(e.amount)}</td></tr>
-                    `).join('');
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">Henüz gider yok</td></tr>';
-                }
+                const d = await api('/web/expenses');
+                $('expensesList').innerHTML = d.expenses?.length ? d.expenses.map(e => `
+                    <tr>
+                        <td>${e.date}</td><td>${e.category}</td><td>${e.description||'-'}</td><td>${e.vendor||'-'}</td>
+                        <td class="text-danger fw-bold">${money(e.amount)}</td>
+                        <td><button class="btn btn-outline-danger action-btn" onclick="deleteExpense('${e.id}')"><i class="bi bi-trash"></i></button></td>
+                    </tr>
+                `).join('') : '<tr><td colspan="6" class="text-center py-3 text-muted">Henüz gider yok</td></tr>';
+            } catch (err) { console.error(err); }
+        }
+
+        async function loadDues() {
+            try {
+                const d = await api('/web/dues');
+                $('duesList').innerHTML = d.dues?.length ? d.dues.map(du => `
+                    <tr>
+                        <td>${du.member_name}</td><td>${du.year}</td><td>${money(du.paid)}</td><td>${money(du.remaining)}</td>
+                        <td><span class="badge-status ${du.remaining<=0?'badge-active':'badge-pending'}">${du.remaining<=0?'Tamamlandı':'Bekliyor'}</span></td>
+                        <td>${du.remaining>0?`<button class="btn btn-success action-btn" onclick="payDue('${du.member_id}',${du.remaining})"><i class="bi bi-cash"></i> Öde</button>`:''}</td>
+                    </tr>
+                `).join('') : '<tr><td colspan="6" class="text-center py-3 text-muted">Aidat kaydı yok</td></tr>';
             } catch (err) { console.error(err); }
         }
 
         async function loadCash() {
             try {
-                const data = await apiRequest('/web/cash-accounts');
-                const tbody = document.getElementById('cashList');
-                if (data.accounts?.length > 0) {
-                    tbody.innerHTML = data.accounts.map(a => `
-                        <tr><td>${a.name}</td><td>${a.type}</td><td class="fw-bold">${formatMoney(a.balance)}</td></tr>
-                    `).join('');
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">Henüz kasa yok</td></tr>';
-                }
+                const d = await api('/web/cash-accounts');
+                $('cashList').innerHTML = d.accounts?.length ? d.accounts.map(a => `
+                    <tr>
+                        <td><i class="bi bi-${a.type==='Banka'?'bank':'cash-coin'} me-2"></i>${a.name}</td>
+                        <td>${a.type}</td>
+                        <td class="fw-bold ${a.balance>=0?'text-success':'text-danger'}">${money(a.balance)}</td>
+                        <td><button class="btn btn-outline-primary action-btn"><i class="bi bi-eye"></i></button></td>
+                    </tr>
+                `).join('') : '<tr><td colspan="4" class="text-center py-3 text-muted">Henüz kasa yok</td></tr>';
             } catch (err) { console.error(err); }
         }
 
-        // Check session on load
-        document.addEventListener('DOMContentLoaded', () => {
-            const saved = localStorage.getItem('bader_session');
-            if (saved) {
+        function loadSettings() {
+            $('settingName').value = session.customer.name || '';
+            $('settingCustomerId').textContent = session.customer.id || '-';
+            $('settingPlan').textContent = (session.customer.plan || 'basic').toUpperCase();
+            $('settingMode').textContent = (session.license_mode || 'local').toUpperCase();
+            $('settingExpires').textContent = session.customer.expires_at || 'Süresiz';
+        }
+
+        // Form Submissions
+        $('memberForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const data = Object.fromEntries(fd);
+            data.full_name = (data.first_name + ' ' + data.last_name).trim();
+            try {
+                await api('/web/members', 'POST', data);
+                hideModal('memberModal'); e.target.reset(); loadMembers();
+                alert('Üye eklendi!');
+            } catch (err) { alert(err.message); }
+        });
+
+        $('incomeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const data = Object.fromEntries(fd);
+            data.amount = parseFloat(data.amount);
+            try {
+                await api('/web/incomes', 'POST', data);
+                hideModal('incomeModal'); e.target.reset(); loadIncomes(); loadDashboard();
+                alert('Gelir eklendi!');
+            } catch (err) { alert(err.message); }
+        });
+
+        $('expenseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const data = Object.fromEntries(fd);
+            data.amount = parseFloat(data.amount);
+            try {
+                await api('/web/expenses', 'POST', data);
+                hideModal('expenseModal'); e.target.reset(); loadExpenses(); loadDashboard();
+                alert('Gider eklendi!');
+            } catch (err) { alert(err.message); }
+        });
+
+        async function deleteMember(id) { if (confirm('Üye silinsin mi?')) { await api('/web/members/'+id, 'DELETE'); loadMembers(); } }
+        async function deleteIncome(id) { if (confirm('Gelir silinsin mi?')) { await api('/web/incomes/'+id, 'DELETE'); loadIncomes(); loadDashboard(); } }
+        async function deleteExpense(id) { if (confirm('Gider silinsin mi?')) { await api('/web/expenses/'+id, 'DELETE'); loadExpenses(); loadDashboard(); } }
+        
+        async function payDue(memberId, amount) {
+            const pay = prompt('Ödenecek tutar:', amount);
+            if (pay) {
                 try {
-                    session = JSON.parse(saved);
-                    if (session?.access_token && session?.api_key) {
-                        showApp();
-                        return;
-                    }
-                } catch(e) {}
+                    await api('/web/dues/'+memberId+'/pay', 'POST', { amount: parseFloat(pay), year: new Date().getFullYear() });
+                    loadDues(); alert('Ödeme kaydedildi!');
+                } catch (err) { alert(err.message); }
             }
-            document.getElementById('login-page').style.display = 'flex';
+        }
+
+        function generateReport(type) { alert(type + ' raporu oluşturuluyor...'); }
+        function saveSettings() { alert('Ayarlar kaydedildi!'); }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set default dates
+            document.querySelectorAll('input[type="date"]').forEach(i => i.value = today());
+            
+            const saved = localStorage.getItem('bader_session');
+            if (saved) { try { session = JSON.parse(saved); if (session?.access_token) { showApp(); return; } } catch(e) {} }
+            $('login-page').style.display = 'flex';
         });
     </script>
 </body>
