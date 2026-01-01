@@ -61,6 +61,8 @@ class Customer(Base):
     email = Column(String(255))
     phone = Column(String(50))
     plan = Column(String(20), default="basic")
+    # LİSANS MODU: 'local' = sadece SQLite, 'internet' = sadece PostgreSQL, 'hybrid' = ikisi birden
+    license_mode = Column(String(20), default="local")
     max_users = Column(Integer, default=5)
     max_members = Column(Integer, default=500)
     is_active = Column(Boolean, default=True)
@@ -344,6 +346,7 @@ def activate_license(request: ActivateRequest, db: Session = Depends(get_db)):
         "api_key": customer.api_key,
         "name": customer.name,
         "plan": customer.plan,
+        "license_mode": customer.license_mode,
         "expires": customer.expires_at.isoformat() if customer.expires_at else None,
         "features": customer.features
     }
@@ -351,6 +354,16 @@ def activate_license(request: ActivateRequest, db: Session = Depends(get_db)):
 @app.post("/auth/login")
 def login(request: LoginRequest, db: Session = Depends(get_db)):
     """Kullanıcı girişi"""
+    # Önce müşteriyi bul
+    customer = db.query(Customer).filter(Customer.customer_id == request.customer_id).first()
+    if not customer:
+        raise HTTPException(status_code=401, detail="Geçersiz müşteri kodu")
+    if not customer.is_active:
+        raise HTTPException(status_code=401, detail="Müşteri hesabı devre dışı")
+    if customer.expires_at and customer.expires_at < date.today():
+        raise HTTPException(status_code=401, detail="Lisans süresi dolmuş")
+    
+    # Kullanıcıyı bul
     user = db.query(User).filter(
         User.customer_id == request.customer_id,
         User.username == request.username
@@ -362,6 +375,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Hesap devre dışı")
     
     user.last_login_at = datetime.utcnow()
+    customer.last_seen_at = datetime.utcnow()
     db.commit()
     
     token = create_access_token({
@@ -372,8 +386,19 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     })
     
     return {
+        "success": True,
         "access_token": token,
         "token_type": "bearer",
+        "api_key": customer.api_key,
+        "license_mode": customer.license_mode,
+        "customer": {
+            "id": customer.customer_id,
+            "name": customer.name,
+            "plan": customer.plan,
+            "license_mode": customer.license_mode,
+            "expires_at": customer.expires_at.isoformat() if customer.expires_at else None,
+            "features": customer.features
+        },
         "user": {
             "id": str(user.id),
             "username": user.username,
@@ -1379,10 +1404,12 @@ def admin_list_customers(
             {
                 "id": str(c.id),
                 "customer_id": c.customer_id,
+                "api_key": c.api_key,
                 "name": c.name,
                 "email": c.email,
                 "phone": c.phone,
                 "plan": c.plan,
+                "license_mode": c.license_mode,
                 "max_users": c.max_users,
                 "max_members": c.max_members,
                 "is_active": c.is_active,
@@ -1413,6 +1440,7 @@ def admin_create_customer(
         email=data.get('email'),
         phone=data.get('phone'),
         plan=data.get('plan', 'basic'),
+        license_mode=data.get('license_mode', 'local'),
         max_users=data.get('max_users', 5),
         max_members=data.get('max_members', 500),
         is_active=True,
@@ -1479,14 +1507,50 @@ def admin_stats(
     total_incomes = db.query(Income).count()
     total_expenses = db.query(Expense).count()
     
+    # Mod istatistikleri
+    local_mode = db.query(Customer).filter(Customer.license_mode == 'local').count()
+    internet_mode = db.query(Customer).filter(Customer.license_mode == 'internet').count()
+    hybrid_mode = db.query(Customer).filter(Customer.license_mode == 'hybrid').count()
+    
     return {
         "stats": {
             "total_customers": total_customers,
             "active_customers": active_customers,
             "total_members": total_members,
             "total_incomes": total_incomes,
-            "total_expenses": total_expenses
+            "total_expenses": total_expenses,
+            "license_modes": {
+                "local": local_mode,
+                "internet": internet_mode,
+                "hybrid": hybrid_mode
+            }
         }
+    }
+
+@app.put("/admin/customers/{customer_id}/mode")
+def admin_set_customer_mode(
+    customer_id: str,
+    data: Dict[str, Any],
+    _: bool = Depends(SuperAdminAuth.verify),
+    db: Session = Depends(get_db)
+):
+    """Müşteri lisans modunu değiştir (local/internet/hybrid)"""
+    customer = db.query(Customer).filter(Customer.customer_id == customer_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Müşteri bulunamadı")
+    
+    mode = data.get('license_mode', 'local')
+    if mode not in ['local', 'internet', 'hybrid']:
+        raise HTTPException(status_code=400, detail="Geçersiz mod. Geçerli modlar: local, internet, hybrid")
+    
+    customer.license_mode = mode
+    db.commit()
+    
+    return {
+        "success": True, 
+        "customer_id": customer_id, 
+        "license_mode": mode,
+        "message": f"Lisans modu '{mode}' olarak güncellendi"
     }
 
 @app.post("/admin/customers/{customer_id}/reset-api-key")

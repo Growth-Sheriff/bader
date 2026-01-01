@@ -7,239 +7,53 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --sidebar-width: 260px;
-        }
-        
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: #f1f5f9;
-        }
-        
-        .sidebar {
-            width: var(--sidebar-width);
-            height: 100vh;
-            background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
-            position: fixed;
-            left: 0;
-            top: 0;
-            padding: 20px 0;
-            z-index: 1000;
-        }
-        
-        .sidebar-brand {
-            color: white;
-            font-size: 24px;
-            font-weight: 700;
-            padding: 0 20px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 20px;
-        }
-        
-        .sidebar-menu {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .sidebar-menu li a {
-            display: flex;
-            align-items: center;
-            padding: 12px 24px;
-            color: rgba(255,255,255,0.8);
-            text-decoration: none;
-            transition: all 0.3s;
-        }
-        
-        .sidebar-menu li a:hover,
-        .sidebar-menu li a.active {
-            background: rgba(255,255,255,0.1);
-            color: white;
-            border-left: 4px solid white;
-        }
-        
-        .sidebar-menu li a i {
-            margin-right: 12px;
-            font-size: 18px;
-        }
-        
-        .main-content {
-            margin-left: var(--sidebar-width);
-            padding: 24px;
-            min-height: 100vh;
-        }
-        
-        .top-bar {
-            background: white;
-            padding: 16px 24px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            margin-bottom: 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .stat-card {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.05);
-            transition: transform 0.3s;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-4px);
-        }
-        
-        .stat-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-        
+        :root { --primary: #2563eb; --primary-dark: #1d4ed8; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --sidebar-width: 260px; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f5f9; }
+        .sidebar { width: var(--sidebar-width); height: 100vh; background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); position: fixed; left: 0; top: 0; padding: 20px 0; z-index: 1000; }
+        .sidebar-brand { color: white; font-size: 24px; font-weight: 700; padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-menu { list-style: none; padding: 0; margin: 0; }
+        .sidebar-menu li a { display: flex; align-items: center; padding: 12px 24px; color: rgba(255,255,255,0.8); text-decoration: none; transition: all 0.3s; }
+        .sidebar-menu li a:hover, .sidebar-menu li a.active { background: rgba(255,255,255,0.1); color: white; border-left: 4px solid white; }
+        .sidebar-menu li a i { margin-right: 12px; font-size: 18px; }
+        .main-content { margin-left: var(--sidebar-width); padding: 24px; min-height: 100vh; }
+        .top-bar { background: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+        .stat-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); transition: transform 0.3s; }
+        .stat-card:hover { transform: translateY(-4px); }
+        .stat-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
         .stat-icon.primary { background: #dbeafe; color: var(--primary); }
         .stat-icon.success { background: #d1fae5; color: var(--success); }
         .stat-icon.warning { background: #fef3c7; color: var(--warning); }
         .stat-icon.danger { background: #fee2e2; color: var(--danger); }
-        
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: #1e293b;
-        }
-        
-        .stat-label {
-            color: #64748b;
-            font-size: 14px;
-        }
-        
-        .card {
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.05);
-        }
-        
-        .card-header {
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 16px 24px;
-            font-weight: 600;
-        }
-        
-        .table {
-            margin: 0;
-        }
-        
-        .table th {
-            background: #f8fafc;
-            font-weight: 600;
-            color: #475569;
-            border-bottom: 2px solid #e2e8f0;
-        }
-        
-        .badge-status {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
+        .stat-value { font-size: 32px; font-weight: 700; color: #1e293b; }
+        .stat-label { color: #64748b; font-size: 14px; }
+        .card { border: none; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.05); }
+        .card-header { background: white; border-bottom: 1px solid #e2e8f0; padding: 16px 24px; font-weight: 600; }
+        .table { margin: 0; }
+        .table th { background: #f8fafc; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; }
+        .badge-status { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
         .badge-active { background: #d1fae5; color: #059669; }
         .badge-inactive { background: #fee2e2; color: #dc2626; }
-        .badge-pending { background: #fef3c7; color: #d97706; }
-        
-        .btn-primary {
-            background: var(--primary);
-            border-color: var(--primary);
-            border-radius: 8px;
-            padding: 10px 20px;
-        }
-        
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            border-color: var(--primary-dark);
-        }
-        
-        .login-container {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
-        }
-        
-        .login-card {
-            background: white;
-            padding: 40px;
-            border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-            width: 100%;
-            max-width: 420px;
-        }
-        
-        .form-control {
-            border-radius: 8px;
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-        }
-        
-        .form-control:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-        }
-        
+        .btn-primary { background: var(--primary); border-color: var(--primary); border-radius: 8px; padding: 10px 20px; }
+        .btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+        .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%); }
+        .login-card { background: white; padding: 40px; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); width: 100%; max-width: 420px; }
+        .form-control { border-radius: 8px; padding: 12px 16px; border: 2px solid #e2e8f0; }
+        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
         #app { display: none; }
-        #login-page { display: block; }
-        
-        .loading {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255,255,255,0.9);
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-        }
-        
+        .loading { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); z-index: 9999; align-items: center; justify-content: center; }
         .loading.active { display: flex; }
-        
-        .spinner {
-            width: 48px;
-            height: 48px;
-            border: 4px solid #e2e8f0;
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        @media (max-width: 768px) {
-            .sidebar { display: none; }
-            .main-content { margin-left: 0; }
-        }
+        .spinner { width: 48px; height: 48px; border: 4px solid #e2e8f0; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .license-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .license-local { background: #fef3c7; color: #92400e; }
+        .license-internet { background: #dbeafe; color: #1e40af; }
+        .license-hybrid { background: #d1fae5; color: #065f46; }
+        .error-message { background: #fee2e2; color: #dc2626; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: none; }
+        @media (max-width: 768px) { .sidebar { display: none; } .main-content { margin-left: 0; } }
     </style>
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div class="loading" id="loading">
-        <div class="spinner"></div>
-    </div>
+    <div class="loading" id="loading"><div class="spinner"></div></div>
 
     <!-- Login Page -->
     <div id="login-page" class="login-container">
@@ -249,25 +63,24 @@
                 <h2 class="mt-3 mb-1">BADER</h2>
                 <p class="text-muted">Dernek Yönetim Sistemi</p>
             </div>
-            
+            <div class="error-message" id="loginError"></div>
             <form id="loginForm">
                 <div class="mb-3">
                     <label class="form-label">Müşteri Kodu</label>
-                    <input type="text" class="form-control" id="customerId" placeholder="BADER-XXXX" required>
+                    <input type="text" class="form-control" id="customerId" placeholder="BADER-2024-DEMO-0001" value="BADER-2024-DEMO-0001" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Kullanıcı Adı</label>
-                    <input type="text" class="form-control" id="username" placeholder="admin" required>
+                    <input type="text" class="form-control" id="username" placeholder="admin" value="admin" required>
                 </div>
                 <div class="mb-4">
                     <label class="form-label">Şifre</label>
-                    <input type="password" class="form-control" id="password" placeholder="••••••••" required>
+                    <input type="password" class="form-control" id="password" placeholder="••••••••" value="admin123" required>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">
                     <i class="bi bi-box-arrow-in-right me-2"></i>Giriş Yap
                 </button>
             </form>
-            
             <div class="text-center mt-4">
                 <small class="text-muted">v5.0.0 • BADER Yazılım</small>
             </div>
@@ -276,11 +89,8 @@
 
     <!-- Main Application -->
     <div id="app">
-        <!-- Sidebar -->
         <nav class="sidebar">
-            <div class="sidebar-brand">
-                <i class="bi bi-building me-2"></i>BADER
-            </div>
+            <div class="sidebar-brand"><i class="bi bi-building me-2"></i>BADER</div>
             <ul class="sidebar-menu">
                 <li><a href="#" class="active" data-page="dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a></li>
                 <li><a href="#" data-page="members"><i class="bi bi-people"></i>Üyeler</a></li>
@@ -288,40 +98,35 @@
                 <li><a href="#" data-page="expenses"><i class="bi bi-graph-down-arrow"></i>Giderler</a></li>
                 <li><a href="#" data-page="dues"><i class="bi bi-cash-stack"></i>Aidatlar</a></li>
                 <li><a href="#" data-page="cash"><i class="bi bi-safe"></i>Kasa</a></li>
-                <li><a href="#" data-page="reports"><i class="bi bi-file-earmark-bar-graph"></i>Raporlar</a></li>
-                <li><a href="#" data-page="settings"><i class="bi bi-gear"></i>Ayarlar</a></li>
             </ul>
-            <div class="mt-auto p-3" style="position: absolute; bottom: 0; width: 100%;">
+            <div style="position: absolute; bottom: 20px; width: 100%; padding: 0 20px;">
+                <div class="text-white-50 small mb-2" id="licenseInfo"></div>
                 <button class="btn btn-outline-light w-100" onclick="logout()">
                     <i class="bi bi-box-arrow-left me-2"></i>Çıkış
                 </button>
             </div>
         </nav>
 
-        <!-- Main Content -->
         <div class="main-content">
-            <!-- Top Bar -->
             <div class="top-bar">
                 <div>
                     <h4 class="mb-0" id="pageTitle">Dashboard</h4>
                     <small class="text-muted" id="orgName">-</small>
                 </div>
                 <div class="d-flex align-items-center">
+                    <span class="license-badge me-3" id="modeBadge"></span>
                     <span class="me-3" id="userInfo"></span>
                     <i class="bi bi-person-circle" style="font-size: 32px; color: #64748b;"></i>
                 </div>
             </div>
 
-            <!-- Dashboard Page -->
+            <!-- Dashboard -->
             <div id="page-dashboard" class="page">
                 <div class="row g-4 mb-4">
                     <div class="col-md-3">
                         <div class="stat-card">
                             <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="stat-value" id="totalMembers">0</div>
-                                    <div class="stat-label">Toplam Üye</div>
-                                </div>
+                                <div><div class="stat-value" id="totalMembers">0</div><div class="stat-label">Toplam Üye</div></div>
                                 <div class="stat-icon primary"><i class="bi bi-people"></i></div>
                             </div>
                         </div>
@@ -329,10 +134,7 @@
                     <div class="col-md-3">
                         <div class="stat-card">
                             <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="stat-value" id="totalIncome">₺0</div>
-                                    <div class="stat-label">Toplam Gelir</div>
-                                </div>
+                                <div><div class="stat-value" id="totalIncome">₺0</div><div class="stat-label">Toplam Gelir</div></div>
                                 <div class="stat-icon success"><i class="bi bi-arrow-up-circle"></i></div>
                             </div>
                         </div>
@@ -340,10 +142,7 @@
                     <div class="col-md-3">
                         <div class="stat-card">
                             <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="stat-value" id="totalExpense">₺0</div>
-                                    <div class="stat-label">Toplam Gider</div>
-                                </div>
+                                <div><div class="stat-value" id="totalExpense">₺0</div><div class="stat-label">Toplam Gider</div></div>
                                 <div class="stat-icon danger"><i class="bi bi-arrow-down-circle"></i></div>
                             </div>
                         </div>
@@ -351,256 +150,173 @@
                     <div class="col-md-3">
                         <div class="stat-card">
                             <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <div class="stat-value" id="balance">₺0</div>
-                                    <div class="stat-label">Bakiye</div>
-                                </div>
+                                <div><div class="stat-value" id="balance">₺0</div><div class="stat-label">Bakiye</div></div>
                                 <div class="stat-icon warning"><i class="bi bi-wallet2"></i></div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div class="row g-4">
-                    <div class="col-md-8">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <span>Son İşlemler</span>
-                                <button class="btn btn-sm btn-outline-primary">Tümünü Gör</button>
-                            </div>
-                            <div class="card-body p-0">
-                                <table class="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Tarih</th>
-                                            <th>İşlem</th>
-                                            <th>Açıklama</th>
-                                            <th>Tutar</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="recentTransactions">
-                                        <tr>
-                                            <td colspan="4" class="text-center py-4 text-muted">Veri yükleniyor...</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header">Bekleyen Aidatlar</div>
-                            <div class="card-body">
-                                <div class="text-center py-4">
-                                    <div class="display-4 text-warning" id="pendingDues">0</div>
-                                    <div class="text-muted">bekleyen ödeme</div>
-                                </div>
-                            </div>
-                        </div>
+                <div class="card">
+                    <div class="card-header">Sistem Bilgisi</div>
+                    <div class="card-body">
+                        <p><strong>Lisans Modu:</strong> <span id="dashLicenseMode">-</span></p>
+                        <p><strong>Plan:</strong> <span id="dashPlan">-</span></p>
+                        <p><strong>Bitiş Tarihi:</strong> <span id="dashExpires">-</span></p>
                     </div>
                 </div>
             </div>
 
-            <!-- Members Page -->
+            <!-- Members -->
             <div id="page-members" class="page" style="display: none;">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span>Üye Listesi</span>
-                        <button class="btn btn-primary" onclick="showAddMemberModal()">
-                            <i class="bi bi-plus-lg me-2"></i>Yeni Üye
-                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="showAddMemberModal()"><i class="bi bi-plus-lg me-1"></i>Yeni Üye</button>
                     </div>
                     <div class="card-body p-0">
                         <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Üye No</th>
-                                    <th>Ad Soyad</th>
-                                    <th>Telefon</th>
-                                    <th>Email</th>
-                                    <th>Durum</th>
-                                    <th>İşlem</th>
-                                </tr>
-                            </thead>
-                            <tbody id="membersList">
-                                <tr>
-                                    <td colspan="6" class="text-center py-4 text-muted">Veri yükleniyor...</td>
-                                </tr>
-                            </tbody>
+                            <thead><tr><th>Üye No</th><th>Ad Soyad</th><th>Telefon</th><th>Email</th><th>Durum</th></tr></thead>
+                            <tbody id="membersList"><tr><td colspan="5" class="text-center py-4 text-muted">Yükleniyor...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Incomes Page -->
+            <!-- Incomes -->
             <div id="page-incomes" class="page" style="display: none;">
                 <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span>Gelir Listesi</span>
-                        <button class="btn btn-primary">
-                            <i class="bi bi-plus-lg me-2"></i>Yeni Gelir
-                        </button>
-                    </div>
+                    <div class="card-header">Gelir Listesi</div>
                     <div class="card-body p-0">
                         <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Tarih</th>
-                                    <th>Kategori</th>
-                                    <th>Açıklama</th>
-                                    <th>Tutar</th>
-                                </tr>
-                            </thead>
-                            <tbody id="incomesList">
-                                <tr>
-                                    <td colspan="4" class="text-center py-4 text-muted">Veri yükleniyor...</td>
-                                </tr>
-                            </tbody>
+                            <thead><tr><th>Tarih</th><th>Kategori</th><th>Açıklama</th><th>Tutar</th></tr></thead>
+                            <tbody id="incomesList"><tr><td colspan="4" class="text-center py-4 text-muted">Yükleniyor...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Expenses Page -->
+            <!-- Expenses -->
             <div id="page-expenses" class="page" style="display: none;">
                 <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span>Gider Listesi</span>
-                        <button class="btn btn-primary">
-                            <i class="bi bi-plus-lg me-2"></i>Yeni Gider
-                        </button>
-                    </div>
+                    <div class="card-header">Gider Listesi</div>
                     <div class="card-body p-0">
                         <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Tarih</th>
-                                    <th>Kategori</th>
-                                    <th>Açıklama</th>
-                                    <th>Tutar</th>
-                                </tr>
-                            </thead>
-                            <tbody id="expensesList">
-                                <tr>
-                                    <td colspan="4" class="text-center py-4 text-muted">Veri yükleniyor...</td>
-                                </tr>
-                            </tbody>
+                            <thead><tr><th>Tarih</th><th>Kategori</th><th>Açıklama</th><th>Tutar</th></tr></thead>
+                            <tbody id="expensesList"><tr><td colspan="4" class="text-center py-4 text-muted">Yükleniyor...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Other pages placeholder -->
+            <!-- Dues -->
             <div id="page-dues" class="page" style="display: none;">
-                <div class="card"><div class="card-body text-center py-5"><i class="bi bi-cash-stack display-1 text-muted mb-3"></i><h4>Aidat Yönetimi</h4><p class="text-muted">Yakında aktif olacak</p></div></div>
+                <div class="card"><div class="card-body text-center py-5"><i class="bi bi-cash-stack display-1 text-muted mb-3"></i><h4>Aidat Yönetimi</h4><p class="text-muted">Bu özellik hybrid/internet modunda kullanılabilir</p></div></div>
             </div>
+
+            <!-- Cash -->
             <div id="page-cash" class="page" style="display: none;">
-                <div class="card"><div class="card-body text-center py-5"><i class="bi bi-safe display-1 text-muted mb-3"></i><h4>Kasa Yönetimi</h4><p class="text-muted">Yakında aktif olacak</p></div></div>
-            </div>
-            <div id="page-reports" class="page" style="display: none;">
-                <div class="card"><div class="card-body text-center py-5"><i class="bi bi-file-earmark-bar-graph display-1 text-muted mb-3"></i><h4>Raporlar</h4><p class="text-muted">Yakında aktif olacak</p></div></div>
-            </div>
-            <div id="page-settings" class="page" style="display: none;">
-                <div class="card"><div class="card-body text-center py-5"><i class="bi bi-gear display-1 text-muted mb-3"></i><h4>Ayarlar</h4><p class="text-muted">Yakında aktif olacak</p></div></div>
+                <div class="card">
+                    <div class="card-header">Kasa Hesapları</div>
+                    <div class="card-body p-0">
+                        <table class="table">
+                            <thead><tr><th>Kasa Adı</th><th>Tip</th><th>Bakiye</th></tr></thead>
+                            <tbody id="cashList"><tr><td colspan="3" class="text-center py-4 text-muted">Yükleniyor...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // API Configuration
         const API_URL = window.location.origin;
-        let authToken = localStorage.getItem('bader_token');
-        let apiKey = localStorage.getItem('bader_api_key');
-        let currentUser = null;
+        let session = null;
 
-        // Show/Hide loading
         function showLoading() { document.getElementById('loading').classList.add('active'); }
         function hideLoading() { document.getElementById('loading').classList.remove('active'); }
+        function showError(msg) { const el = document.getElementById('loginError'); el.textContent = msg; el.style.display = 'block'; }
+        function hideError() { document.getElementById('loginError').style.display = 'none'; }
+        function formatMoney(n) { return new Intl.NumberFormat('tr-TR', {style:'currency',currency:'TRY'}).format(n||0); }
 
-        // API Request Helper
         async function apiRequest(endpoint, method = 'GET', data = null) {
-            const headers = {
-                'Content-Type': 'application/json',
-                'X-API-Key': apiKey
-            };
-            if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+            const headers = { 'Content-Type': 'application/json' };
+            if (session?.api_key) headers['X-API-Key'] = session.api_key;
+            if (session?.access_token) headers['Authorization'] = 'Bearer ' + session.access_token;
             
-            const options = { method, headers };
-            if (data) options.body = JSON.stringify(data);
+            const opts = { method, headers };
+            if (data) opts.body = JSON.stringify(data);
             
-            const response = await fetch(`${API_URL}${endpoint}`, options);
-            if (!response.ok) {
-                if (response.status === 401) {
-                    logout();
-                    throw new Error('Oturum süresi doldu');
-                }
-                throw new Error(`API Error: ${response.status}`);
+            const res = await fetch(API_URL + endpoint, opts);
+            const json = await res.json();
+            
+            if (!res.ok) {
+                throw new Error(json.detail || 'API Hatası: ' + res.status);
             }
-            return response.json();
+            return json;
         }
 
-        // Format currency
-        function formatMoney(amount) {
-            return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(amount);
-        }
-
-        // Login Handler
+        // Login
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            hideError();
             showLoading();
             
             try {
-                const customerId = document.getElementById('customerId').value;
-                const username = document.getElementById('username').value;
-                const password = document.getElementById('password').value;
+                const result = await apiRequest('/auth/login', 'POST', {
+                    customer_id: document.getElementById('customerId').value,
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value
+                });
                 
-                const result = await fetch(`${API_URL}/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ customer_id: customerId, username, password })
-                }).then(r => r.json());
-                
-                if (result.access_token) {
-                    authToken = result.access_token;
-                    apiKey = result.api_key || customerId;
-                    currentUser = result.user;
-                    
-                    localStorage.setItem('bader_token', authToken);
-                    localStorage.setItem('bader_api_key', apiKey);
-                    localStorage.setItem('bader_user', JSON.stringify(currentUser));
-                    
+                if (result.success) {
+                    session = {
+                        access_token: result.access_token,
+                        api_key: result.api_key,
+                        license_mode: result.license_mode,
+                        customer: result.customer,
+                        user: result.user
+                    };
+                    localStorage.setItem('bader_session', JSON.stringify(session));
                     showApp();
                 } else {
-                    alert('Giriş başarısız: ' + (result.detail || 'Bilinmeyen hata'));
+                    showError('Giriş başarısız');
                 }
-            } catch (error) {
-                alert('Giriş hatası: ' + error.message);
+            } catch (err) {
+                showError(err.message);
             } finally {
                 hideLoading();
             }
         });
 
-        // Show Application
         function showApp() {
             document.getElementById('login-page').style.display = 'none';
             document.getElementById('app').style.display = 'block';
             
-            currentUser = JSON.parse(localStorage.getItem('bader_user') || '{}');
-            document.getElementById('userInfo').textContent = currentUser.full_name || currentUser.username || 'Kullanıcı';
+            // User info
+            document.getElementById('userInfo').textContent = session.user.full_name;
+            document.getElementById('orgName').textContent = session.customer.name;
+            
+            // License mode badge
+            const badge = document.getElementById('modeBadge');
+            const mode = session.license_mode || 'local';
+            badge.textContent = mode.toUpperCase();
+            badge.className = 'license-badge license-' + mode;
+            
+            document.getElementById('licenseInfo').innerHTML = 
+                '<i class="bi bi-shield-check me-1"></i>' + mode.toUpperCase() + ' Mod';
+            
+            // Dashboard info
+            document.getElementById('dashLicenseMode').textContent = mode.toUpperCase();
+            document.getElementById('dashPlan').textContent = session.customer.plan?.toUpperCase() || '-';
+            document.getElementById('dashExpires').textContent = session.customer.expires_at || 'Süresiz';
             
             loadDashboard();
         }
 
-        // Logout
         function logout() {
-            localStorage.removeItem('bader_token');
-            localStorage.removeItem('bader_api_key');
-            localStorage.removeItem('bader_user');
-            authToken = null;
-            apiKey = null;
-            currentUser = null;
-            
+            localStorage.removeItem('bader_session');
+            session = null;
             document.getElementById('login-page').style.display = 'flex';
             document.getElementById('app').style.display = 'none';
         }
@@ -615,113 +331,104 @@
                 e.currentTarget.classList.add('active');
                 
                 document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-                document.getElementById(`page-${page}`).style.display = 'block';
-                
+                document.getElementById('page-' + page).style.display = 'block';
                 document.getElementById('pageTitle').textContent = e.currentTarget.textContent.trim();
                 
-                // Load page data
                 if (page === 'dashboard') loadDashboard();
                 else if (page === 'members') loadMembers();
                 else if (page === 'incomes') loadIncomes();
                 else if (page === 'expenses') loadExpenses();
+                else if (page === 'cash') loadCash();
             });
         });
 
-        // Load Dashboard Data
         async function loadDashboard() {
             try {
                 const data = await apiRequest('/web/dashboard');
-                
-                document.getElementById('orgName').textContent = data.organization?.name || '-';
                 document.getElementById('totalMembers').textContent = data.stats?.total_members || 0;
-                document.getElementById('totalIncome').textContent = formatMoney(data.stats?.total_income || 0);
-                document.getElementById('totalExpense').textContent = formatMoney(data.stats?.total_expense || 0);
-                document.getElementById('balance').textContent = formatMoney(data.stats?.balance || 0);
-                document.getElementById('pendingDues').textContent = data.stats?.pending_dues || 0;
-            } catch (error) {
-                console.error('Dashboard error:', error);
+                document.getElementById('totalIncome').textContent = formatMoney(data.stats?.total_income);
+                document.getElementById('totalExpense').textContent = formatMoney(data.stats?.total_expense);
+                document.getElementById('balance').textContent = formatMoney(data.stats?.balance);
+            } catch (err) {
+                console.error('Dashboard error:', err);
             }
         }
 
-        // Load Members
         async function loadMembers() {
             try {
                 const data = await apiRequest('/web/members');
                 const tbody = document.getElementById('membersList');
-                
-                if (data.members && data.members.length > 0) {
+                if (data.members?.length > 0) {
                     tbody.innerHTML = data.members.map(m => `
                         <tr>
                             <td>${m.member_no || '-'}</td>
                             <td>${m.full_name}</td>
                             <td>${m.phone || '-'}</td>
                             <td>${m.email || '-'}</td>
-                            <td><span class="badge-status ${m.status === 'active' ? 'badge-active' : 'badge-inactive'}">${m.status === 'active' ? 'Aktif' : 'Pasif'}</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></button>
-                                <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i></button>
-                            </td>
+                            <td><span class="badge-status ${m.status==='active'?'badge-active':'badge-inactive'}">${m.status==='active'?'Aktif':'Pasif'}</span></td>
                         </tr>
                     `).join('');
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Henüz üye kaydı yok</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">Henüz üye yok</td></tr>';
                 }
-            } catch (error) {
-                console.error('Members error:', error);
-            }
+            } catch (err) { console.error(err); }
         }
 
-        // Load Incomes
         async function loadIncomes() {
             try {
                 const data = await apiRequest('/web/incomes');
                 const tbody = document.getElementById('incomesList');
-                
-                if (data.incomes && data.incomes.length > 0) {
+                if (data.incomes?.length > 0) {
                     tbody.innerHTML = data.incomes.map(i => `
-                        <tr>
-                            <td>${i.date}</td>
-                            <td>${i.category}</td>
-                            <td>${i.description || '-'}</td>
-                            <td class="text-success fw-bold">${formatMoney(i.amount)}</td>
-                        </tr>
+                        <tr><td>${i.date}</td><td>${i.category}</td><td>${i.description||'-'}</td><td class="text-success fw-bold">${formatMoney(i.amount)}</td></tr>
                     `).join('');
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">Henüz gelir kaydı yok</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">Henüz gelir yok</td></tr>';
                 }
-            } catch (error) {
-                console.error('Incomes error:', error);
-            }
+            } catch (err) { console.error(err); }
         }
 
-        // Load Expenses
         async function loadExpenses() {
             try {
                 const data = await apiRequest('/web/expenses');
                 const tbody = document.getElementById('expensesList');
-                
-                if (data.expenses && data.expenses.length > 0) {
+                if (data.expenses?.length > 0) {
                     tbody.innerHTML = data.expenses.map(e => `
-                        <tr>
-                            <td>${e.date}</td>
-                            <td>${e.category}</td>
-                            <td>${e.description || '-'}</td>
-                            <td class="text-danger fw-bold">${formatMoney(e.amount)}</td>
-                        </tr>
+                        <tr><td>${e.date}</td><td>${e.category}</td><td>${e.description||'-'}</td><td class="text-danger fw-bold">${formatMoney(e.amount)}</td></tr>
                     `).join('');
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">Henüz gider kaydı yok</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-muted">Henüz gider yok</td></tr>';
                 }
-            } catch (error) {
-                console.error('Expenses error:', error);
-            }
+            } catch (err) { console.error(err); }
         }
 
-        // Check auth on page load
+        async function loadCash() {
+            try {
+                const data = await apiRequest('/web/cash-accounts');
+                const tbody = document.getElementById('cashList');
+                if (data.accounts?.length > 0) {
+                    tbody.innerHTML = data.accounts.map(a => `
+                        <tr><td>${a.name}</td><td>${a.type}</td><td class="fw-bold">${formatMoney(a.balance)}</td></tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">Henüz kasa yok</td></tr>';
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        // Check session on load
         document.addEventListener('DOMContentLoaded', () => {
-            if (authToken && apiKey) {
-                showApp();
+            const saved = localStorage.getItem('bader_session');
+            if (saved) {
+                try {
+                    session = JSON.parse(saved);
+                    if (session?.access_token && session?.api_key) {
+                        showApp();
+                        return;
+                    }
+                } catch(e) {}
             }
+            document.getElementById('login-page').style.display = 'flex';
         });
     </script>
 </body>

@@ -7,200 +7,52 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        :root {
-            --primary: #7c3aed;
-            --primary-dark: #6d28d9;
-            --dark: #0f172a;
-        }
-        
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            min-height: 100vh;
-        }
-        
-        .admin-header {
-            background: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%);
-            padding: 20px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-        
-        .admin-brand {
-            font-size: 24px;
-            font-weight: 700;
-            color: white;
-        }
-        
-        .admin-brand i {
-            color: #a78bfa;
-        }
-        
-        .admin-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 30px;
-        }
-        
-        .stat-card {
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-            border-radius: 16px;
-            padding: 24px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .stat-value {
-            font-size: 36px;
-            font-weight: 700;
-            color: white;
-        }
-        
-        .stat-label {
-            color: #94a3b8;
-            font-size: 14px;
-        }
-        
-        .stat-icon {
-            width: 56px;
-            height: 56px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-        
+        :root { --primary: #7c3aed; --dark: #0f172a; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+        .admin-header { background: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .admin-brand { font-size: 24px; font-weight: 700; color: white; }
+        .admin-container { max-width: 1400px; margin: 0 auto; padding: 30px; }
+        .stat-card { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); border-radius: 16px; padding: 24px; border: 1px solid rgba(255,255,255,0.1); }
+        .stat-value { font-size: 36px; font-weight: 700; color: white; }
+        .stat-label { color: #94a3b8; font-size: 14px; }
+        .stat-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
         .stat-icon.purple { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
         .stat-icon.blue { background: rgba(96, 165, 250, 0.2); color: #60a5fa; }
         .stat-icon.green { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
         .stat-icon.orange { background: rgba(251, 146, 60, 0.2); color: #fb923c; }
-        
-        .card {
-            background: #1e293b;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-        }
-        
-        .card-header {
-            background: transparent;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            color: white;
-            font-weight: 600;
-            padding: 16px 24px;
-        }
-        
-        .table {
-            color: #e2e8f0;
-            margin: 0;
-        }
-        
-        .table th {
-            background: rgba(0,0,0,0.2);
-            color: #94a3b8;
-            font-weight: 600;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .table td {
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            vertical-align: middle;
-        }
-        
+        .card { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; }
+        .card-header { background: transparent; border-bottom: 1px solid rgba(255,255,255,0.1); color: white; font-weight: 600; padding: 16px 24px; }
+        .table { color: #e2e8f0; margin: 0; }
+        .table th { background: rgba(0,0,0,0.2); color: #94a3b8; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .table td { border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
         .badge-active { background: rgba(74, 222, 128, 0.2); color: #4ade80; padding: 6px 12px; border-radius: 20px; }
         .badge-inactive { background: rgba(248, 113, 113, 0.2); color: #f87171; padding: 6px 12px; border-radius: 20px; }
-        .badge-plan { background: rgba(167, 139, 250, 0.2); color: #a78bfa; padding: 6px 12px; border-radius: 20px; }
-        
-        .btn-admin {
-            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-            border: none;
-            color: white;
-            padding: 10px 24px;
-            border-radius: 8px;
-        }
-        
-        .btn-admin:hover {
-            background: linear-gradient(135deg, #6d28d9 0%, #9333ea 100%);
-            color: white;
-        }
-        
-        .btn-outline-light:hover {
-            background: rgba(255,255,255,0.1);
-        }
-        
-        .login-page {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-        }
-        
-        .login-card {
-            background: #1e293b;
-            padding: 40px;
-            border-radius: 24px;
-            border: 1px solid rgba(255,255,255,0.1);
-            width: 100%;
-            max-width: 420px;
-        }
-        
-        .form-control {
-            background: rgba(0,0,0,0.3);
-            border: 2px solid rgba(255,255,255,0.1);
-            color: white;
-            padding: 12px 16px;
-            border-radius: 8px;
-        }
-        
-        .form-control:focus {
-            background: rgba(0,0,0,0.4);
-            border-color: var(--primary);
-            color: white;
-            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.2);
-        }
-        
-        .form-control::placeholder {
-            color: #64748b;
-        }
-        
-        .form-label {
-            color: #94a3b8;
-        }
-        
-        .modal-content {
-            background: #1e293b;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .modal-header {
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .modal-footer {
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .btn-close-white {
-            filter: invert(1);
-        }
-        
+        .badge-mode { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .badge-local { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        .badge-internet { background: rgba(96, 165, 250, 0.2); color: #60a5fa; }
+        .badge-hybrid { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
+        .btn-admin { background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); border: none; color: white; padding: 10px 24px; border-radius: 8px; }
+        .btn-admin:hover { background: linear-gradient(135deg, #6d28d9 0%, #9333ea 100%); color: white; }
+        .login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%); }
+        .login-card { background: #1e293b; padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 420px; }
+        .form-control { background: rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.1); color: white; padding: 12px 16px; border-radius: 8px; }
+        .form-control:focus { background: rgba(0,0,0,0.4); border-color: var(--primary); color: white; box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.2); }
+        .form-control::placeholder { color: #64748b; }
+        .form-label { color: #94a3b8; }
+        .form-select { background: rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.1); color: white; }
+        .form-select option { background: #1e293b; color: white; }
+        .modal-content { background: #1e293b; border: 1px solid rgba(255,255,255,0.1); }
+        .modal-header { border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .modal-footer { border-top: 1px solid rgba(255,255,255,0.1); }
+        .btn-close { filter: invert(1); }
         #app { display: none; }
-        #login-page { display: flex; }
-        
-        .copy-btn {
-            cursor: pointer;
-            opacity: 0.7;
-        }
-        .copy-btn:hover {
-            opacity: 1;
-        }
+        .copy-btn { cursor: pointer; opacity: 0.7; }
+        .copy-btn:hover { opacity: 1; }
+        .error-msg { background: rgba(248, 113, 113, 0.2); color: #f87171; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: none; }
     </style>
 </head>
 <body>
-    <!-- Login Page -->
+    <!-- Login -->
     <div id="login-page" class="login-page">
         <div class="login-card">
             <div class="text-center mb-4">
@@ -208,37 +60,25 @@
                 <h2 class="mt-3 mb-1 text-white">BADER Admin</h2>
                 <p class="text-muted">Super Admin Paneli</p>
             </div>
-            
+            <div class="error-msg" id="loginError"></div>
             <form id="loginForm">
                 <div class="mb-4">
                     <label class="form-label">Admin Secret Key</label>
                     <input type="password" class="form-control" id="adminKey" placeholder="••••••••••••••" required>
                 </div>
-                <button type="submit" class="btn btn-admin w-100">
-                    <i class="bi bi-shield-check me-2"></i>Giriş Yap
-                </button>
+                <button type="submit" class="btn btn-admin w-100"><i class="bi bi-shield-check me-2"></i>Giriş Yap</button>
             </form>
-            
-            <div class="text-center mt-4">
-                <small class="text-muted">BADER Super Admin v5.0.0</small>
-            </div>
+            <div class="text-center mt-4"><small class="text-muted">BADER Super Admin v5.0.0</small></div>
         </div>
     </div>
 
-    <!-- Main Application -->
+    <!-- App -->
     <div id="app">
-        <!-- Header -->
         <header class="admin-header">
-            <div class="admin-brand">
-                <i class="bi bi-shield-lock-fill me-2"></i>BADER Admin
-            </div>
+            <div class="admin-brand"><i class="bi bi-shield-lock-fill me-2"></i>BADER Super Admin</div>
             <div>
-                <button class="btn btn-outline-light me-2" onclick="loadStats()">
-                    <i class="bi bi-arrow-clockwise"></i>
-                </button>
-                <button class="btn btn-outline-light" onclick="logout()">
-                    <i class="bi bi-box-arrow-right me-2"></i>Çıkış
-                </button>
+                <button class="btn btn-outline-light me-2" onclick="loadAll()"><i class="bi bi-arrow-clockwise"></i></button>
+                <button class="btn btn-outline-light" onclick="logout()"><i class="bi bi-box-arrow-right me-2"></i>Çıkış</button>
             </div>
         </header>
 
@@ -248,10 +88,7 @@
                 <div class="col-md-3">
                     <div class="stat-card">
                         <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <div class="stat-value" id="totalCustomers">0</div>
-                                <div class="stat-label">Toplam Müşteri</div>
-                            </div>
+                            <div><div class="stat-value" id="totalCustomers">0</div><div class="stat-label">Toplam Müşteri</div></div>
                             <div class="stat-icon purple"><i class="bi bi-building"></i></div>
                         </div>
                     </div>
@@ -259,66 +96,40 @@
                 <div class="col-md-3">
                     <div class="stat-card">
                         <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <div class="stat-value" id="activeCustomers">0</div>
-                                <div class="stat-label">Aktif Müşteri</div>
-                            </div>
-                            <div class="stat-icon green"><i class="bi bi-check-circle"></i></div>
+                            <div><div class="stat-value" id="localCount">0</div><div class="stat-label">Local Mod</div></div>
+                            <div class="stat-icon orange"><i class="bi bi-hdd"></i></div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stat-card">
                         <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <div class="stat-value" id="totalMembers">0</div>
-                                <div class="stat-label">Toplam Üye</div>
-                            </div>
-                            <div class="stat-icon blue"><i class="bi bi-people"></i></div>
+                            <div><div class="stat-value" id="internetCount">0</div><div class="stat-label">Internet Mod</div></div>
+                            <div class="stat-icon blue"><i class="bi bi-cloud"></i></div>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stat-card">
                         <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <div class="stat-value" id="totalTransactions">0</div>
-                                <div class="stat-label">Toplam İşlem</div>
-                            </div>
-                            <div class="stat-icon orange"><i class="bi bi-receipt"></i></div>
+                            <div><div class="stat-value" id="hybridCount">0</div><div class="stat-label">Hybrid Mod</div></div>
+                            <div class="stat-icon green"><i class="bi bi-arrows-angle-expand"></i></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Customers List -->
+            <!-- Customers -->
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <span><i class="bi bi-building me-2"></i>Müşteriler</span>
-                    <button class="btn btn-admin" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
-                        <i class="bi bi-plus-lg me-2"></i>Yeni Müşteri
-                    </button>
+                    <button class="btn btn-admin" data-bs-toggle="modal" data-bs-target="#addModal"><i class="bi bi-plus-lg me-2"></i>Yeni Müşteri</button>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Müşteri ID</th>
-                                    <th>İsim</th>
-                                    <th>Email</th>
-                                    <th>Plan</th>
-                                    <th>Limit</th>
-                                    <th>Durum</th>
-                                    <th>Son Görülme</th>
-                                    <th>İşlem</th>
-                                </tr>
-                            </thead>
-                            <tbody id="customersList">
-                                <tr>
-                                    <td colspan="8" class="text-center py-4 text-muted">Veri yükleniyor...</td>
-                                </tr>
-                            </tbody>
+                            <thead><tr><th>Müşteri ID</th><th>İsim</th><th>Plan</th><th>Mod</th><th>Durum</th><th>İşlem</th></tr></thead>
+                            <tbody id="customersList"><tr><td colspan="6" class="text-center py-4 text-muted">Yükleniyor...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -327,45 +138,35 @@
     </div>
 
     <!-- Add Customer Modal -->
-    <div class="modal fade" id="addCustomerModal" tabindex="-1">
+    <div class="modal fade" id="addModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title text-white"><i class="bi bi-building me-2"></i>Yeni Müşteri</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <form id="addCustomerForm">
+                <div class="modal-header"><h5 class="modal-title text-white"><i class="bi bi-building me-2"></i>Yeni Müşteri</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <form id="addForm">
                     <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Dernek Adı</label>
-                            <input type="text" class="form-control" id="customerName" placeholder="Örnek Derneği" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" id="customerEmail" placeholder="info@dernek.org">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Telefon</label>
-                            <input type="tel" class="form-control" id="customerPhone" placeholder="0532 123 4567">
-                        </div>
+                        <div class="mb-3"><label class="form-label">Dernek Adı</label><input type="text" class="form-control" id="custName" required></div>
+                        <div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" id="custEmail"></div>
+                        <div class="mb-3"><label class="form-label">Telefon</label><input type="tel" class="form-control" id="custPhone"></div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Plan</label>
-                                <select class="form-control" id="customerPlan">
+                                <select class="form-select" id="custPlan">
                                     <option value="basic">Basic</option>
-                                    <option value="professional">Professional</option>
+                                    <option value="pro">Professional</option>
                                     <option value="enterprise">Enterprise</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label">Üye Limiti</label>
-                                <input type="number" class="form-control" id="customerMaxMembers" value="500">
+                                <label class="form-label">Lisans Modu</label>
+                                <select class="form-select" id="custMode">
+                                    <option value="local">Local (Sadece SQLite)</option>
+                                    <option value="internet">Internet (Sadece PostgreSQL)</option>
+                                    <option value="hybrid">Hybrid (Her İkisi)</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Bitiş Tarihi</label>
-                            <input type="date" class="form-control" id="customerExpires">
-                        </div>
+                        <div class="mb-3"><label class="form-label">Üye Limiti</label><input type="number" class="form-control" id="custMaxMembers" value="500"></div>
+                        <div class="mb-3"><label class="form-label">Bitiş Tarihi</label><input type="date" class="form-control" id="custExpires"></div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">İptal</button>
@@ -376,83 +177,85 @@
         </div>
     </div>
 
-    <!-- View Customer Modal -->
-    <div class="modal fade" id="viewCustomerModal" tabindex="-1">
+    <!-- View Modal -->
+    <div class="modal fade" id="viewModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title text-white"><i class="bi bi-info-circle me-2"></i>Müşteri Detayı</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" id="customerDetails">
-                    <!-- Filled by JS -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Kapat</button>
-                </div>
+                <div class="modal-header"><h5 class="modal-title text-white"><i class="bi bi-info-circle me-2"></i>Müşteri Detayı</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body" id="custDetails"></div>
+                <div class="modal-footer"><button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Kapat</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mode Modal -->
+    <div class="modal fade" id="modeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title text-white"><i class="bi bi-gear me-2"></i>Mod Değiştir</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <form id="modeForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="modeCustomerId">
+                        <p class="text-muted">Müşteri: <strong id="modeCustomerName"></strong></p>
+                        <div class="mb-3">
+                            <label class="form-label">Yeni Lisans Modu</label>
+                            <select class="form-select" id="newMode">
+                                <option value="local">Local (Sadece SQLite)</option>
+                                <option value="internet">Internet (Sadece PostgreSQL)</option>
+                                <option value="hybrid">Hybrid (Her İkisi)</option>
+                            </select>
+                        </div>
+                        <div class="alert alert-info small">
+                            <strong>Local:</strong> Sadece masaüstü uygulama, internet bağlantısı gerektirmez.<br>
+                            <strong>Internet:</strong> Sadece web erişimi, masaüstü senkronizasyon yok.<br>
+                            <strong>Hybrid:</strong> Hem masaüstü hem web, tam senkronizasyon.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-admin">Değiştir</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const API_URL = window.location.origin;
+        const API = window.location.origin;
         let adminKey = sessionStorage.getItem('bader_admin_key');
 
-        // API Request
-        async function apiRequest(endpoint, method = 'GET', data = null) {
-            const headers = {
-                'Content-Type': 'application/json',
-                'X-Admin-Key': adminKey
-            };
-            
-            const options = { method, headers };
-            if (data) options.body = JSON.stringify(data);
-            
-            const response = await fetch(`${API_URL}${endpoint}`, options);
-            if (response.status === 403) {
-                logout();
-                throw new Error('Yetkisiz erişim');
-            }
-            if (!response.ok) throw new Error(`API Error: ${response.status}`);
-            return response.json();
+        async function api(endpoint, method = 'GET', data = null) {
+            const opts = { method, headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey } };
+            if (data) opts.body = JSON.stringify(data);
+            const res = await fetch(API + endpoint, opts);
+            if (res.status === 403) { logout(); throw new Error('Yetkisiz'); }
+            if (!res.ok) throw new Error('API Hatası: ' + res.status);
+            return res.json();
         }
 
-        // Format date
-        function formatDate(dateStr) {
-            if (!dateStr) return '-';
-            return new Date(dateStr).toLocaleDateString('tr-TR');
-        }
-
-        // Copy to clipboard
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text);
-            alert('Kopyalandı: ' + text);
-        }
+        function copy(text) { navigator.clipboard.writeText(text); alert('Kopyalandı: ' + text); }
 
         // Login
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             adminKey = document.getElementById('adminKey').value;
-            
             try {
-                await apiRequest('/admin/stats');
+                await api('/admin/stats');
                 sessionStorage.setItem('bader_admin_key', adminKey);
                 showApp();
-            } catch (error) {
-                alert('Geçersiz admin key');
+            } catch (err) {
+                document.getElementById('loginError').textContent = 'Geçersiz admin key';
+                document.getElementById('loginError').style.display = 'block';
             }
         });
 
-        // Show App
         function showApp() {
             document.getElementById('login-page').style.display = 'none';
             document.getElementById('app').style.display = 'block';
-            loadStats();
-            loadCustomers();
+            loadAll();
         }
 
-        // Logout
         function logout() {
             sessionStorage.removeItem('bader_admin_key');
             adminKey = null;
@@ -460,155 +263,124 @@
             document.getElementById('app').style.display = 'none';
         }
 
-        // Load Stats
-        async function loadStats() {
+        async function loadAll() {
             try {
-                const data = await apiRequest('/admin/stats');
-                document.getElementById('totalCustomers').textContent = data.stats?.total_customers || 0;
-                document.getElementById('activeCustomers').textContent = data.stats?.active_customers || 0;
-                document.getElementById('totalMembers').textContent = data.stats?.total_members || 0;
-                document.getElementById('totalTransactions').textContent = 
-                    (data.stats?.total_incomes || 0) + (data.stats?.total_expenses || 0);
-            } catch (error) {
-                console.error('Stats error:', error);
-            }
-        }
+                const stats = await api('/admin/stats');
+                document.getElementById('totalCustomers').textContent = stats.stats?.total_customers || 0;
+                document.getElementById('localCount').textContent = stats.stats?.license_modes?.local || 0;
+                document.getElementById('internetCount').textContent = stats.stats?.license_modes?.internet || 0;
+                document.getElementById('hybridCount').textContent = stats.stats?.license_modes?.hybrid || 0;
+            } catch (err) { console.error(err); }
 
-        // Load Customers
-        async function loadCustomers() {
             try {
-                const data = await apiRequest('/admin/customers');
+                const data = await api('/admin/customers');
                 const tbody = document.getElementById('customersList');
-                
-                if (data.customers && data.customers.length > 0) {
+                if (data.customers?.length > 0) {
                     tbody.innerHTML = data.customers.map(c => `
                         <tr>
-                            <td>
-                                <code class="text-info">${c.customer_id}</code>
-                                <i class="bi bi-clipboard copy-btn ms-1" onclick="copyToClipboard('${c.customer_id}')"></i>
-                            </td>
+                            <td><code class="text-info">${c.customer_id}</code> <i class="bi bi-clipboard copy-btn" onclick="copy('${c.customer_id}')"></i></td>
                             <td>${c.name}</td>
-                            <td>${c.email || '-'}</td>
-                            <td><span class="badge-plan">${c.plan.toUpperCase()}</span></td>
-                            <td>${c.max_members} üye</td>
+                            <td>${c.plan?.toUpperCase()}</td>
+                            <td><span class="badge-mode badge-${c.license_mode || 'local'}">${(c.license_mode || 'local').toUpperCase()}</span></td>
                             <td><span class="${c.is_active ? 'badge-active' : 'badge-inactive'}">${c.is_active ? 'Aktif' : 'Pasif'}</span></td>
-                            <td>${c.last_seen_at ? formatDate(c.last_seen_at) : 'Hiç'}</td>
                             <td>
-                                <button class="btn btn-sm btn-outline-light" onclick="viewCustomer('${c.customer_id}')">
-                                    <i class="bi bi-eye"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-warning" onclick="resetApiKey('${c.customer_id}')">
-                                    <i class="bi bi-key"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteCustomer('${c.customer_id}')">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                                <button class="btn btn-sm btn-outline-light" onclick="viewCustomer('${c.customer_id}')"><i class="bi bi-eye"></i></button>
+                                <button class="btn btn-sm btn-outline-info" onclick="showModeModal('${c.customer_id}','${c.name}','${c.license_mode||'local'}')"><i class="bi bi-gear"></i></button>
+                                <button class="btn btn-sm btn-outline-warning" onclick="resetKey('${c.customer_id}')"><i class="bi bi-key"></i></button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteCustomer('${c.customer_id}')"><i class="bi bi-trash"></i></button>
                             </td>
                         </tr>
                     `).join('');
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Henüz müşteri yok</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">Henüz müşteri yok</td></tr>';
                 }
-            } catch (error) {
-                console.error('Customers error:', error);
-            }
+            } catch (err) { console.error(err); }
         }
 
-        // View Customer
-        async function viewCustomer(customerId) {
+        async function viewCustomer(id) {
             try {
-                const data = await apiRequest('/admin/customers');
-                const customer = data.customers.find(c => c.customer_id === customerId);
-                
-                if (customer) {
-                    document.getElementById('customerDetails').innerHTML = `
+                const data = await api('/admin/customers');
+                const c = data.customers.find(x => x.customer_id === id);
+                if (c) {
+                    document.getElementById('custDetails').innerHTML = `
                         <div class="row">
                             <div class="col-md-6">
-                                <p><strong class="text-muted">Müşteri ID:</strong><br>
-                                    <code class="text-info fs-5">${customer.customer_id}</code>
-                                    <i class="bi bi-clipboard copy-btn ms-1" onclick="copyToClipboard('${customer.customer_id}')"></i>
-                                </p>
-                                <p><strong class="text-muted">API Key:</strong><br>
-                                    <code class="text-warning">${customer.api_key}</code>
-                                    <i class="bi bi-clipboard copy-btn ms-1" onclick="copyToClipboard('${customer.api_key}')"></i>
-                                </p>
-                                <p><strong class="text-muted">İsim:</strong> ${customer.name}</p>
-                                <p><strong class="text-muted">Email:</strong> ${customer.email || '-'}</p>
-                                <p><strong class="text-muted">Telefon:</strong> ${customer.phone || '-'}</p>
+                                <p><strong class="text-muted">Müşteri ID:</strong><br><code class="text-info fs-5">${c.customer_id}</code> <i class="bi bi-clipboard copy-btn" onclick="copy('${c.customer_id}')"></i></p>
+                                <p><strong class="text-muted">API Key:</strong><br><code class="text-warning">${c.api_key}</code> <i class="bi bi-clipboard copy-btn" onclick="copy('${c.api_key}')"></i></p>
+                                <p><strong class="text-muted">İsim:</strong> ${c.name}</p>
+                                <p><strong class="text-muted">Email:</strong> ${c.email || '-'}</p>
                             </div>
                             <div class="col-md-6">
-                                <p><strong class="text-muted">Plan:</strong> <span class="badge-plan">${customer.plan.toUpperCase()}</span></p>
-                                <p><strong class="text-muted">Kullanıcı Limiti:</strong> ${customer.max_users}</p>
-                                <p><strong class="text-muted">Üye Limiti:</strong> ${customer.max_members}</p>
-                                <p><strong class="text-muted">Bitiş Tarihi:</strong> ${customer.expires_at ? formatDate(customer.expires_at) : 'Süresiz'}</p>
-                                <p><strong class="text-muted">Özellikler:</strong> ${(customer.features || []).join(', ')}</p>
-                                <p><strong class="text-muted">Oluşturulma:</strong> ${formatDate(customer.created_at)}</p>
+                                <p><strong class="text-muted">Plan:</strong> ${c.plan?.toUpperCase()}</p>
+                                <p><strong class="text-muted">Lisans Modu:</strong> <span class="badge-mode badge-${c.license_mode||'local'}">${(c.license_mode||'local').toUpperCase()}</span></p>
+                                <p><strong class="text-muted">Üye Limiti:</strong> ${c.max_members}</p>
+                                <p><strong class="text-muted">Bitiş:</strong> ${c.expires_at || 'Süresiz'}</p>
                             </div>
                         </div>
                     `;
-                    new bootstrap.Modal(document.getElementById('viewCustomerModal')).show();
+                    new bootstrap.Modal(document.getElementById('viewModal')).show();
                 }
-            } catch (error) {
-                console.error('View customer error:', error);
-            }
+            } catch (err) { alert('Hata: ' + err.message); }
         }
 
-        // Reset API Key
-        async function resetApiKey(customerId) {
-            if (!confirm(`${customerId} için API key sıfırlansın mı?`)) return;
-            
-            try {
-                const result = await apiRequest(`/admin/customers/${customerId}/reset-api-key`, 'POST');
-                alert('Yeni API Key: ' + result.new_api_key);
-                loadCustomers();
-            } catch (error) {
-                alert('Hata: ' + error.message);
-            }
+        function showModeModal(id, name, currentMode) {
+            document.getElementById('modeCustomerId').value = id;
+            document.getElementById('modeCustomerName').textContent = name;
+            document.getElementById('newMode').value = currentMode;
+            new bootstrap.Modal(document.getElementById('modeModal')).show();
         }
 
-        // Delete Customer
-        async function deleteCustomer(customerId) {
-            if (!confirm(`${customerId} müşterisi ve tüm verileri silinecek. Emin misiniz?`)) return;
-            
-            try {
-                await apiRequest(`/admin/customers/${customerId}`, 'DELETE');
-                loadCustomers();
-                loadStats();
-            } catch (error) {
-                alert('Hata: ' + error.message);
-            }
-        }
-
-        // Add Customer
-        document.getElementById('addCustomerForm').addEventListener('submit', async (e) => {
+        document.getElementById('modeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const data = {
-                name: document.getElementById('customerName').value,
-                email: document.getElementById('customerEmail').value,
-                phone: document.getElementById('customerPhone').value,
-                plan: document.getElementById('customerPlan').value,
-                max_members: parseInt(document.getElementById('customerMaxMembers').value),
-                expires_at: document.getElementById('customerExpires').value || null
-            };
-            
+            const id = document.getElementById('modeCustomerId').value;
+            const mode = document.getElementById('newMode').value;
             try {
-                const result = await apiRequest('/admin/customers', 'POST', data);
-                alert(`Müşteri oluşturuldu!\n\nCustomer ID: ${result.customer.customer_id}\nAPI Key: ${result.customer.api_key}`);
-                bootstrap.Modal.getInstance(document.getElementById('addCustomerModal')).hide();
-                e.target.reset();
-                loadCustomers();
-                loadStats();
-            } catch (error) {
-                alert('Hata: ' + error.message);
-            }
+                await api(`/admin/customers/${id}/mode`, 'PUT', { license_mode: mode });
+                bootstrap.Modal.getInstance(document.getElementById('modeModal')).hide();
+                loadAll();
+                alert('Mod güncellendi: ' + mode.toUpperCase());
+            } catch (err) { alert('Hata: ' + err.message); }
         });
 
-        // Check auth on load
+        async function resetKey(id) {
+            if (!confirm(`${id} için API key sıfırlansın mı?`)) return;
+            try {
+                const res = await api(`/admin/customers/${id}/reset-api-key`, 'POST');
+                alert('Yeni API Key: ' + res.new_api_key);
+                loadAll();
+            } catch (err) { alert('Hata: ' + err.message); }
+        }
+
+        async function deleteCustomer(id) {
+            if (!confirm(`${id} silinecek. Emin misiniz?`)) return;
+            try {
+                await api(`/admin/customers/${id}`, 'DELETE');
+                loadAll();
+            } catch (err) { alert('Hata: ' + err.message); }
+        }
+
+        document.getElementById('addForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const res = await api('/admin/customers', 'POST', {
+                    name: document.getElementById('custName').value,
+                    email: document.getElementById('custEmail').value,
+                    phone: document.getElementById('custPhone').value,
+                    plan: document.getElementById('custPlan').value,
+                    license_mode: document.getElementById('custMode').value,
+                    max_members: parseInt(document.getElementById('custMaxMembers').value),
+                    expires_at: document.getElementById('custExpires').value || null
+                });
+                alert(`Müşteri oluşturuldu!\n\nID: ${res.customer.customer_id}\nAPI Key: ${res.customer.api_key}`);
+                bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+                e.target.reset();
+                loadAll();
+            } catch (err) { alert('Hata: ' + err.message); }
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
-            if (adminKey) {
-                showApp();
-            }
+            if (adminKey) showApp();
+            else document.getElementById('login-page').style.display = 'flex';
         });
     </script>
 </body>

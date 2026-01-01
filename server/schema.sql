@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS customers (
     email VARCHAR(255),
     phone VARCHAR(50),
     plan VARCHAR(20) DEFAULT 'basic' CHECK (plan IN ('demo', 'basic', 'pro', 'enterprise')),
+    license_mode VARCHAR(20) DEFAULT 'local' CHECK (license_mode IN ('local', 'internet', 'hybrid')),
     max_users INTEGER DEFAULT 5,
     max_members INTEGER DEFAULT 500,
     is_active BOOLEAN DEFAULT TRUE,
