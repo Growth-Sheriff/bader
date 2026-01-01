@@ -236,6 +236,10 @@ class LoginRequest(BaseModel):
 class ActivateRequest(BaseModel):
     license_key: str
     device_info: Optional[dict] = None
+    # İlk aktivasyonda admin kullanıcısı oluştur
+    admin_username: Optional[str] = None
+    admin_password: Optional[str] = None
+    admin_name: Optional[str] = None
 
 
 # ==================== AUTH ====================
@@ -336,6 +340,23 @@ def activate_license(request: ActivateRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Lisans devre dışı")
     if customer.expires_at and customer.expires_at < date.today():
         raise HTTPException(status_code=401, detail="Lisans süresi dolmuş")
+    
+    # Eğer admin bilgileri verilmişse ve bu müşterinin kullanıcısı yoksa, oluştur
+    if request.admin_username and request.admin_password:
+        existing_user = db.query(User).filter(
+            User.customer_id == customer.customer_id,
+            User.username == request.admin_username
+        ).first()
+        
+        if not existing_user:
+            new_user = User(
+                customer_id=customer.customer_id,
+                username=request.admin_username,
+                password_hash=hash_password(request.admin_password),
+                full_name=request.admin_name or request.admin_username,
+                role="admin"
+            )
+            db.add(new_user)
     
     customer.last_seen_at = datetime.utcnow()
     db.commit()
