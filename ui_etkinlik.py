@@ -14,7 +14,7 @@ from models import EtkinlikYoneticisi, UyeYoneticisi
 from ui_drawer import DrawerPanel
 from ui_form_fields import (create_line_edit, create_text_edit, create_combo_box,
                             create_double_spin_box, create_date_edit, create_spin_box)
-from ui_helpers import export_table_to_excel
+from ui_helpers import export_table_to_excel, setup_resizable_table
 from datetime import datetime
 
 
@@ -296,8 +296,7 @@ class EtkinlikWidget(QWidget):
         self.table.setHorizontalHeaderLabels([
             "ID", "Tür", "Başlık", "Tarih", "Saat", "Mekan", "Durum", "Katılımcı", "Sorumlu"
         ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        setup_resizable_table(self.table, table_id="etkinlikler_tablosu", stretch_column=2)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setAlternatingRowColors(True)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)

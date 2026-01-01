@@ -11,6 +11,7 @@ from qfluentwidgets import MessageBox
 from database import Database
 from models import UyeYoneticisi, AidatYoneticisi
 from typing import Optional
+from ui_helpers import setup_resizable_table
 
 
 class AyrilanUyelerWidget(QWidget):
@@ -113,7 +114,7 @@ class AyrilanUyelerWidget(QWidget):
         ])
         
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        setup_resizable_table(self.table, table_id="ayrilan_uyeler_tablosu", stretch_column=1)
         
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)

@@ -14,7 +14,7 @@ from models import GelirYoneticisi, KasaYoneticisi
 from ui_drawer import DrawerPanel
 from ui_form_fields import (FormField, create_line_edit, create_text_edit, 
                             create_combo_box, create_double_spin_box, create_date_edit)
-from ui_helpers import export_table_to_excel
+from ui_helpers import export_table_to_excel, setup_resizable_table
 from ui_login import session
 
 
@@ -25,6 +25,7 @@ class GelirFormWidget(QWidget):
         super().__init__(parent)
         self.db = db
         self.kasa_yoneticisi = KasaYoneticisi(db)
+        self.gelir_yoneticisi = GelirYoneticisi(db)
         self.gelir_data = gelir_data
         self.setup_ui()
         self.load_kasalar()
@@ -46,7 +47,16 @@ class GelirFormWidget(QWidget):
         self.gelir_turu_combo[1].addItems([
             "KİRA", "BAĞIŞ", "DÜĞÜN", "KINA", "TOPLANTI", "DAVET", "DİĞER"
         ])
+        self.gelir_turu_combo[1].currentTextChanged.connect(self.on_tur_changed)
         layout.addWidget(self.gelir_turu_combo[0])
+        
+        # Alt Kategori
+        self.alt_kategori_combo = create_combo_box("Alt Kategori", searchable=True)
+        self.alt_kategori_combo[1].setEditable(True)
+        layout.addWidget(self.alt_kategori_combo[0])
+        
+        # İlk yüklemede alt kategorileri doldur
+        self.on_tur_changed(self.gelir_turu_combo[1].currentText())
         
         # Açıklama
         self.aciklama_edit = create_line_edit("Açıklama *", "Gelir açıklaması...")
@@ -83,6 +93,14 @@ class GelirFormWidget(QWidget):
         
         layout.addStretch()
         self.setLayout(layout)
+    
+    def on_tur_changed(self, tur: str):
+        """Gelir türü değiştiğinde alt kategorileri güncelle"""
+        self.alt_kategori_combo[1].clear()
+        alt_kategoriler = self.gelir_yoneticisi.gelir_alt_kategorileri(tur)
+        if alt_kategoriler:
+            self.alt_kategori_combo[1].addItems(alt_kategoriler)
+        self.alt_kategori_combo[0].setVisible(len(alt_kategoriler) > 0)
         
     def load_kasalar(self):
         self.kasa_combo[1].clear()
@@ -97,6 +115,12 @@ class GelirFormWidget(QWidget):
         if self.gelir_data:
             self.tarih_edit[1].setDate(QDate.fromString(self.gelir_data['tarih'], "yyyy-MM-dd"))
             self.gelir_turu_combo[1].setCurrentText(self.gelir_data['gelir_turu'])
+            
+            # Alt kategori varsa ayarla
+            alt_kat = self.gelir_data.get('alt_kategori', '')
+            if alt_kat:
+                self.alt_kategori_combo[1].setCurrentText(alt_kat)
+            
             self.aciklama_edit[1].setText(self.gelir_data['aciklama'])
             self.tutar_spin[1].setValue(self.gelir_data['tutar'])
             
@@ -110,9 +134,11 @@ class GelirFormWidget(QWidget):
             self.notlar_edit[1].setPlainText(self.gelir_data.get('notlar', ''))
             
     def get_data(self):
+        alt_kategori = self.alt_kategori_combo[1].currentText().strip() if self.alt_kategori_combo[0].isVisible() else ""
         return {
             'tarih': self.tarih_edit[1].date().toString("yyyy-MM-dd"),
             'gelir_turu': self.gelir_turu_combo[1].currentText(),
+            'alt_kategori': alt_kategori,
             'aciklama': self.aciklama_edit[1].text().strip(),
             'tutar': self.tutar_spin[1].value(),
             'kasa_id': self.kasa_combo[1].currentData(),
@@ -230,9 +256,8 @@ class GelirWidget(QWidget):
             "ID", "Tarih", "Ait Yıl", "Gelir Türü", "Açıklama", "Tutar", "Kasa", "Dekont No", "Belge No"
         ])
         
-        # Sütun genişliklerini otomatik ayarla
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)  # Açıklama stretch
+        # Responsive sütunlar - hareket ettirilebilir, sağ tık ile gizle/göster
+        setup_resizable_table(self.table, table_id="gelirler_tablosu", stretch_column=4)
         
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)

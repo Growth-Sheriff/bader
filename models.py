@@ -276,13 +276,53 @@ class UyeYoneticisi:
 
 
 class AidatYoneticisi:
-    """Aidat takip ve ödeme işlemleri"""
+    """Aidat takip ve ödeme işlemleri - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            import requests
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
         
     def aidat_kaydi_olustur(self, uye_id: int, yil: int, yillik_aidat_tutari: float) -> int:
         """Bir üye için yıllık aidat kaydı oluştur"""
+        if self.online_mode:
+            data = {
+                'uye_id': uye_id,
+                'yil': yil,
+                'yillik_aidat_tutari': yillik_aidat_tutari,
+                'odenecek_tutar': yillik_aidat_tutari
+            }
+            result = self._api_request('POST', '/db/aidat_takip', data)
+            return result.get('aidat_id', -1) if result else -1
+            
         try:
             self.db.cursor.execute("""
                 INSERT INTO aidat_takip (uye_id, yil, yillik_aidat_tutari, odenecek_tutar)
@@ -305,6 +345,18 @@ class AidatYoneticisi:
         if not aciklama:
             aciklama = "Aidattan gelen ödeme"
         
+        if self.online_mode:
+            data = {
+                'aidat_id': aidat_id,
+                'tarih': tarih,
+                'tutar': tutar,
+                'aciklama': aciklama,
+                'tahsilat_turu': tahsilat_turu,
+                'dekont_no': dekont_no
+            }
+            result = self._api_request('POST', '/db/aidat_odemeleri', data)
+            return result.get('odeme_id', -1) if result else -1
+        
         self.db.cursor.execute("""
             INSERT INTO aidat_odemeleri (aidat_id, tarih, tutar, aciklama, tahsilat_turu, dekont_no)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -321,6 +373,10 @@ class AidatYoneticisi:
         
     def aidat_odeme_sil(self, odeme_id: int):
         """Aidat ödemesini sil"""
+        if self.online_mode:
+            self._api_request('DELETE', f'/db/aidat_odemeleri/{odeme_id}')
+            return
+            
         # Önce aidat_id'yi al
         self.db.cursor.execute("SELECT aidat_id, tutar FROM aidat_odemeleri WHERE odeme_id = ?", (odeme_id,))
         result = self.db.cursor.fetchone()
@@ -518,10 +574,37 @@ class AidatYoneticisi:
 
 
 class GelirYoneticisi:
-    """Gelir yönetim işlemleri"""
+    """Gelir yönetim işlemleri - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method, endpoint, data=None):
+        """Online API isteği"""
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                resp = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                resp = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                resp = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                resp = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if resp.status_code in [200, 201]:
+                return resp.json()
+            return None
+        except Exception as e:
+            print(f"API Hatası: {e}")
+            return None
         
     def gelir_ekle(self, tarih: str, gelir_turu: str, aciklama: str, 
                    tutar: float, kasa_id: int, tahsil_eden: str = "", 
@@ -529,11 +612,24 @@ class GelirYoneticisi:
                    dekont_no: str = "", ait_oldugu_yil: Optional[int] = None,
                    tahakkuk_durumu: str = 'NORMAL', coklu_odeme_grup_id: Optional[str] = None) -> int:
         """Yeni gelir kaydı ekle (Yıl bazlı muhasebe desteği ile)"""
-        belge_no = self.db.get_next_belge_no()
         
         # Eğer ait_oldugu_yil belirtilmemişse, tarihten çıkar
         if ait_oldugu_yil is None:
             ait_oldugu_yil = int(tarih[:4])
+        
+        if self.online_mode:
+            data = {
+                'tarih': tarih, 'gelir_turu': gelir_turu, 'aciklama': aciklama,
+                'tutar': tutar, 'kasa_id': kasa_id, 'tahsil_eden': tahsil_eden,
+                'notlar': notlar, 'aidat_id': aidat_id, 'dekont_no': dekont_no,
+                'ait_oldugu_yil': ait_oldugu_yil, 'tahakkuk_durumu': tahakkuk_durumu,
+                'coklu_odeme_grup_id': coklu_odeme_grup_id
+            }
+            data = {k: v for k, v in data.items() if v is not None and v != ''}
+            result = self._api_request('POST', '/db/gelirler', data)
+            return result.get('gelir_id', 0) if result else 0
+        
+        belge_no = self.db.get_next_belge_no()
         
         self.db.cursor.execute("""
             INSERT INTO gelirler 
@@ -597,6 +693,26 @@ class GelirYoneticisi:
                      gelir_turu: Optional[str] = None,
                      kasa_id: Optional[int] = None) -> List[Dict]:
         """Gelir listesini getir (filtreli)"""
+        if self.online_mode:
+            params = {}
+            if baslangic_tarih:
+                params['baslangic_tarih'] = baslangic_tarih
+            if bitis_tarih:
+                params['bitis_tarih'] = bitis_tarih
+            if gelir_turu:
+                params['gelir_turu'] = gelir_turu
+            if kasa_id:
+                params['kasa_id'] = kasa_id
+            result = self._api_request('GET', '/db/gelirler', params)
+            if result:
+                if isinstance(result, list):
+                    return result
+                elif isinstance(result, dict) and 'gelirler' in result:
+                    return result['gelirler']
+                elif isinstance(result, dict) and 'incomes' in result:
+                    return result['incomes']
+            # Online başarısız olursa offline'a düş
+            
         query = """
             SELECT g.*, k.kasa_adi, k.para_birimi
             FROM gelirler g
@@ -729,24 +845,82 @@ class GelirYoneticisi:
             (tahakkuk_turu, kaynak_tablo, kaynak_id, tahsil_yili, ait_oldugu_yil, tutar, durum)
             VALUES (?, 'gelirler', ?, ?, ?, ?, 'AKTİF')
         """, (tahakkuk_turu, kaynak_id, tahsil_yili, ait_oldugu_yil, tutar))
+    
+    def gelir_alt_kategorileri(self, tur_adi: str) -> List[str]:
+        """Gelir türüne göre alt kategorileri getir"""
+        alt_kategoriler = {
+            "KİRA": ["Salon Kirası", "Düğün Salonu", "Toplantı Salonu", "Depo Kirası"],
+            "BAĞIŞ": ["Nakdi Bağış", "Ayni Bağış", "Koşullu Bağış"],
+            "DÜĞÜN": ["Düğün Salonu", "Ses Sistemi", "Aydınlatma", "Catering"],
+            "KINA": ["Kına Salonu", "Organizasyon"],
+            "TOPLANTI": ["Toplantı Salonu", "İkram"],
+            "DAVET": ["Taziye", "Mevlit", "Bayramlaşma"],
+            "AİDAT": ["Yıllık Aidat", "Giriş Aidatı"],
+            "DİĞER": ["Genel Gelir", "Faiz Geliri", "Ceza Geliri"]
+        }
+        return alt_kategoriler.get(tur_adi.upper(), [])
 
 
 class GiderYoneticisi:
-    """Gider yönetim işlemleri"""
+    """Gider yönetim işlemleri - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            import requests
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
         
     def gider_ekle(self, tarih: str, gider_turu: str, aciklama: str, 
                    tutar: float, kasa_id: int, odeyen: str = "", notlar: str = "",
                    ait_oldugu_yil: Optional[int] = None, tahakkuk_durumu: str = 'NORMAL') -> int:
         """Yeni gider kaydı ekle (Yıl bazlı muhasebe desteği ile)"""
-        islem_no = self.db.get_next_islem_no()
-        
         # Eğer ait_oldugu_yil belirtilmemişse, tarihten çıkar
         if ait_oldugu_yil is None:
             ait_oldugu_yil = int(tarih[:4])
         
+        if self.online_mode:
+            data = {
+                'tarih': tarih,
+                'gider_turu': gider_turu,
+                'aciklama': aciklama,
+                'tutar': tutar,
+                'kasa_id': kasa_id,
+                'odeyen': odeyen,
+                'notlar': notlar,
+                'ait_oldugu_yil': ait_oldugu_yil,
+                'tahakkuk_durumu': tahakkuk_durumu
+            }
+            result = self._api_request('POST', '/db/giderler', data)
+            return result.get('gider_id', 0) if result else 0
+        
+        islem_no = self.db.get_next_islem_no()
         self.db.cursor.execute("""
             INSERT INTO giderler 
             (tarih, islem_no, gider_turu, aciklama, tutar, kasa_id, odeyen, notlar,
@@ -764,6 +938,19 @@ class GiderYoneticisi:
                       aciklama: str, tutar: float, kasa_id: int, 
                       odeyen: str = "", notlar: str = ""):
         """Gider kaydını güncelle"""
+        if self.online_mode:
+            data = {
+                'tarih': tarih,
+                'gider_turu': gider_turu,
+                'aciklama': aciklama,
+                'tutar': tutar,
+                'kasa_id': kasa_id,
+                'odeyen': odeyen,
+                'notlar': notlar
+            }
+            self._api_request('PUT', f'/db/giderler/{gider_id}', data)
+            return
+            
         self.db.cursor.execute("""
             UPDATE giderler
             SET tarih = ?, gider_turu = ?, aciklama = ?, tutar = ?, 
@@ -776,6 +963,10 @@ class GiderYoneticisi:
         
     def gider_sil(self, gider_id: int):
         """Gider kaydını sil"""
+        if self.online_mode:
+            self._api_request('DELETE', f'/db/giderler/{gider_id}')
+            return
+            
         self.db.cursor.execute("SELECT tutar, gider_turu FROM giderler WHERE gider_id = ?", (gider_id,))
         result = self.db.cursor.fetchone()
         
@@ -793,6 +984,26 @@ class GiderYoneticisi:
                      gider_turu: Optional[str] = None,
                      kasa_id: Optional[int] = None) -> List[Dict]:
         """Gider listesini getir (filtreli)"""
+        if self.online_mode:
+            params = {}
+            if baslangic_tarih:
+                params['baslangic_tarih'] = baslangic_tarih
+            if bitis_tarih:
+                params['bitis_tarih'] = bitis_tarih
+            if gider_turu:
+                params['gider_turu'] = gider_turu
+            if kasa_id:
+                params['kasa_id'] = kasa_id
+            result = self._api_request('GET', '/db/giderler', params)
+            if result:
+                if isinstance(result, list):
+                    return result
+                elif isinstance(result, dict) and 'giderler' in result:
+                    return result['giderler']
+                elif isinstance(result, dict) and 'expenses' in result:
+                    return result['expenses']
+            # Online başarısız olursa offline'a düş
+            
         query = """
             SELECT g.*, k.kasa_adi, k.para_birimi
             FROM giderler g
@@ -826,6 +1037,21 @@ class GiderYoneticisi:
         """Gider türlerini getir"""
         self.db.cursor.execute("SELECT tur_adi FROM gider_turleri WHERE aktif = 1 ORDER BY tur_adi")
         return [row['tur_adi'] for row in self.db.cursor.fetchall()]
+    
+    def gider_alt_kategorileri(self, tur_adi: str) -> List[str]:
+        """Gider türüne göre alt kategorileri getir"""
+        # Alt kategori tablosu yoksa varsayılan listeden döndür
+        alt_kategoriler = {
+            "PERSONEL": ["Maaş", "SSK Primi", "İşsizlik Primi", "Kıdem Tazminatı", "İkramiye"],
+            "KİRA": ["Bina Kirası", "Arsa Kirası", "Depo Kirası"],
+            "FATURA": ["Elektrik", "Su", "Doğalgaz", "Telefon", "İnternet"],
+            "BAKIM": ["Bina Bakım", "Araç Bakım", "Cihaz Bakım", "Bahçe Bakım"],
+            "MALZEME": ["Kırtasiye", "Temizlik", "Mutfak", "Teknik Malzeme"],
+            "TAŞIT": ["Yakıt", "Sigorta", "Muayene", "Tamir"],
+            "VERGİ": ["Gelir Vergisi", "KDV", "Damga Vergisi", "Emlak Vergisi"],
+            "DİĞER": ["Genel Gider", "Temsil Ağırlama", "Avukatlık", "Danışmanlık"]
+        }
+        return alt_kategoriler.get(tur_adi.upper(), [])
         
     def gider_turu_ekle(self, tur_adi: str):
         """Yeni gider türü ekle"""
@@ -838,16 +1064,57 @@ class GiderYoneticisi:
 
 
 class VirmanYoneticisi:
-    """Kasa transfer işlemleri"""
+    """Kasa transfer işlemleri - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            import requests
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
         
     def virman_ekle(self, tarih: str, gonderen_kasa_id: int, alan_kasa_id: int, 
                     tutar: float, aciklama: str = "") -> int:
         """Kasalar arası transfer yap"""
         if gonderen_kasa_id == alan_kasa_id:
             raise ValueError("Gönderen ve alan kasa aynı olamaz!")
+        
+        if self.online_mode:
+            data = {
+                'tarih': tarih,
+                'gonderen_kasa_id': gonderen_kasa_id,
+                'alan_kasa_id': alan_kasa_id,
+                'tutar': tutar,
+                'aciklama': aciklama
+            }
+            result = self._api_request('POST', '/db/virmanlar', data)
+            return result.get('virman_id', 0) if result else 0
             
         self.db.cursor.execute("""
             INSERT INTO virmanlar (tarih, gonderen_kasa_id, alan_kasa_id, tutar, aciklama)
@@ -862,6 +1129,10 @@ class VirmanYoneticisi:
         
     def virman_sil(self, virman_id: int):
         """Virman işlemini sil"""
+        if self.online_mode:
+            self._api_request('DELETE', f'/db/virmanlar/{virman_id}')
+            return
+            
         self.db.cursor.execute("SELECT tutar FROM virmanlar WHERE virman_id = ?", (virman_id,))
         result = self.db.cursor.fetchone()
         
@@ -874,6 +1145,20 @@ class VirmanYoneticisi:
     def virman_listesi(self, baslangic_tarih: Optional[str] = None, 
                       bitis_tarih: Optional[str] = None) -> List[Dict]:
         """Virman listesini getir"""
+        if self.online_mode:
+            params = {}
+            if baslangic_tarih:
+                params['baslangic_tarih'] = baslangic_tarih
+            if bitis_tarih:
+                params['bitis_tarih'] = bitis_tarih
+            result = self._api_request('GET', '/db/virmanlar', params)
+            if result:
+                if isinstance(result, list):
+                    return result
+                elif isinstance(result, dict) and 'virmanlar' in result:
+                    return result['virmanlar']
+            # Online başarısız olursa offline'a düş
+            
         query = """
             SELECT v.*, 
                    k1.kasa_adi as gonderen_kasa_adi, k1.para_birimi as gonderen_para_birimi,
@@ -900,14 +1185,54 @@ class VirmanYoneticisi:
 
 
 class KasaYoneticisi:
-    """Kasa yönetim ve hesaplama işlemleri"""
+    """Kasa yönetim ve hesaplama işlemleri - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            import requests
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
         
     def kasa_ekle(self, kasa_adi: str, para_birimi: str = "TL", 
                   devir_bakiye: float = 0, aciklama: str = "") -> int:
         """Yeni kasa ekle"""
+        if self.online_mode:
+            data = {
+                'kasa_adi': kasa_adi,
+                'para_birimi': para_birimi,
+                'devir_bakiye': devir_bakiye,
+                'aciklama': aciklama
+            }
+            result = self._api_request('POST', '/db/kasalar', data)
+            return result.get('kasa_id', -1) if result else -1
+            
         try:
             self.db.cursor.execute("""
                 INSERT INTO kasalar (kasa_adi, para_birimi, devir_bakiye, aciklama)
@@ -924,6 +1249,16 @@ class KasaYoneticisi:
     def kasa_guncelle(self, kasa_id: int, kasa_adi: str, para_birimi: str, 
                      devir_bakiye: float, aciklama: str = ""):
         """Kasa bilgilerini güncelle"""
+        if self.online_mode:
+            data = {
+                'kasa_adi': kasa_adi,
+                'para_birimi': para_birimi,
+                'devir_bakiye': devir_bakiye,
+                'aciklama': aciklama
+            }
+            self._api_request('PUT', f'/db/kasalar/{kasa_id}', data)
+            return
+            
         self.db.cursor.execute("""
             UPDATE kasalar
             SET kasa_adi = ?, para_birimi = ?, devir_bakiye = ?, aciklama = ?
@@ -934,6 +1269,18 @@ class KasaYoneticisi:
         
     def kasa_listesi(self) -> List[Dict]:
         """Tüm kasaları listele"""
+        if self.online_mode:
+            result = self._api_request('GET', '/db/kasalar')
+            # API sonucu liste ise direkt döndür, dict ise içinden listeyi çıkar
+            if result:
+                if isinstance(result, list):
+                    return result
+                elif isinstance(result, dict) and 'accounts' in result:
+                    return result['accounts']
+                elif isinstance(result, dict) and 'kasalar' in result:
+                    return result['kasalar']
+            # Online başarısız olursa offline'a düş
+            
         self.db.cursor.execute("SELECT * FROM kasalar WHERE aktif = 1 ORDER BY kasa_adi")
         return [dict(row) for row in self.db.cursor.fetchall()]
         
@@ -1859,6 +2206,20 @@ class KoyGelirYoneticisi:
         """Köy gelir türlerini getir"""
         self.db.cursor.execute("SELECT tur_adi FROM koy_gelir_turleri WHERE aktif = 1 ORDER BY tur_adi")
         return [row['tur_adi'] for row in self.db.cursor.fetchall()]
+    
+    def gelir_alt_kategorileri(self, tur_adi: str) -> List[str]:
+        """Gelir türüne göre alt kategorileri getir"""
+        alt_kategoriler = {
+            "KİRA": ["Salon Kirası", "Düğün Salonu", "Toplantı Salonu", "Depo Kirası"],
+            "BAĞIŞ": ["Nakdi Bağış", "Ayni Bağış", "Koşullu Bağış"],
+            "DÜĞÜN": ["Düğün Salonu", "Ses Sistemi", "Aydınlatma", "Catering"],
+            "KINA": ["Kına Salonu", "Organizasyon"],
+            "TOPLANTI": ["Toplantı Salonu", "İkram"],
+            "DAVET": ["Taziye", "Mevlit", "Bayramlaşma"],
+            "AİDAT": ["Yıllık Aidat", "Giriş Aidatı"],
+            "DİĞER": ["Genel Gelir", "Faiz Geliri", "Ceza Geliri"]
+        }
+        return alt_kategoriler.get(tur_adi.upper(), [])
 
 
 class KoyGiderYoneticisi:

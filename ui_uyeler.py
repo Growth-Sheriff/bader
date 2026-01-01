@@ -14,7 +14,7 @@ from ui_drawer import DrawerPanel
 from ui_login import session
 from ui_form_fields import (FormField, create_line_edit, create_text_edit, create_combo_box,
                             create_spin_box, create_date_edit, create_double_spin_box)
-from ui_helpers import make_searchable_combobox, export_table_to_excel
+from ui_helpers import make_searchable_combobox, export_table_to_excel, setup_resizable_table
 from typing import Optional
 
 
@@ -448,8 +448,8 @@ class UyeWidget(QWidget):
             "ID", "Üye No", "TC Kimlik", "Ad Soyad", "Telefon", "E-posta", "Üyelik Tipi", "Meslek", "Durum"
         ])
         
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        # Responsive sütunlar - hareket ettirilebilir, sağ tık ile gizle/göster
+        setup_resizable_table(self.table, table_id="uyeler_tablosu", stretch_column=3)
         
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)

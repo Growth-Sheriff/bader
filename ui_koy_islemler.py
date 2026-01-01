@@ -14,7 +14,7 @@ from models import (KoyKasaYoneticisi, KoyGelirYoneticisi,
 from ui_drawer import DrawerPanel
 from ui_form_fields import (create_line_edit, create_text_edit, create_combo_box,
                             create_double_spin_box, create_date_edit)
-from ui_helpers import export_table_to_excel
+from ui_helpers import export_table_to_excel, setup_resizable_table
 from datetime import datetime
 
 
@@ -330,8 +330,7 @@ class KoyGiderWidget(QWidget):
         self.table.setHorizontalHeaderLabels([
             "ID", "Tarih", "Gider Türü", "Açıklama", "Tutar", "Kasa", "Dekont No", "İşlem No"
         ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        setup_resizable_table(self.table, table_id="koy_giderler_tablosu", stretch_column=3)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setAlternatingRowColors(True)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -548,8 +547,7 @@ class KoyKasaWidget(QWidget):
         self.table.setHorizontalHeaderLabels([
             "ID", "Kasa Adı", "Para Birimi", "Devir Bakiye", "Toplam Gelir", "Toplam Gider", "Net Bakiye"
         ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        setup_resizable_table(self.table, table_id="koy_kasalar_tablosu", stretch_column=1)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setAlternatingRowColors(True)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -725,8 +723,7 @@ class KoyVirmanWidget(QWidget):
         self.table.setHorizontalHeaderLabels([
             "ID", "Tarih", "Gönderen Kasa", "Alan Kasa", "Tutar", "Açıklama"
         ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
+        setup_resizable_table(self.table, table_id="koy_virmanlar_tablosu", stretch_column=5)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setAlternatingRowColors(True)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)

@@ -12,7 +12,7 @@ from PyQt5.QtGui import QFont
 
 # Modern Input Stilleri
 INPUT_STYLE = """
-    QLineEdit, QTextEdit, QComboBox, QSpinBox, QDoubleSpinBox, QDateEdit {
+    QLineEdit, QTextEdit, QSpinBox, QDoubleSpinBox, QDateEdit {
         background-color: #FAFAFA;
         border: 1.5px solid #E0E0E0;
         border-radius: 8px;
@@ -22,19 +22,44 @@ INPUT_STYLE = """
         color: #1A1A1A;
         min-height: 20px;
     }
-    QLineEdit:focus, QTextEdit:focus, QComboBox:focus, 
+    QLineEdit:focus, QTextEdit:focus, 
     QSpinBox:focus, QDoubleSpinBox:focus, QDateEdit:focus {
         border: 2px solid #64B5F6;
         background-color: #FFFFFF;
     }
-    QLineEdit:hover, QTextEdit:hover, QComboBox:hover,
+    QLineEdit:hover, QTextEdit:hover,
     QSpinBox:hover, QDoubleSpinBox:hover, QDateEdit:hover {
         border-color: #BDBDBD;
+        background-color: #FFFFFF;
+    }
+    QComboBox {
+        background-color: #FAFAFA;
+        border: 1.5px solid #E0E0E0;
+        border-radius: 8px;
+        padding: 10px 14px;
+        padding-right: 30px;
+        font-size: 14px;
+        font-family: 'Inter', 'Roboto', 'Segoe UI', sans-serif;
+        color: #1A1A1A;
+        min-height: 20px;
+    }
+    QComboBox:focus {
+        border: 2px solid #64B5F6;
+        background-color: #FFFFFF;
+    }
+    QComboBox:hover {
+        border-color: #BDBDBD;
+        background-color: #FFFFFF;
+    }
+    QComboBox:on {
+        border: 2px solid #64B5F6;
         background-color: #FFFFFF;
     }
     QComboBox::drop-down {
         border: none;
         width: 30px;
+        subcontrol-origin: padding;
+        subcontrol-position: right center;
     }
     QComboBox::down-arrow {
         image: none;
@@ -50,6 +75,18 @@ INPUT_STYLE = """
         padding: 4px;
         selection-background-color: #E3F2FD;
         selection-color: #1976D2;
+        outline: none;
+    }
+    QComboBox QAbstractItemView::item {
+        min-height: 32px;
+        padding: 6px 12px;
+    }
+    QComboBox QAbstractItemView::item:hover {
+        background-color: #F5F5F5;
+    }
+    QComboBox QAbstractItemView::item:selected {
+        background-color: #E3F2FD;
+        color: #1976D2;
     }
     QSpinBox::up-button, QDoubleSpinBox::up-button {
         subcontrol-origin: border;
@@ -153,6 +190,10 @@ def create_text_edit(label: str, placeholder: str = "", max_height: int = 100) -
 def create_combo_box(label: str, items: list = None, searchable: bool = False) -> tuple[QWidget, QComboBox]:
     """Modern QComboBox oluştur"""
     combo = QComboBox()
+    combo.setMaxVisibleItems(15)  # Dropdown'da daha fazla öğe göster
+    combo.setMinimumWidth(150)  # Minimum genişlik
+    combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+    
     if items:
         combo.addItems(items)
     if searchable:
@@ -160,6 +201,8 @@ def create_combo_box(label: str, items: list = None, searchable: bool = False) -
         combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         if combo.completer():
             combo.completer().setCompletionMode(combo.completer().CompletionMode.PopupCompletion)
+            combo.completer().setFilterMode(Qt.MatchFlag.MatchContains)
+    
     required = label.endswith('*') or '*' in label
     container = FormField(label.replace('*', '').strip(), combo, required=required)
     return (container, combo)

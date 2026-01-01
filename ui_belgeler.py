@@ -18,7 +18,7 @@ from database import Database
 from models import BelgeYoneticisi
 from ui_drawer import DrawerPanel
 from ui_form_fields import create_line_edit, create_combo_box, create_text_edit
-from ui_helpers import export_table_to_excel
+from ui_helpers import export_table_to_excel, setup_resizable_table
 from ui_login import session
 
 
@@ -222,8 +222,7 @@ class BelgelerWidget(QWidget):
         self.table.setHorizontalHeaderLabels([
             "ID", "Tür", "Başlık", "Dosya", "Boyut", "Tarih"
         ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        setup_resizable_table(self.table, table_id="belgeler_tablosu", stretch_column=2)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setAlternatingRowColors(True)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)

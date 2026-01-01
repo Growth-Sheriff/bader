@@ -13,7 +13,7 @@ from qfluentwidgets import (MessageBox, PushButton, ComboBox, TitleLabel,
                             SubtitleLabel, BodyLabel, CardWidget, SpinBox)
 from database import Database
 from models import UyeYoneticisi, AidatYoneticisi, RaporYoneticisi, KasaYoneticisi
-from ui_helpers import export_table_to_excel
+from ui_helpers import export_table_to_excel, setup_resizable_table
 from datetime import datetime
 
 
@@ -130,8 +130,7 @@ class BorcluUyelerWidget(QWidget):
         self.table.setHorizontalHeaderLabels([
             "Üye No", "Ad Soyad", "Telefon", "Yıl", "Aidat Tutarı", "Ödenen", "Borç"
         ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        setup_resizable_table(self.table, table_id="borclu_uyeler_tablosu", stretch_column=1)
         self.table.setAlternatingRowColors(True)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)

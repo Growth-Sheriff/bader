@@ -17,7 +17,7 @@ from datetime import datetime
 from typing import Optional
 from ui_drawer import DrawerPanel
 from ui_form_fields import create_combo_box, create_spin_box, create_double_spin_box, create_date_edit, create_line_edit
-from ui_helpers import export_table_to_excel
+from ui_helpers import export_table_to_excel, setup_resizable_table
 from ui_login import session
 
 
@@ -73,11 +73,15 @@ class TopluAidatFormWidget(QWidget):
 
 
 class AidatOdemeFormWidget(QWidget):
-    """Aidat ödemesi ekleme formu"""
+    """Aidat ödemesi ekleme formu - Yıl seçimi ile"""
     
-    def __init__(self, kalan_tutar: float = 0):
+    def __init__(self, kalan_tutar: float = 0, mevcut_yil: int = None, uye_yillari: list = None, db: Database = None, uye_id: int = None):
         super().__init__()
         self.kalan_tutar = kalan_tutar
+        self.mevcut_yil = mevcut_yil or datetime.now().year
+        self.uye_yillari = uye_yillari or []  # Üyenin borçlu olduğu yıllar
+        self.db = db
+        self.uye_id = uye_id
         self.setup_ui()
         
     def setup_ui(self):
@@ -85,21 +89,40 @@ class AidatOdemeFormWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(20)
         
+        # Yıl seçimi
+        self.yil_combo = create_combo_box("Ödeme Yapılacak Yıl *")
+        
+        # Borçlu yılları ekle
+        if self.uye_yillari:
+            for yil_bilgi in self.uye_yillari:
+                if isinstance(yil_bilgi, dict):
+                    yil = yil_bilgi.get('yil', 0)
+                    kalan = yil_bilgi.get('kalan', 0)
+                    self.yil_combo[1].addItem(f"{yil} (Borç: {kalan:,.2f} ₺)", yil_bilgi)
+                else:
+                    self.yil_combo[1].addItem(str(yil_bilgi), {'yil': yil_bilgi, 'kalan': 0})
+        else:
+            # Varsayılan olarak mevcut yıl
+            self.yil_combo[1].addItem(str(self.mevcut_yil), {'yil': self.mevcut_yil, 'kalan': self.kalan_tutar})
+        
+        self.yil_combo[1].currentIndexChanged.connect(self.on_yil_changed)
+        layout.addWidget(self.yil_combo[0])
+        
         # Kalan borç bilgisi
+        self.borc_label = QLabel(f"Kalan Borç: {self.kalan_tutar:.2f} ₺")
+        self.borc_label.setStyleSheet("""
+            QLabel {
+                color: #E65100;
+                font-size: 14px;
+                font-weight: 600;
+                padding: 10px;
+                background-color: #FFF3E0;
+                border-radius: 6px;
+                border-left: 3px solid #FF9800;
+            }
+        """)
         if self.kalan_tutar > 0:
-            info_label = QLabel(f"Kalan Borç: {self.kalan_tutar:.2f} ₺")
-            info_label.setStyleSheet("""
-                QLabel {
-                    color: #E65100;
-                    font-size: 14px;
-                    font-weight: 600;
-                    padding: 10px;
-                    background-color: #FFF3E0;
-                    border-radius: 6px;
-                    border-left: 3px solid #FF9800;
-                }
-            """)
-            layout.addWidget(info_label)
+            layout.addWidget(self.borc_label)
         
         # Tarih
         self.tarih_edit = create_date_edit("Tarih")
@@ -116,8 +139,12 @@ class AidatOdemeFormWidget(QWidget):
         
         # Tahsilat Türü
         self.tahsilat_combo = create_combo_box("Tahsilat Türü")
-        self.tahsilat_combo[1].addItems(["Nakit", "Banka Transferi", "Kredi Kartı", "Havale"])
+        self.tahsilat_combo[1].addItems(["Nakit", "Banka Transferi", "Kredi Kartı", "Havale/EFT", "Çek"])
         layout.addWidget(self.tahsilat_combo[0])
+        
+        # Banka Bilgisi
+        self.banka_edit = create_line_edit("Banka/Şube", "Banka adı ve şube...")
+        layout.addWidget(self.banka_edit[0])
         
         # Dekont Numarası
         self.dekont_edit = create_line_edit("Dekont No", "Dekont numarası...")
@@ -129,12 +156,26 @@ class AidatOdemeFormWidget(QWidget):
         
         layout.addStretch()
         self.setLayout(layout)
+    
+    def on_yil_changed(self, index):
+        """Yıl seçimi değiştiğinde borç bilgisini güncelle"""
+        data = self.yil_combo[1].currentData()
+        if data:
+            kalan = data.get('kalan', 0)
+            self.borc_label.setText(f"Kalan Borç: {kalan:,.2f} ₺")
+            self.borc_label.setVisible(kalan > 0)
+            if kalan > 0:
+                self.tutar_spin[1].setValue(kalan)
         
     def get_data(self):
+        yil_data = self.yil_combo[1].currentData() or {}
         return {
+            'yil': yil_data.get('yil', self.mevcut_yil),
+            'aidat_id': yil_data.get('aidat_id'),
             'tarih': self.tarih_edit[1].date().toString("yyyy-MM-dd"),
             'tutar': self.tutar_spin[1].value(),
             'tahsilat_turu': self.tahsilat_combo[1].currentText(),
+            'banka': self.banka_edit[1].text().strip(),
             'dekont_no': self.dekont_edit[1].text().strip(),
             'aciklama': self.aciklama_edit[1].text().strip()
         }
@@ -288,9 +329,8 @@ class AidatWidget(QWidget):
             "Kalan", "Durum", "Aktarım"
         ])
         
-        # Sütun genişliklerini otomatik ayarla
-        self.aidat_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.aidat_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Üye stretch
+        # Sütun genişliklerini responsive yap
+        setup_resizable_table(self.aidat_table, table_id="aidat_tablosu", stretch_column=1)
         
         self.aidat_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.aidat_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
@@ -350,9 +390,8 @@ class AidatWidget(QWidget):
             "ID", "Tarih", "Tutar", "Tahsilat Türü", "Dekont No", "Açıklama"
         ])
         
-        # Sütun genişliklerini otomatik ayarla
-        self.odeme_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.odeme_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)  # Açıklama stretch
+        # Sütun genişliklerini responsive yap
+        setup_resizable_table(self.odeme_table, table_id="aidat_odemeler_tablosu", stretch_column=5)
         
         self.odeme_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.odeme_table.setAlternatingRowColors(True)
@@ -555,33 +594,63 @@ class AidatWidget(QWidget):
         drawer.show()
         
     def odeme_ekle(self):
-        """Ödeme ekle"""
+        """Ödeme ekle - Yıl seçimi ile"""
         if not self.selected_aidat_id:
             return
             
-        # Kalan tutarı hesapla
+        # Seçili aidat kaydının üye bilgisini al
         row = self.aidat_table.currentRow()
-        kalan_text = self.aidat_table.item(row, 5).text().replace(" ₺", "")
+        kalan_text = self.aidat_table.item(row, 5).text().replace(" ₺", "").replace(",", "")
         kalan = float(kalan_text)
+        mevcut_yil = int(self.aidat_table.item(row, 2).text())
         
-        form_widget = AidatOdemeFormWidget(kalan)
-        drawer = DrawerPanel(self, "Ödeme Ekle", form_widget)
+        # Üyenin tüm borçlu yıllarını bul
+        uye_adi = self.aidat_table.item(row, 1).text()
+        
+        # Tüm aidat kayıtlarından bu üyenin borçlarını bul
+        uye_yillari = []
+        for i in range(self.aidat_table.rowCount()):
+            if self.aidat_table.item(i, 1).text() == uye_adi:
+                yil = int(self.aidat_table.item(i, 2).text())
+                kalan_str = self.aidat_table.item(i, 5).text().replace(" ₺", "").replace(",", "")
+                kalan_tutar = float(kalan_str)
+                aidat_id = int(self.aidat_table.item(i, 0).text())
+                durum = self.aidat_table.item(i, 6).text()
+                
+                if kalan_tutar > 0 or durum != "Tamamlandı":
+                    uye_yillari.append({
+                        'yil': yil,
+                        'kalan': kalan_tutar,
+                        'aidat_id': aidat_id
+                    })
+        
+        # Seçili yılı en üste al
+        uye_yillari.sort(key=lambda x: (x['aidat_id'] != self.selected_aidat_id, x['yil']))
+        
+        form_widget = AidatOdemeFormWidget(
+            kalan_tutar=kalan,
+            mevcut_yil=mevcut_yil,
+            uye_yillari=uye_yillari,
+            db=self.db
+        )
+        drawer = DrawerPanel(self, f"💰 Ödeme Ekle - {uye_adi}", form_widget)
         
         def on_submit():
             data = form_widget.get_data()
+            aidat_id = data.get('aidat_id') or self.selected_aidat_id
             
             try:
                 self.aidat_yoneticisi.aidat_odeme_ekle(
-                    self.selected_aidat_id,
+                    aidat_id,
                     data['tarih'],
                     data['tutar'],
-                    data['aciklama'],
-                    data['tahsilat_turu']
+                    data.get('aciklama', ''),
+                    data.get('tahsilat_turu', 'Nakit')
                 )
                 self.load_aidatlar()
                 # Aynı kaydı tekrar seç
                 for i in range(self.aidat_table.rowCount()):
-                    if int(self.aidat_table.item(i, 0).text()) == self.selected_aidat_id:
+                    if int(self.aidat_table.item(i, 0).text()) == aidat_id:
                         self.aidat_table.selectRow(i)
                         break
                 MessageBox("Başarılı", "Ödeme kaydedildi!", self).show()

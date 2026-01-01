@@ -12,7 +12,7 @@ from database import Database
 from models import GiderYoneticisi, KasaYoneticisi
 from ui_drawer import DrawerPanel
 from ui_form_fields import create_line_edit, create_combo_box, create_text_edit, create_date_edit, create_double_spin_box
-from ui_helpers import export_table_to_excel
+from ui_helpers import export_table_to_excel, setup_resizable_table
 from ui_login import session
 
 
@@ -45,7 +45,13 @@ class GiderFormWidget(QWidget):
         # Gider Türü
         self.gider_turu_combo = create_combo_box("Gider Türü *")
         self.gider_turu_combo[1].setEditable(True)
+        self.gider_turu_combo[1].currentTextChanged.connect(self.on_tur_changed)
         layout.addWidget(self.gider_turu_combo[0])
+        
+        # Alt Kategori
+        self.alt_kategori_combo = create_combo_box("Alt Kategori")
+        self.alt_kategori_combo[1].setEditable(True)
+        layout.addWidget(self.alt_kategori_combo[0])
         
         # Açıklama
         self.aciklama_edit = create_line_edit("Açıklama *", "Gider açıklaması...")
@@ -72,6 +78,14 @@ class GiderFormWidget(QWidget):
         
         layout.addStretch()
         self.setLayout(layout)
+    
+    def on_tur_changed(self, tur: str):
+        """Gider türü değiştiğinde alt kategorileri güncelle"""
+        self.alt_kategori_combo[1].clear()
+        alt_kategoriler = self.gider_yoneticisi.gider_alt_kategorileri(tur)
+        if alt_kategoriler:
+            self.alt_kategori_combo[1].addItems(alt_kategoriler)
+        self.alt_kategori_combo[0].setVisible(len(alt_kategoriler) > 0)
         
     def load_kasalar(self):
         kasalar = self.kasa_yoneticisi.kasa_listesi()
@@ -84,11 +98,20 @@ class GiderFormWidget(QWidget):
     def load_gider_turleri(self):
         turler = self.gider_yoneticisi.gider_turleri_listesi()
         self.gider_turu_combo[1].addItems(turler)
+        # İlk yüklemede alt kategorileri doldur
+        if turler:
+            self.on_tur_changed(turler[0])
         
     def load_data(self):
         if self.gider_data:
             self.tarih_edit[1].setDate(QDate.fromString(self.gider_data['tarih'], "yyyy-MM-dd"))
             self.gider_turu_combo[1].setCurrentText(self.gider_data['gider_turu'])
+            
+            # Alt kategori varsa ayarla
+            alt_kat = self.gider_data.get('alt_kategori', '')
+            if alt_kat:
+                self.alt_kategori_combo[1].setCurrentText(alt_kat)
+            
             self.aciklama_edit[1].setText(self.gider_data['aciklama'])
             self.tutar_spin[1].setValue(self.gider_data['tutar'])
             
@@ -101,9 +124,11 @@ class GiderFormWidget(QWidget):
             self.notlar_edit[1].setPlainText(self.gider_data.get('notlar', ''))
             
     def get_data(self):
+        alt_kategori = self.alt_kategori_combo[1].currentText().strip() if self.alt_kategori_combo[0].isVisible() else ""
         return {
             'tarih': self.tarih_edit[1].date().toString("yyyy-MM-dd"),
             'gider_turu': self.gider_turu_combo[1].currentText().strip(),
+            'alt_kategori': alt_kategori,
             'aciklama': self.aciklama_edit[1].text().strip(),
             'tutar': self.tutar_spin[1].value(),
             'kasa_id': self.kasa_combo[1].currentData(),
@@ -204,9 +229,8 @@ class GiderWidget(QWidget):
             "Tutar", "Kasa", "Ödeyen", "Notlar"
         ])
         
-        # Sütun genişliklerini otomatik ayarla
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)  # Açıklama stretch
+        # Responsive sütunlar - hareket ettirilebilir, sağ tık ile gizle/göster
+        setup_resizable_table(self.table, table_id="giderler_tablosu", stretch_column=4)
         
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)

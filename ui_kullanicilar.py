@@ -11,6 +11,7 @@ from database import Database
 from models import KullaniciYoneticisi
 from ui_drawer import DrawerPanel
 from ui_form_fields import create_line_edit, create_combo_box
+from ui_helpers import setup_resizable_table
 
 
 class KullaniciFormWidget(QWidget):
@@ -170,8 +171,7 @@ class KullanicilarWidget(QWidget):
         self.table.setHorizontalHeaderLabels([
             "ID", "Kullanıcı Adı", "Ad Soyad", "E-posta", "Rol", "Son Giriş"
         ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        setup_resizable_table(self.table, table_id="kullanicilar_tablosu", stretch_column=2)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setAlternatingRowColors(True)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)

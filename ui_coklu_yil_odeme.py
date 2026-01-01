@@ -1,22 +1,127 @@
 """
 Çok Yıllık Ödeme - Yıl Bazlı Muhasebe Sistemi
 Üyelerin birden fazla yıl için aidat ödemesi yapabilmesi
-Modern Drawer Panel UI
+Modern Drawer Panel UI - Geliştirilmiş Versiyon
+Her yıl için ayrı dekont, banka bilgisi, tahsilat türü
 """
 
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QTableWidget, QTableWidgetItem, QFrame, QDateEdit)
+                             QTableWidget, QTableWidgetItem, QFrame, QDateEdit,
+                             QCheckBox, QLineEdit, QScrollArea, QGroupBox)
 from PyQt5.QtCore import Qt, QDate
 from PyQt5.QtGui import QFont, QColor
 from qfluentwidgets import (PushButton, ComboBox, SpinBox, TableWidget, CardWidget,
-                           MessageBox, InfoBar, InfoBarPosition, BodyLabel, SubtitleLabel)
+                           MessageBox, InfoBar, InfoBarPosition, BodyLabel, SubtitleLabel,
+                           LineEdit)
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, List
 from ui_drawer import DrawerPanel
 
 
+class YilOdemeWidget(QWidget):
+    """Tek bir yıl için ödeme bilgisi widget'ı"""
+    
+    def __init__(self, yil: int, tutar: float, parent=None):
+        super().__init__(parent)
+        self.yil = yil
+        self.tutar = tutar
+        self.setup_ui()
+        
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(10, 8, 10, 8)
+        layout.setSpacing(8)
+        
+        # Üst satır - Yıl, Checkbox, Tutar
+        top_layout = QHBoxLayout()
+        
+        self.checkbox = QCheckBox()
+        self.checkbox.setChecked(True)
+        self.checkbox.stateChanged.connect(self.on_check_changed)
+        top_layout.addWidget(self.checkbox)
+        
+        yil_label = QLabel(f"<b>{self.yil}</b>")
+        yil_label.setMinimumWidth(60)
+        top_layout.addWidget(yil_label)
+        
+        tutar_label = QLabel(f"{self.tutar:,.2f} ₺")
+        tutar_label.setStyleSheet("color: #1976D2; font-weight: 600;")
+        tutar_label.setMinimumWidth(100)
+        top_layout.addWidget(tutar_label)
+        
+        # Durum
+        tahsil_yili = datetime.now().year
+        if self.yil == tahsil_yili:
+            durum = "Normal"
+            durum_color = "#4CAF50"
+        elif self.yil < tahsil_yili:
+            durum = "Geriye Dönük"
+            durum_color = "#FF9800"
+        else:
+            durum = "Peşin"
+            durum_color = "#2196F3"
+        
+        durum_label = QLabel(durum)
+        durum_label.setStyleSheet(f"color: {durum_color}; font-weight: 500;")
+        top_layout.addWidget(durum_label)
+        
+        top_layout.addStretch()
+        layout.addLayout(top_layout)
+        
+        # Alt satır - Dekont, Banka, Tahsilat Türü
+        details_layout = QHBoxLayout()
+        details_layout.setSpacing(8)
+        
+        self.dekont_edit = QLineEdit()
+        self.dekont_edit.setPlaceholderText("Dekont No")
+        self.dekont_edit.setMaximumWidth(120)
+        details_layout.addWidget(self.dekont_edit)
+        
+        self.banka_edit = QLineEdit()
+        self.banka_edit.setPlaceholderText("Banka / Şube")
+        self.banka_edit.setMaximumWidth(150)
+        details_layout.addWidget(self.banka_edit)
+        
+        self.tahsilat_combo = ComboBox()
+        self.tahsilat_combo.addItems(["Nakit", "Havale/EFT", "Kredi Kartı", "Çek"])
+        self.tahsilat_combo.setMaximumWidth(120)
+        details_layout.addWidget(self.tahsilat_combo)
+        
+        details_layout.addStretch()
+        layout.addLayout(details_layout)
+        
+        # Stil
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #FAFAFA;
+                border: 1px solid #E0E0E0;
+                border-radius: 6px;
+            }
+        """)
+        
+    def on_check_changed(self, state):
+        """Checkbox değiştiğinde opacity ayarla"""
+        opacity = "1.0" if state else "0.5"
+        enabled = state == Qt.CheckState.Checked.value
+        self.dekont_edit.setEnabled(enabled)
+        self.banka_edit.setEnabled(enabled)
+        self.tahsilat_combo.setEnabled(enabled)
+        
+    def is_selected(self) -> bool:
+        return self.checkbox.isChecked()
+    
+    def get_data(self) -> Dict:
+        return {
+            'yil': self.yil,
+            'tutar': self.tutar,
+            'dekont_no': self.dekont_edit.text().strip(),
+            'banka': self.banka_edit.text().strip(),
+            'tahsilat_turu': self.tahsilat_combo.currentText()
+        }
+
+
 class CokluYilOdemeFormWidget(QWidget):
-    """Çok yıllık ödeme formu - Drawer içinde"""
+    """Çok yıllık ödeme formu - Drawer içinde - Geliştirilmiş"""
     
     def __init__(self, db=None, uye_id: int = None, parent=None):
         super().__init__(parent)
@@ -24,6 +129,7 @@ class CokluYilOdemeFormWidget(QWidget):
         self.uye_id = uye_id
         self.uye_adi = ""
         self.yillik_aidat = 100.0
+        self.yil_widgets: List[YilOdemeWidget] = []
         
         self.init_ui()
         self.load_uye_bilgi()
@@ -46,7 +152,7 @@ class CokluYilOdemeFormWidget(QWidget):
         uye_card.setLayout(uye_layout)
         layout.addWidget(uye_card)
         
-        # Yıl seçimi
+        # Yıl seçimi aralığı
         yil_frame = QFrame()
         yil_layout = QHBoxLayout(yil_frame)
         
@@ -55,7 +161,7 @@ class CokluYilOdemeFormWidget(QWidget):
         self.baslangic_spin.setRange(2020, 2050)
         self.baslangic_spin.setValue(datetime.now().year)
         self.baslangic_spin.setMinimumWidth(100)
-        self.baslangic_spin.valueChanged.connect(self.hesapla_ozet)
+        self.baslangic_spin.valueChanged.connect(self.yillari_olustur)
         yil_layout.addWidget(self.baslangic_spin)
         
         yil_layout.addWidget(QLabel("Bitiş Yılı:"))
@@ -63,52 +169,66 @@ class CokluYilOdemeFormWidget(QWidget):
         self.bitis_spin.setRange(2020, 2050)
         self.bitis_spin.setValue(datetime.now().year)
         self.bitis_spin.setMinimumWidth(100)
-        self.bitis_spin.valueChanged.connect(self.hesapla_ozet)
+        self.bitis_spin.valueChanged.connect(self.yillari_olustur)
         yil_layout.addWidget(self.bitis_spin)
         
         yil_layout.addStretch()
         layout.addWidget(yil_frame)
         
-        # Kasa seçimi
-        kasa_frame = QFrame()
-        kasa_layout = QHBoxLayout(kasa_frame)
-        kasa_layout.addWidget(QLabel("Kasa:"))
-        self.kasa_combo = ComboBox()
-        self.kasa_combo.setMinimumWidth(200)
-        self.load_kasalar()
-        kasa_layout.addWidget(self.kasa_combo)
-        kasa_layout.addStretch()
-        layout.addWidget(kasa_frame)
+        # Kasa ve Tarih yan yana
+        ortak_frame = QFrame()
+        ortak_layout = QHBoxLayout(ortak_frame)
         
-        # Tarih seçimi
-        tarih_frame = QFrame()
-        tarih_layout = QHBoxLayout(tarih_frame)
-        tarih_layout.addWidget(QLabel("Tahsil Tarihi:"))
+        ortak_layout.addWidget(QLabel("Kasa:"))
+        self.kasa_combo = ComboBox()
+        self.kasa_combo.setMinimumWidth(180)
+        self.load_kasalar()
+        ortak_layout.addWidget(self.kasa_combo)
+        
+        ortak_layout.addWidget(QLabel("Tahsil Tarihi:"))
         self.tarih_edit = QDateEdit()
         self.tarih_edit.setDate(QDate.currentDate())
         self.tarih_edit.setCalendarPopup(True)
         self.tarih_edit.setDisplayFormat("dd.MM.yyyy")
-        tarih_layout.addWidget(self.tarih_edit)
-        tarih_layout.addStretch()
-        layout.addWidget(tarih_frame)
+        ortak_layout.addWidget(self.tarih_edit)
         
-        # Özet bölgesi
-        ozet_label = QLabel("📊 Ödeme Özeti")
-        ozet_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        layout.addWidget(ozet_label)
+        ortak_layout.addStretch()
+        layout.addWidget(ortak_frame)
         
-        # Özet tablo
-        self.ozet_table = TableWidget()
-        self.ozet_table.setColumnCount(3)
-        self.ozet_table.setHorizontalHeaderLabels(["Yıl", "Tutar", "Durum"])
-        self.ozet_table.setColumnWidth(0, 100)
-        self.ozet_table.setColumnWidth(1, 150)
-        self.ozet_table.setColumnWidth(2, 200)
-        self.ozet_table.setMaximumHeight(200)
-        layout.addWidget(self.ozet_table)
+        # Yıl seçimi bölgesi
+        yillar_label = QLabel("📅 Ödenecek Yıllar (işaretli olanlar ödenecek)")
+        yillar_label.setFont(QFont("Arial", 11, QFont.Weight.Bold))
+        layout.addWidget(yillar_label)
+        
+        # Tümünü seç/kaldır
+        secim_layout = QHBoxLayout()
+        self.tumunu_sec_btn = PushButton("✓ Tümünü Seç")
+        self.tumunu_sec_btn.clicked.connect(self.tumunu_sec)
+        secim_layout.addWidget(self.tumunu_sec_btn)
+        
+        self.tumunu_kaldir_btn = PushButton("✗ Tümünü Kaldır")
+        self.tumunu_kaldir_btn.clicked.connect(self.tumunu_kaldir)
+        secim_layout.addWidget(self.tumunu_kaldir_btn)
+        
+        secim_layout.addStretch()
+        layout.addLayout(secim_layout)
+        
+        # Scroll area for year widgets
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setMaximumHeight(250)
+        scroll.setStyleSheet("QScrollArea { border: none; }")
+        
+        self.yillar_container = QWidget()
+        self.yillar_layout = QVBoxLayout(self.yillar_container)
+        self.yillar_layout.setSpacing(8)
+        self.yillar_layout.setContentsMargins(0, 0, 0, 0)
+        
+        scroll.setWidget(self.yillar_container)
+        layout.addWidget(scroll)
         
         # Toplam tutar
-        self.toplam_label = QLabel("Toplam: 0 TL")
+        self.toplam_label = QLabel("Toplam: 0 ₺ (0 yıl seçili)")
         self.toplam_label.setFont(QFont("Arial", 14, QFont.Weight.Bold))
         self.toplam_label.setStyleSheet("color: #1976D2; padding: 10px;")
         layout.addWidget(self.toplam_label)
@@ -177,10 +297,10 @@ class CokluYilOdemeFormWidget(QWidget):
             
             self.uye_label.setText(f"Üye: {self.uye_adi} (Yıllık Aidat: {self.yillik_aidat:,.2f} ₺)")
             
-            self.hesapla_ozet()
+            self.yillari_olustur()
     
-    def hesapla_ozet(self):
-        """Ödeme özetini hesapla"""
+    def yillari_olustur(self):
+        """Yıl widget'larını oluştur"""
         baslangic = self.baslangic_spin.value()
         bitis = self.bitis_spin.value()
         
@@ -188,64 +308,61 @@ class CokluYilOdemeFormWidget(QWidget):
             bitis = baslangic
             self.bitis_spin.setValue(bitis)
         
-        # Tabloyu temizle
-        self.ozet_table.setRowCount(0)
+        # Mevcut widget'ları temizle
+        for widget in self.yil_widgets:
+            widget.setParent(None)
+            widget.deleteLater()
+        self.yil_widgets.clear()
         
-        toplam = 0
-        tahsil_yili = datetime.now().year
-        
+        # Yeni widget'ları oluştur
         for yil in range(baslangic, bitis + 1):
-            row = self.ozet_table.rowCount()
-            self.ozet_table.insertRow(row)
-            
-            # Yıl
-            yil_item = QTableWidgetItem(str(yil))
-            yil_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.ozet_table.setItem(row, 0, yil_item)
-            
-            # Tutar
-            tutar_item = QTableWidgetItem(f"{self.yillik_aidat:,.2f} ₺")
-            tutar_item.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-            self.ozet_table.setItem(row, 1, tutar_item)
-            
-            # Durum
-            if yil == tahsil_yili:
-                durum = "Normal"
-                durum_color = QColor("#4CAF50")
-            elif yil < tahsil_yili:
-                durum = "Geriye Dönük"
-                durum_color = QColor("#FF9800")
-            else:
-                durum = "Peşin"
-                durum_color = QColor("#2196F3")
-            
-            durum_item = QTableWidgetItem(f"✓ {durum}")
-            durum_item.setForeground(durum_color)
-            durum_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.ozet_table.setItem(row, 2, durum_item)
-            
-            toplam += self.yillik_aidat
+            widget = YilOdemeWidget(yil, self.yillik_aidat)
+            widget.checkbox.stateChanged.connect(self.hesapla_toplam)
+            self.yillar_layout.addWidget(widget)
+            self.yil_widgets.append(widget)
         
-        self.toplam_label.setText(f"Toplam: {toplam:,.2f} ₺")
+        self.hesapla_toplam()
+    
+    def tumunu_sec(self):
+        """Tüm yılları seç"""
+        for widget in self.yil_widgets:
+            widget.checkbox.setChecked(True)
+    
+    def tumunu_kaldir(self):
+        """Tüm yıl seçimlerini kaldır"""
+        for widget in self.yil_widgets:
+            widget.checkbox.setChecked(False)
+    
+    def hesapla_toplam(self):
+        """Toplam tutarı hesapla"""
+        secili_sayisi = sum(1 for w in self.yil_widgets if w.is_selected())
+        toplam = secili_sayisi * self.yillik_aidat
         
-        # Yıl sayısını güncelle
-        yil_sayisi = bitis - baslangic + 1
-        self.uyari_text.setText(
-            f"Bu ödeme {datetime.now().year} yılı kasasına girecektir ama "
-            f"{baslangic}-{bitis} yılları ({yil_sayisi} yıl) için aidat "
-            f"ödenmiş sayılacaktır."
-        )
+        self.toplam_label.setText(f"Toplam: {toplam:,.2f} ₺ ({secili_sayisi} yıl seçili)")
+        
+        # Uyarı metnini güncelle
+        if secili_sayisi > 0:
+            secili_yillar = [str(w.yil) for w in self.yil_widgets if w.is_selected()]
+            yillar_str = ", ".join(secili_yillar)
+            self.uyari_text.setText(
+                f"Bu ödeme {datetime.now().year} yılı kasasına girecektir ama "
+                f"{yillar_str} yılları için aidat ödenmiş sayılacaktır."
+            )
+        else:
+            self.uyari_text.setText("Lütfen en az bir yıl seçiniz.")
     
     def get_data(self):
         """Form verilerini al"""
+        secili_yillar = [w.get_data() for w in self.yil_widgets if w.is_selected()]
+        
         return {
-            'baslangic': self.baslangic_spin.value(),
-            'bitis': self.bitis_spin.value(),
+            'secili_yillar': secili_yillar,
             'kasa_id': self.kasa_combo.currentData(),
             'tarih': self.tarih_edit.date().toString("yyyy-MM-dd"),
             'yillik_aidat': self.yillik_aidat,
             'uye_id': self.uye_id,
-            'uye_adi': self.uye_adi
+            'uye_adi': self.uye_adi,
+            'toplam_tutar': len(secili_yillar) * self.yillik_aidat
         }
     
     def validate(self):
@@ -256,6 +373,11 @@ class CokluYilOdemeFormWidget(QWidget):
         
         if self.kasa_combo.currentIndex() < 0:
             MessageBox("Hata", "Lütfen kasa seçiniz!", self).exec()
+            return False
+        
+        secili_sayisi = sum(1 for w in self.yil_widgets if w.is_selected())
+        if secili_sayisi == 0:
+            MessageBox("Hata", "Lütfen en az bir yıl seçiniz!", self).exec()
             return False
         
         return True

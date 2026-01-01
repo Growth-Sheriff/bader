@@ -13,6 +13,7 @@ from database import Database
 from models import KasaYoneticisi
 from datetime import datetime
 from ui_drawer import DrawerPanel
+from ui_helpers import setup_resizable_table
 
 
 class DevirThread(QThread):
@@ -134,9 +135,8 @@ class DevirOnayWidget(QWidget):
             "Kasa", "Para Birimi", "Mevcut Devir", "Net Bakiye", "Yeni Devir", "Fark"
         ])
         
-        # Sütun genişliklerini otomatik ayarla
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Kasa stretch
+        # Sütun genişliklerini responsive yap
+        setup_resizable_table(self.table, table_id="devir_ozet_tablosu", stretch_column=0)
         
         self.table.setAlternatingRowColors(True)
         self.table.setMinimumHeight(250)
@@ -267,9 +267,8 @@ class DevirWidget(QWidget):
             "Kasa", "Para Birimi", "Devir Bakiye", "Net Bakiye", "Aktarılacak"
         ])
         
-        # Sütun genişliklerini otomatik ayarla
-        self.durum_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.durum_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # Kasa stretch
+        # Sütun genişliklerini responsive yap
+        setup_resizable_table(self.durum_table, table_id="devir_durum_tablosu", stretch_column=0)
         
         self.durum_table.setAlternatingRowColors(True)
         

@@ -12,7 +12,7 @@ from database import Database
 from models import VirmanYoneticisi, KasaYoneticisi
 from ui_drawer import DrawerPanel
 from ui_form_fields import create_line_edit, create_combo_box, create_date_edit, create_double_spin_box
-from ui_helpers import export_table_to_excel
+from ui_helpers import export_table_to_excel, setup_resizable_table
 from ui_login import session
 
 
@@ -182,9 +182,8 @@ class VirmanWidget(QWidget):
             "ID", "Tarih", "Gönderen Kasa", "Alan Kasa", "Tutar", "Açıklama"
         ])
         
-        # Sütun genişliklerini otomatik ayarla
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)  # Açıklama stretch
+        # Responsive sütunlar - hareket ettirilebilir, sağ tık ile gizle/göster
+        setup_resizable_table(self.table, table_id="virmanlar_tablosu", stretch_column=5)
         
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)

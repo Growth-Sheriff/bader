@@ -13,7 +13,7 @@ from database import Database
 from models import KasaYoneticisi
 from ui_drawer import DrawerPanel
 from ui_form_fields import create_line_edit, create_combo_box, create_text_edit, create_double_spin_box
-from ui_helpers import export_table_to_excel
+from ui_helpers import export_table_to_excel, setup_resizable_table
 from ui_login import session
 
 
@@ -146,9 +146,8 @@ class KasaWidget(QWidget):
             "Toplam Gelir", "Toplam Gider", "Virman Net", "Fiziksel Bakiye", "Tahakkuk", "Serbest Bakiye"
         ])
         
-        # Sütun genişliklerini otomatik ayarla
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Kasa Adı stretch
+        # Responsive sütunlar - hareket ettirilebilir, sağ tık ile gizle/göster
+        setup_resizable_table(self.table, table_id="kasalar_tablosu", stretch_column=1)
         
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
