@@ -637,7 +637,8 @@ class GelirYoneticisi:
                    tutar: float, kasa_id: int, tahsil_eden: str = "", 
                    notlar: str = "", aidat_id: Optional[int] = None,
                    dekont_no: str = "", ait_oldugu_yil: Optional[int] = None,
-                   tahakkuk_durumu: str = 'NORMAL', coklu_odeme_grup_id: Optional[str] = None) -> int:
+                   tahakkuk_durumu: str = 'NORMAL', coklu_odeme_grup_id: Optional[str] = None,
+                   alt_kategori: str = "") -> int:
         """Yeni gelir kaydı ekle (Yıl bazlı muhasebe desteği ile)"""
         
         # Eğer ait_oldugu_yil belirtilmemişse, tarihten çıkar
@@ -650,7 +651,7 @@ class GelirYoneticisi:
                 'tutar': tutar, 'kasa_id': kasa_id, 'tahsil_eden': tahsil_eden,
                 'notlar': notlar, 'aidat_id': aidat_id, 'dekont_no': dekont_no,
                 'ait_oldugu_yil': ait_oldugu_yil, 'tahakkuk_durumu': tahakkuk_durumu,
-                'coklu_odeme_grup_id': coklu_odeme_grup_id
+                'coklu_odeme_grup_id': coklu_odeme_grup_id, 'alt_kategori': alt_kategori
             }
             data = {k: v for k, v in data.items() if v is not None and v != ''}
             result = self._api_request('POST', '/db/gelirler', data)
@@ -663,10 +664,10 @@ class GelirYoneticisi:
         self.db.cursor.execute("""
             INSERT INTO gelirler 
             (tarih, belge_no, gelir_turu, aciklama, tutar, kasa_id, tahsil_eden, notlar, aidat_id, dekont_no,
-             ait_oldugu_yil, tahakkuk_durumu, coklu_odeme_grup_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ait_oldugu_yil, tahakkuk_durumu, coklu_odeme_grup_id, alt_kategori)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (tarih, belge_no, gelir_turu, aciklama, tutar, kasa_id, tahsil_eden, notlar, aidat_id, dekont_no,
-              ait_oldugu_yil, tahakkuk_durumu, coklu_odeme_grup_id))
+              ait_oldugu_yil, tahakkuk_durumu, coklu_odeme_grup_id, alt_kategori))
         self.db.commit()
         
         gelir_id = self.db.cursor.lastrowid
@@ -945,7 +946,8 @@ class GiderYoneticisi:
         
     def gider_ekle(self, tarih: str, gider_turu: str, aciklama: str, 
                    tutar: float, kasa_id: int, odeyen: str = "", notlar: str = "",
-                   ait_oldugu_yil: Optional[int] = None, tahakkuk_durumu: str = 'NORMAL') -> int:
+                   ait_oldugu_yil: Optional[int] = None, tahakkuk_durumu: str = 'NORMAL',
+                   alt_kategori: str = "") -> int:
         """Yeni gider kaydı ekle (Yıl bazlı muhasebe desteği ile)"""
         # Eğer ait_oldugu_yil belirtilmemişse, tarihten çıkar
         if ait_oldugu_yil is None:
@@ -961,7 +963,8 @@ class GiderYoneticisi:
                 'odeyen': odeyen,
                 'notlar': notlar,
                 'ait_oldugu_yil': ait_oldugu_yil,
-                'tahakkuk_durumu': tahakkuk_durumu
+                'tahakkuk_durumu': tahakkuk_durumu,
+                'alt_kategori': alt_kategori
             }
             result = self._api_request('POST', '/db/giderler', data)
             if result and result.get('gider_id'):
@@ -972,9 +975,9 @@ class GiderYoneticisi:
         self.db.cursor.execute("""
             INSERT INTO giderler 
             (tarih, islem_no, gider_turu, aciklama, tutar, kasa_id, odeyen, notlar,
-             ait_oldugu_yil, tahakkuk_durumu)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (tarih, islem_no, gider_turu, aciklama, tutar, kasa_id, odeyen, notlar, ait_oldugu_yil, tahakkuk_durumu))
+             ait_oldugu_yil, tahakkuk_durumu, alt_kategori)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (tarih, islem_no, gider_turu, aciklama, tutar, kasa_id, odeyen, notlar, ait_oldugu_yil, tahakkuk_durumu, alt_kategori))
         self.db.commit()
         
         gider_id = self.db.cursor.lastrowid
@@ -1639,33 +1642,33 @@ class TahakkukYoneticisi:
     def __init__(self, db: Database):
         self.db = db
     
-    def tahakkuk_listesi(self, yil: int = None, durum: str = 'AKTİF') -> List[Dict]:
+    def tahakkuk_listesi(self, yil: int = None, durum: str = None) -> List[Dict]:
         """Tahakkuk listesi"""
         query = """
             SELECT 
                 t.*,
                 g.gelir_turu,
-                g.aciklama,
+                g.aciklama as gelir_aciklama,
                 k.kasa_adi,
                 u.ad_soyad as uye_adi
             FROM tahakkuklar t
-            LEFT JOIN gelirler g ON t.kaynak_id = g.gelir_id
-            LEFT JOIN kasalar k ON g.kasa_id = k.kasa_id
+            LEFT JOIN gelirler g ON t.ilgili_kayit_id = g.gelir_id AND t.tahakkuk_tipi = 'GELIR'
+            LEFT JOIN kasalar k ON t.kasa_id = k.kasa_id
             LEFT JOIN aidat_takip a ON g.aidat_id = a.aidat_id
             LEFT JOIN uyeler u ON a.uye_id = u.uye_id
-            WHERE t.tahakkuk_turu = 'GELİR'
+            WHERE t.tahakkuk_tipi = 'GELIR'
         """
         params = []
         
         if yil:
-            query += " AND t.ait_oldugu_yil = ?"
+            query += " AND t.yil = ?"
             params.append(yil)
         
         if durum:
             query += " AND t.durum = ?"
             params.append(durum)
         
-        query += " ORDER BY t.ait_oldugu_yil, t.tutar DESC"
+        query += " ORDER BY t.yil, t.tutar DESC"
         
         self.db.cursor.execute(query, params)
         return [dict(row) for row in self.db.cursor.fetchall()]
@@ -1674,14 +1677,14 @@ class TahakkukYoneticisi:
         """Yıl bazlı tahakkuk özeti"""
         self.db.cursor.execute("""
             SELECT 
-                ait_oldugu_yil as yil,
+                yil,
                 COUNT(*) as adet,
                 SUM(tutar) as tutar,
                 durum
             FROM tahakkuklar
-            WHERE tahakkuk_turu = 'GELİR'
-            GROUP BY ait_oldugu_yil, durum
-            ORDER BY ait_oldugu_yil
+            WHERE tahakkuk_tipi = 'GELIR'
+            GROUP BY yil, durum
+            ORDER BY yil
         """)
         
         return [dict(row) for row in self.db.cursor.fetchall()]

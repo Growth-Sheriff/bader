@@ -282,6 +282,10 @@ class Database:
                 notlar TEXT,
                 dekont_no TEXT,
                 aidat_id INTEGER DEFAULT NULL,
+                ait_oldugu_yil INTEGER,
+                tahakkuk_durumu TEXT DEFAULT 'NORMAL',
+                coklu_odeme_grup_id TEXT,
+                alt_kategori TEXT,
                 olusturma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 guncelleme_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (kasa_id) REFERENCES kasalar(kasa_id),
@@ -301,6 +305,9 @@ class Database:
                 kasa_id INTEGER NOT NULL,
                 odeyen TEXT,
                 notlar TEXT,
+                ait_oldugu_yil INTEGER,
+                tahakkuk_durumu TEXT DEFAULT 'NORMAL',
+                alt_kategori TEXT,
                 olusturma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 guncelleme_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (kasa_id) REFERENCES kasalar(kasa_id)
@@ -768,6 +775,9 @@ class Database:
                 ("kasalar", "serbest_devir_bakiye", "REAL DEFAULT 0"),
                 ("kasalar", "tahakkuk_toplami", "REAL DEFAULT 0"),
                 ("kasalar", "son_devir_tarihi", "DATE"),
+                # v5 - Alt kategori desteği
+                ("gelirler", "alt_kategori", "TEXT"),
+                ("giderler", "alt_kategori", "TEXT"),
             ]
             
             for table, column, col_type in migrations:
