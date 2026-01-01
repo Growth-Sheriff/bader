@@ -682,13 +682,14 @@ class GelirYoneticisi:
         
     def gelir_guncelle(self, gelir_id: int, tarih: str, gelir_turu: str, 
                       aciklama: str, tutar: float, kasa_id: int, 
-                      tahsil_eden: str = "", notlar: str = "", dekont_no: str = ""):
+                      tahsil_eden: str = "", notlar: str = "", dekont_no: str = "",
+                      alt_kategori: str = ""):
         """Gelir kaydını güncelle"""
         if self.online_mode:
             data = {
                 'tarih': tarih, 'gelir_turu': gelir_turu, 'aciklama': aciklama,
                 'tutar': tutar, 'kasa_id': kasa_id, 'tahsil_eden': tahsil_eden,
-                'notlar': notlar, 'dekont_no': dekont_no
+                'notlar': notlar, 'dekont_no': dekont_no, 'alt_kategori': alt_kategori
             }
             result = self._api_request('PUT', f'/db/gelirler/{gelir_id}', data)
             if result and result.get('success'):
@@ -698,10 +699,10 @@ class GelirYoneticisi:
         self.db.cursor.execute("""
             UPDATE gelirler
             SET tarih = ?, gelir_turu = ?, aciklama = ?, tutar = ?, 
-                kasa_id = ?, tahsil_eden = ?, notlar = ?, dekont_no = ?,
+                kasa_id = ?, tahsil_eden = ?, notlar = ?, dekont_no = ?, alt_kategori = ?,
                 guncelleme_tarihi = CURRENT_TIMESTAMP
             WHERE gelir_id = ?
-        """, (tarih, gelir_turu, aciklama, tutar, kasa_id, tahsil_eden, notlar, dekont_no, gelir_id))
+        """, (tarih, gelir_turu, aciklama, tutar, kasa_id, tahsil_eden, notlar, dekont_no, alt_kategori, gelir_id))
         self.db.commit()
         self.db.log_islem("Sistem", "GÜNCELLE", "gelirler", gelir_id, f"Gelir güncellendi")
         
@@ -987,7 +988,7 @@ class GiderYoneticisi:
         
     def gider_guncelle(self, gider_id: int, tarih: str, gider_turu: str, 
                       aciklama: str, tutar: float, kasa_id: int, 
-                      odeyen: str = "", notlar: str = ""):
+                      odeyen: str = "", notlar: str = "", alt_kategori: str = ""):
         """Gider kaydını güncelle"""
         if self.online_mode:
             data = {
@@ -997,7 +998,8 @@ class GiderYoneticisi:
                 'tutar': tutar,
                 'kasa_id': kasa_id,
                 'odeyen': odeyen,
-                'notlar': notlar
+                'notlar': notlar,
+                'alt_kategori': alt_kategori
             }
             result = self._api_request('PUT', f'/db/giderler/{gider_id}', data)
             if result and result.get('success'):
@@ -1007,10 +1009,10 @@ class GiderYoneticisi:
         self.db.cursor.execute("""
             UPDATE giderler
             SET tarih = ?, gider_turu = ?, aciklama = ?, tutar = ?, 
-                kasa_id = ?, odeyen = ?, notlar = ?,
+                kasa_id = ?, odeyen = ?, notlar = ?, alt_kategori = ?,
                 guncelleme_tarihi = CURRENT_TIMESTAMP
             WHERE gider_id = ?
-        """, (tarih, gider_turu, aciklama, tutar, kasa_id, odeyen, notlar, gider_id))
+        """, (tarih, gider_turu, aciklama, tutar, kasa_id, odeyen, notlar, alt_kategori, gider_id))
         self.db.commit()
         self.db.log_islem("Sistem", "GÜNCELLE", "giderler", gider_id, f"Gider güncellendi")
         

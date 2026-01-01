@@ -224,9 +224,9 @@ class GiderWidget(QWidget):
         
         # Tablo
         self.table = QTableWidget()
-        self.table.setColumnCount(9)
+        self.table.setColumnCount(10)
         self.table.setHorizontalHeaderLabels([
-            "ID", "Tarih", "İşlem No", "Gider Türü", "Açıklama", 
+            "ID", "Tarih", "İşlem No", "Gider Türü", "Alt Kategori", "Açıklama", 
             "Tutar", "Kasa", "Ödeyen", "Notlar"
         ])
         
@@ -284,15 +284,16 @@ class GiderWidget(QWidget):
             self.table.setItem(row, 1, QTableWidgetItem(gider['tarih']))
             self.table.setItem(row, 2, QTableWidgetItem(gider['islem_no']))
             self.table.setItem(row, 3, QTableWidgetItem(gider['gider_turu']))
-            self.table.setItem(row, 4, QTableWidgetItem(gider['aciklama']))
+            self.table.setItem(row, 4, QTableWidgetItem(gider.get('alt_kategori', '') or '-'))
+            self.table.setItem(row, 5, QTableWidgetItem(gider['aciklama']))
             
             tutar_item = QTableWidgetItem(f"{gider['tutar']:.2f} ₺")
             tutar_item.setForeground(Qt.GlobalColor.darkRed)
-            self.table.setItem(row, 5, tutar_item)
+            self.table.setItem(row, 6, tutar_item)
             
-            self.table.setItem(row, 6, QTableWidgetItem(gider['kasa_adi']))
-            self.table.setItem(row, 7, QTableWidgetItem(gider.get('odeyen', '-')))
-            self.table.setItem(row, 8, QTableWidgetItem(gider.get('notlar', '-')))
+            self.table.setItem(row, 7, QTableWidgetItem(gider['kasa_adi']))
+            self.table.setItem(row, 8, QTableWidgetItem(gider.get('odeyen', '-')))
+            self.table.setItem(row, 9, QTableWidgetItem(gider.get('notlar', '-')))
             
             toplam += gider['tutar']
         

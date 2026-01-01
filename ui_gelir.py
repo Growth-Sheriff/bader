@@ -252,9 +252,9 @@ class GelirWidget(QWidget):
         
         # Tablo
         self.table = QTableWidget()
-        self.table.setColumnCount(9)
+        self.table.setColumnCount(10)
         self.table.setHorizontalHeaderLabels([
-            "ID", "Tarih", "Ait Yıl", "Gelir Türü", "Açıklama", "Tutar", "Kasa", "Dekont No", "Belge No"
+            "ID", "Tarih", "Ait Yıl", "Gelir Türü", "Alt Kategori", "Açıklama", "Tutar", "Kasa", "Dekont No", "Belge No"
         ])
         
         # Responsive sütunlar - hareket ettirilebilir, sağ tık ile gizle/göster
@@ -304,11 +304,12 @@ class GelirWidget(QWidget):
             self.table.setItem(row, 2, ait_yil_item)
             
             self.table.setItem(row, 3, QTableWidgetItem(gelir['gelir_turu']))
-            self.table.setItem(row, 4, QTableWidgetItem(gelir['aciklama']))
-            self.table.setItem(row, 5, QTableWidgetItem(f"{gelir['tutar']:.2f} ₺"))
-            self.table.setItem(row, 6, QTableWidgetItem(gelir['kasa_adi']))
-            self.table.setItem(row, 7, QTableWidgetItem(gelir.get('dekont_no', '') or '-'))
-            self.table.setItem(row, 8, QTableWidgetItem(gelir.get('belge_no', '')))
+            self.table.setItem(row, 4, QTableWidgetItem(gelir.get('alt_kategori', '') or '-'))
+            self.table.setItem(row, 5, QTableWidgetItem(gelir['aciklama']))
+            self.table.setItem(row, 6, QTableWidgetItem(f"{gelir['tutar']:.2f} ₺"))
+            self.table.setItem(row, 7, QTableWidgetItem(gelir['kasa_adi']))
+            self.table.setItem(row, 8, QTableWidgetItem(gelir.get('dekont_no', '') or '-'))
+            self.table.setItem(row, 9, QTableWidgetItem(gelir.get('belge_no', '')))
     
     def filtreleri_temizle(self):
         """Filtreleri temizle"""
