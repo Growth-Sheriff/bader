@@ -1790,26 +1790,24 @@ class TahakkukYoneticisi:
                 t.*,
                 g.gelir_turu,
                 g.aciklama as gelir_aciklama,
-                k.kasa_adi,
                 u.ad_soyad as uye_adi
             FROM tahakkuklar t
-            LEFT JOIN gelirler g ON t.ilgili_kayit_id = g.gelir_id AND t.tahakkuk_tipi = 'GELIR'
-            LEFT JOIN kasalar k ON t.kasa_id = k.kasa_id
+            LEFT JOIN gelirler g ON t.kaynak_id = g.gelir_id AND t.kaynak_tablo = 'gelirler'
             LEFT JOIN aidat_takip a ON g.aidat_id = a.aidat_id
             LEFT JOIN uyeler u ON a.uye_id = u.uye_id
-            WHERE t.tahakkuk_tipi = 'GELIR'
+            WHERE t.tahakkuk_turu = 'GELIR'
         """
         params = []
         
         if yil:
-            query += " AND t.yil = ?"
+            query += " AND t.ait_oldugu_yil = ?"
             params.append(yil)
         
         if durum:
             query += " AND t.durum = ?"
             params.append(durum)
         
-        query += " ORDER BY t.yil, t.tutar DESC"
+        query += " ORDER BY t.ait_oldugu_yil, t.tutar DESC"
         
         self.db.cursor.execute(query, params)
         return [dict(row) for row in self.db.cursor.fetchall()]
@@ -1818,14 +1816,14 @@ class TahakkukYoneticisi:
         """Yıl bazlı tahakkuk özeti"""
         self.db.cursor.execute("""
             SELECT 
-                yil,
+                ait_oldugu_yil as yil,
                 COUNT(*) as adet,
                 SUM(tutar) as tutar,
                 durum
             FROM tahakkuklar
-            WHERE tahakkuk_tipi = 'GELIR'
-            GROUP BY yil, durum
-            ORDER BY yil
+            WHERE tahakkuk_turu = 'GELIR'
+            GROUP BY ait_oldugu_yil, durum
+            ORDER BY ait_oldugu_yil
         """)
         
         return [dict(row) for row in self.db.cursor.fetchall()]

@@ -23,6 +23,9 @@ matplotlib>=3.8.0
 # HTTP İstekleri (Sunucu bağlantısı için)
 requests>=2.31.0
 
+# Modern Analytics Dashboard (Flutter/Material UI)
+flet>=0.80.0
+
 # Veritabanı (Python ile birlikte gelir, ekstra kurulum gerekmez)
 # sqlite3 (built-in)
 

@@ -404,6 +404,25 @@ class DashboardWidget(QWidget):
         
         header_layout.addStretch()
         
+        # Modern Analytics butonu
+        self.analytics_btn = PushButton("🚀 Modern Analytics")
+        self.analytics_btn.setFixedHeight(32)
+        self.analytics_btn.clicked.connect(self.open_flet_dashboard)
+        self.analytics_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #7367f0;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 0 16px;
+                font-weight: 600;
+            }
+            QPushButton:hover {
+                background-color: #5e50e6;
+            }
+        """)
+        header_layout.addWidget(self.analytics_btn)
+        
         self.yenile_btn = PushButton("🔄 Yenile")
         self.yenile_btn.setFixedHeight(32)
         self.yenile_btn.clicked.connect(self.load_dashboard)
@@ -452,6 +471,25 @@ class DashboardWidget(QWidget):
         main_layout.addStretch()
         
         self.setLayout(main_layout)
+    
+    def open_flet_dashboard(self):
+        """Flet ile modern analytics dashboard aç"""
+        import subprocess
+        import sys
+        import os
+        
+        script_path = os.path.join(os.path.dirname(__file__), 'flet_dashboard.py')
+        if os.path.exists(script_path):
+            subprocess.Popen([sys.executable, script_path])
+        else:
+            from qfluentwidgets import InfoBar, InfoBarPosition
+            InfoBar.warning(
+                title='Uyarı',
+                content='Modern Analytics modülü bulunamadı.',
+                parent=self,
+                position=InfoBarPosition.TOP,
+                duration=3000
+            )
         
     def load_dashboard(self):
         """Dashboard verilerini yükle ve göster"""
