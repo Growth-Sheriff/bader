@@ -5,6 +5,8 @@ Desktop ve Web Entegrasyonu için Tam API
 
 from fastapi import FastAPI, HTTPException, Depends, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
 from typing import Optional, List, Any, Dict
@@ -17,6 +19,7 @@ import uuid
 import secrets
 import bcrypt
 from jose import JWTError, jwt
+import os
 
 
 # ==================== CONFIGURATION ====================
@@ -285,6 +288,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Static Files (Web App ve Admin Panel)
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+# ==================== WEB PAGES ====================
+
+@app.get("/", response_class=HTMLResponse)
+def serve_index():
+    """Ana sayfa - Web App"""
+    index_path = os.path.join(STATIC_DIR, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path, media_type="text/html")
+    return HTMLResponse("<h1>BADER API v5.0.0</h1><p>Web App için /static/index.html dosyası bulunamadı.</p>")
+
+@app.get("/admin", response_class=HTMLResponse)
+def serve_admin():
+    """Super Admin Panel"""
+    admin_path = os.path.join(STATIC_DIR, "admin.html")
+    if os.path.exists(admin_path):
+        return FileResponse(admin_path, media_type="text/html")
+    return HTMLResponse("<h1>Admin Panel</h1><p>/static/admin.html dosyası bulunamadı.</p>")
 
 
 # ==================== HEALTH & AUTH ====================

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BADER Super Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #7c3aed;
+            --primary-dark: #6d28d9;
+            --dark: #0f172a;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        
+        .admin-header {
+            background: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .admin-brand {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .admin-brand i {
+            color: #a78bfa;
+        }
+        
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .stat-label {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        
+        .stat-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .stat-icon.purple { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
+        .stat-icon.blue { background: rgba(96, 165, 250, 0.2); color: #60a5fa; }
+        .stat-icon.green { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
+        .stat-icon.orange { background: rgba(251, 146, 60, 0.2); color: #fb923c; }
+        
+        .card {
+            background: #1e293b;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+        }
+        
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            font-weight: 600;
+            padding: 16px 24px;
+        }
+        
+        .table {
+            color: #e2e8f0;
+            margin: 0;
+        }
+        
+        .table th {
+            background: rgba(0,0,0,0.2);
+            color: #94a3b8;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .table td {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            vertical-align: middle;
+        }
+        
+        .badge-active { background: rgba(74, 222, 128, 0.2); color: #4ade80; padding: 6px 12px; border-radius: 20px; }
+        .badge-inactive { background: rgba(248, 113, 113, 0.2); color: #f87171; padding: 6px 12px; border-radius: 20px; }
+        .badge-plan { background: rgba(167, 139, 250, 0.2); color: #a78bfa; padding: 6px 12px; border-radius: 20px; }
+        
+        .btn-admin {
+            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+            border: none;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 8px;
+        }
+        
+        .btn-admin:hover {
+            background: linear-gradient(135deg, #6d28d9 0%, #9333ea 100%);
+            color: white;
+        }
+        
+        .btn-outline-light:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        }
+        
+        .login-card {
+            background: #1e293b;
+            padding: 40px;
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            width: 100%;
+            max-width: 420px;
+        }
+        
+        .form-control {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.1);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+        }
+        
+        .form-control:focus {
+            background: rgba(0,0,0,0.4);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.2);
+        }
+        
+        .form-control::placeholder {
+            color: #64748b;
+        }
+        
+        .form-label {
+            color: #94a3b8;
+        }
+        
+        .modal-content {
+            background: #1e293b;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .modal-header {
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .modal-footer {
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .btn-close-white {
+            filter: invert(1);
+        }
+        
+        #app { display: none; }
+        #login-page { display: flex; }
+        
+        .copy-btn {
+            cursor: pointer;
+            opacity: 0.7;
+        }
+        .copy-btn:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="login-page" class="login-page">
+        <div class="login-card">
+            <div class="text-center mb-4">
+                <i class="bi bi-shield-lock-fill" style="font-size: 48px; color: #a78bfa;"></i>
+                <h2 class="mt-3 mb-1 text-white">BADER Admin</h2>
+                <p class="text-muted">Super Admin Paneli</p>
+            </div>
+            
+            <form id="loginForm">
+                <div class="mb-4">
+                    <label class="form-label">Admin Secret Key</label>
+                    <input type="password" class="form-control" id="adminKey" placeholder="••••••••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-admin w-100">
+                    <i class="bi bi-shield-check me-2"></i>Giriş Yap
+                </button>
+            </form>
+            
+            <div class="text-center mt-4">
+                <small class="text-muted">BADER Super Admin v5.0.0</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="admin-brand">
+                <i class="bi bi-shield-lock-fill me-2"></i>BADER Admin
+            </div>
+            <div>
+                <button class="btn btn-outline-light me-2" onclick="loadStats()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <button class="btn btn-outline-light" onclick="logout()">
+                    <i class="bi bi-box-arrow-right me-2"></i>Çıkış
+                </button>
+            </div>
+        </header>
+
+        <div class="admin-container">
+            <!-- Stats -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="stat-value" id="totalCustomers">0</div>
+                                <div class="stat-label">Toplam Müşteri</div>
+                            </div>
+                            <div class="stat-icon purple"><i class="bi bi-building"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="stat-value" id="activeCustomers">0</div>
+                                <div class="stat-label">Aktif Müşteri</div>
+                            </div>
+                            <div class="stat-icon green"><i class="bi bi-check-circle"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="stat-value" id="totalMembers">0</div>
+                                <div class="stat-label">Toplam Üye</div>
+                            </div>
+                            <div class="stat-icon blue"><i class="bi bi-people"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="stat-value" id="totalTransactions">0</div>
+                                <div class="stat-label">Toplam İşlem</div>
+                            </div>
+                            <div class="stat-icon orange"><i class="bi bi-receipt"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customers List -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-building me-2"></i>Müşteriler</span>
+                    <button class="btn btn-admin" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+                        <i class="bi bi-plus-lg me-2"></i>Yeni Müşteri
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Müşteri ID</th>
+                                    <th>İsim</th>
+                                    <th>Email</th>
+                                    <th>Plan</th>
+                                    <th>Limit</th>
+                                    <th>Durum</th>
+                                    <th>Son Görülme</th>
+                                    <th>İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customersList">
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">Veri yükleniyor...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Customer Modal -->
+    <div class="modal fade" id="addCustomerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-white"><i class="bi bi-building me-2"></i>Yeni Müşteri</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addCustomerForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Dernek Adı</label>
+                            <input type="text" class="form-control" id="customerName" placeholder="Örnek Derneği" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="customerEmail" placeholder="info@dernek.org">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Telefon</label>
+                            <input type="tel" class="form-control" id="customerPhone" placeholder="0532 123 4567">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Plan</label>
+                                <select class="form-control" id="customerPlan">
+                                    <option value="basic">Basic</option>
+                                    <option value="professional">Professional</option>
+                                    <option value="enterprise">Enterprise</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Üye Limiti</label>
+                                <input type="number" class="form-control" id="customerMaxMembers" value="500">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Bitiş Tarihi</label>
+                            <input type="date" class="form-control" id="customerExpires">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-admin">Oluştur</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Customer Modal -->
+    <div class="modal fade" id="viewCustomerModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-white"><i class="bi bi-info-circle me-2"></i>Müşteri Detayı</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="customerDetails">
+                    <!-- Filled by JS -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Kapat</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API_URL = window.location.origin;
+        let adminKey = sessionStorage.getItem('bader_admin_key');
+
+        // API Request
+        async function apiRequest(endpoint, method = 'GET', data = null) {
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-Admin-Key': adminKey
+            };
+            
+            const options = { method, headers };
+            if (data) options.body = JSON.stringify(data);
+            
+            const response = await fetch(`${API_URL}${endpoint}`, options);
+            if (response.status === 403) {
+                logout();
+                throw new Error('Yetkisiz erişim');
+            }
+            if (!response.ok) throw new Error(`API Error: ${response.status}`);
+            return response.json();
+        }
+
+        // Format date
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            return new Date(dateStr).toLocaleDateString('tr-TR');
+        }
+
+        // Copy to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            alert('Kopyalandı: ' + text);
+        }
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            adminKey = document.getElementById('adminKey').value;
+            
+            try {
+                await apiRequest('/admin/stats');
+                sessionStorage.setItem('bader_admin_key', adminKey);
+                showApp();
+            } catch (error) {
+                alert('Geçersiz admin key');
+            }
+        });
+
+        // Show App
+        function showApp() {
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            loadStats();
+            loadCustomers();
+        }
+
+        // Logout
+        function logout() {
+            sessionStorage.removeItem('bader_admin_key');
+            adminKey = null;
+            document.getElementById('login-page').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+        }
+
+        // Load Stats
+        async function loadStats() {
+            try {
+                const data = await apiRequest('/admin/stats');
+                document.getElementById('totalCustomers').textContent = data.stats?.total_customers || 0;
+                document.getElementById('activeCustomers').textContent = data.stats?.active_customers || 0;
+                document.getElementById('totalMembers').textContent = data.stats?.total_members || 0;
+                document.getElementById('totalTransactions').textContent = 
+                    (data.stats?.total_incomes || 0) + (data.stats?.total_expenses || 0);
+            } catch (error) {
+                console.error('Stats error:', error);
+            }
+        }
+
+        // Load Customers
+        async function loadCustomers() {
+            try {
+                const data = await apiRequest('/admin/customers');
+                const tbody = document.getElementById('customersList');
+                
+                if (data.customers && data.customers.length > 0) {
+                    tbody.innerHTML = data.customers.map(c => `
+                        <tr>
+                            <td>
+                                <code class="text-info">${c.customer_id}</code>
+                                <i class="bi bi-clipboard copy-btn ms-1" onclick="copyToClipboard('${c.customer_id}')"></i>
+                            </td>
+                            <td>${c.name}</td>
+                            <td>${c.email || '-'}</td>
+                            <td><span class="badge-plan">${c.plan.toUpperCase()}</span></td>
+                            <td>${c.max_members} üye</td>
+                            <td><span class="${c.is_active ? 'badge-active' : 'badge-inactive'}">${c.is_active ? 'Aktif' : 'Pasif'}</span></td>
+                            <td>${c.last_seen_at ? formatDate(c.last_seen_at) : 'Hiç'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-light" onclick="viewCustomer('${c.customer_id}')">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning" onclick="resetApiKey('${c.customer_id}')">
+                                    <i class="bi bi-key"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteCustomer('${c.customer_id}')">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Henüz müşteri yok</td></tr>';
+                }
+            } catch (error) {
+                console.error('Customers error:', error);
+            }
+        }
+
+        // View Customer
+        async function viewCustomer(customerId) {
+            try {
+                const data = await apiRequest('/admin/customers');
+                const customer = data.customers.find(c => c.customer_id === customerId);
+                
+                if (customer) {
+                    document.getElementById('customerDetails').innerHTML = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong class="text-muted">Müşteri ID:</strong><br>
+                                    <code class="text-info fs-5">${customer.customer_id}</code>
+                                    <i class="bi bi-clipboard copy-btn ms-1" onclick="copyToClipboard('${customer.customer_id}')"></i>
+                                </p>
+                                <p><strong class="text-muted">API Key:</strong><br>
+                                    <code class="text-warning">${customer.api_key}</code>
+                                    <i class="bi bi-clipboard copy-btn ms-1" onclick="copyToClipboard('${customer.api_key}')"></i>
+                                </p>
+                                <p><strong class="text-muted">İsim:</strong> ${customer.name}</p>
+                                <p><strong class="text-muted">Email:</strong> ${customer.email || '-'}</p>
+                                <p><strong class="text-muted">Telefon:</strong> ${customer.phone || '-'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong class="text-muted">Plan:</strong> <span class="badge-plan">${customer.plan.toUpperCase()}</span></p>
+                                <p><strong class="text-muted">Kullanıcı Limiti:</strong> ${customer.max_users}</p>
+                                <p><strong class="text-muted">Üye Limiti:</strong> ${customer.max_members}</p>
+                                <p><strong class="text-muted">Bitiş Tarihi:</strong> ${customer.expires_at ? formatDate(customer.expires_at) : 'Süresiz'}</p>
+                                <p><strong class="text-muted">Özellikler:</strong> ${(customer.features || []).join(', ')}</p>
+                                <p><strong class="text-muted">Oluşturulma:</strong> ${formatDate(customer.created_at)}</p>
+                            </div>
+                        </div>
+                    `;
+                    new bootstrap.Modal(document.getElementById('viewCustomerModal')).show();
+                }
+            } catch (error) {
+                console.error('View customer error:', error);
+            }
+        }
+
+        // Reset API Key
+        async function resetApiKey(customerId) {
+            if (!confirm(`${customerId} için API key sıfırlansın mı?`)) return;
+            
+            try {
+                const result = await apiRequest(`/admin/customers/${customerId}/reset-api-key`, 'POST');
+                alert('Yeni API Key: ' + result.new_api_key);
+                loadCustomers();
+            } catch (error) {
+                alert('Hata: ' + error.message);
+            }
+        }
+
+        // Delete Customer
+        async function deleteCustomer(customerId) {
+            if (!confirm(`${customerId} müşterisi ve tüm verileri silinecek. Emin misiniz?`)) return;
+            
+            try {
+                await apiRequest(`/admin/customers/${customerId}`, 'DELETE');
+                loadCustomers();
+                loadStats();
+            } catch (error) {
+                alert('Hata: ' + error.message);
+            }
+        }
+
+        // Add Customer
+        document.getElementById('addCustomerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                name: document.getElementById('customerName').value,
+                email: document.getElementById('customerEmail').value,
+                phone: document.getElementById('customerPhone').value,
+                plan: document.getElementById('customerPlan').value,
+                max_members: parseInt(document.getElementById('customerMaxMembers').value),
+                expires_at: document.getElementById('customerExpires').value || null
+            };
+            
+            try {
+                const result = await apiRequest('/admin/customers', 'POST', data);
+                alert(`Müşteri oluşturuldu!\n\nCustomer ID: ${result.customer.customer_id}\nAPI Key: ${result.customer.api_key}`);
+                bootstrap.Modal.getInstance(document.getElementById('addCustomerModal')).hide();
+                e.target.reset();
+                loadCustomers();
+                loadStats();
+            } catch (error) {
+                alert('Hata: ' + error.message);
+            }
+        });
+
+        // Check auth on load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (adminKey) {
+                showApp();
+            }
+        });
+    </script>
+</body>
+</html>
