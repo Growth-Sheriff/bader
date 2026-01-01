@@ -122,17 +122,24 @@
                 <li><a href="#" class="active" data-page="dashboard"><i class="bi bi-speedometer2"></i>Dashboard</a></li>
                 <div class="menu-section">Üye İşlemleri</div>
                 <li><a href="#" data-page="members"><i class="bi bi-people"></i>Üyeler</a></li>
+                <li><a href="#" data-page="leftmembers"><i class="bi bi-person-dash"></i>Ayrılan Üyeler</a></li>
                 <li><a href="#" data-page="dues"><i class="bi bi-credit-card"></i>Aidatlar</a></li>
                 <div class="menu-section">Mali İşlemler</div>
                 <li><a href="#" data-page="incomes"><i class="bi bi-arrow-down-circle"></i>Gelirler</a></li>
                 <li><a href="#" data-page="expenses"><i class="bi bi-arrow-up-circle"></i>Giderler</a></li>
                 <li><a href="#" data-page="cash"><i class="bi bi-safe"></i>Kasa</a></li>
-                <li><a href="#" data-page="virman"><i class="bi bi-arrow-left-right"></i>Virman</a></li>
+                <li><a href="#" data-page="transfers"><i class="bi bi-arrow-left-right"></i>Virman</a></li>
+                <li><a href="#" data-page="budgets"><i class="bi bi-pie-chart"></i>Bütçe</a></li>
+                <li><a href="#" data-page="carryover"><i class="bi bi-skip-forward"></i>Devir</a></li>
                 <div class="menu-section">Raporlar</div>
                 <li><a href="#" data-page="reports"><i class="bi bi-file-earmark-bar-graph"></i>Raporlar</a></li>
+                <li><a href="#" data-page="assessment"><i class="bi bi-clipboard-data"></i>Tahakkuk</a></li>
                 <li><a href="#" data-page="documents"><i class="bi bi-folder"></i>Belgeler</a></li>
-                <div class="menu-section">Yönetim</div>
+                <div class="menu-section">Etkinlikler</div>
                 <li><a href="#" data-page="meetings"><i class="bi bi-calendar-event"></i>Toplantılar</a></li>
+                <li><a href="#" data-page="events"><i class="bi bi-calendar-star"></i>Etkinlikler</a></li>
+                <div class="menu-section">Yönetim</div>
+                <li><a href="#" data-page="users"><i class="bi bi-person-gear"></i>Kullanıcılar</a></li>
                 <li><a href="#" data-page="settings"><i class="bi bi-gear"></i>Ayarlar</a></li>
             </ul>
             <div class="sidebar-footer">
@@ -143,8 +150,15 @@
 
         <div class="main" id="mainContent">
             <div class="topbar">
-                <div><h5 class="mb-0" id="pageTitle">Dashboard</h5><small class="text-muted" id="orgName"></small></div>
+                <div>
+                    <h5 class="mb-0" id="pageTitle">Dashboard</h5>
+                    <small class="text-muted" id="orgName"></small>
+                </div>
                 <div class="d-flex align-items-center gap-3">
+                    <div class="input-group input-group-sm" style="width:250px;">
+                        <input type="text" class="form-control" id="globalSearch" placeholder="Ara..." onkeyup="if(event.key==='Enter')globalSearchFn()">
+                        <button class="btn btn-outline-secondary" onclick="globalSearchFn()"><i class="bi bi-search"></i></button>
+                    </div>
                     <span class="license-badge" id="modeBadge"></span>
                     <span class="small" id="userInfo"></span>
                     <i class="bi bi-person-circle fs-4 text-secondary"></i>
@@ -154,14 +168,20 @@
             <!-- Pages -->
             <div id="page-dashboard" class="page"></div>
             <div id="page-members" class="page" style="display:none;"></div>
+            <div id="page-leftmembers" class="page" style="display:none;"></div>
             <div id="page-incomes" class="page" style="display:none;"></div>
             <div id="page-expenses" class="page" style="display:none;"></div>
             <div id="page-dues" class="page" style="display:none;"></div>
             <div id="page-cash" class="page" style="display:none;"></div>
-            <div id="page-virman" class="page" style="display:none;"></div>
+            <div id="page-transfers" class="page" style="display:none;"></div>
+            <div id="page-budgets" class="page" style="display:none;"></div>
+            <div id="page-carryover" class="page" style="display:none;"></div>
             <div id="page-reports" class="page" style="display:none;"></div>
+            <div id="page-assessment" class="page" style="display:none;"></div>
             <div id="page-documents" class="page" style="display:none;"></div>
             <div id="page-meetings" class="page" style="display:none;"></div>
+            <div id="page-events" class="page" style="display:none;"></div>
+            <div id="page-users" class="page" style="display:none;"></div>
             <div id="page-settings" class="page" style="display:none;"></div>
         </div>
 
@@ -357,7 +377,7 @@ function getDrawerForm(type) {
             </div>
             <div class="mt-3"><label class="form-label">Konum</label><input type="text" class="form-control" name="location" placeholder="Toplantı yeri..."></div>
             <div class="mt-3"><label class="form-label">Toplantı Türü</label>
-                <select class="form-select" name="type">
+                <select class="form-select" name="meeting_type">
                     <option value="Olağan">Olağan Genel Kurul</option>
                     <option value="Olağanüstü">Olağanüstü Genel Kurul</option>
                     <option value="Yönetim">Yönetim Kurulu</option>
@@ -367,6 +387,110 @@ function getDrawerForm(type) {
             </div>
             <div class="mt-3"><label class="form-label">Gündem</label><textarea class="form-control" name="agenda" rows="4" placeholder="Toplantı gündem maddeleri..."></textarea></div>
             <div class="mt-3"><label class="form-label">Notlar</label><textarea class="form-control" name="notes" rows="2"></textarea></div>
+        `,
+        event: `
+            <div class="mb-3"><label class="form-label">Etkinlik Adı *</label><input type="text" class="form-control" name="title" required></div>
+            <div class="row g-3">
+                <div class="col-6"><label class="form-label">Başlangıç Tarihi *</label><input type="date" class="form-control" name="start_date" required></div>
+                <div class="col-6"><label class="form-label">Bitiş Tarihi</label><input type="date" class="form-control" name="end_date"></div>
+            </div>
+            <div class="row g-3 mt-1">
+                <div class="col-6"><label class="form-label">Başlangıç Saati</label><input type="time" class="form-control" name="start_time"></div>
+                <div class="col-6"><label class="form-label">Bitiş Saati</label><input type="time" class="form-control" name="end_time"></div>
+            </div>
+            <div class="mt-3"><label class="form-label">Etkinlik Türü</label>
+                <select class="form-select" name="event_type">
+                    <option value="Düğün">Düğün</option>
+                    <option value="Kına">Kına Gecesi</option>
+                    <option value="Nişan">Nişan</option>
+                    <option value="Sünnet">Sünnet Düğünü</option>
+                    <option value="Piknik">Piknik</option>
+                    <option value="Gezi">Gezi</option>
+                    <option value="Seminer">Seminer</option>
+                    <option value="Konser">Konser</option>
+                    <option value="Yemek">Yemek</option>
+                    <option value="Diğer">Diğer</option>
+                </select>
+            </div>
+            <div class="mt-3"><label class="form-label">Konum</label><input type="text" class="form-control" name="location" placeholder="Etkinlik yeri..."></div>
+            <div class="mt-3"><label class="form-label">Organizatör</label><input type="text" class="form-control" name="organizer"></div>
+            <div class="row g-3 mt-1">
+                <div class="col-6"><label class="form-label">Tahmini Bütçe</label><div class="input-group"><input type="number" class="form-control" name="budget" step="0.01"><span class="input-group-text">₺</span></div></div>
+                <div class="col-6"><label class="form-label">Max Katılımcı</label><input type="number" class="form-control" name="max_participants"></div>
+            </div>
+            <div class="mt-3"><label class="form-label">Açıklama</label><textarea class="form-control" name="description" rows="3"></textarea></div>
+        `,
+        budget: `
+            <div class="row g-3">
+                <div class="col-6"><label class="form-label">Yıl *</label><input type="number" class="form-control" name="year" value="${new Date().getFullYear()}" required></div>
+                <div class="col-6"><label class="form-label">Tür *</label>
+                    <select class="form-select" name="budget_type" required>
+                        <option value="income">Gelir</option>
+                        <option value="expense">Gider</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-3"><label class="form-label">Kategori *</label><input type="text" class="form-control" name="category" required placeholder="Örn: Kira, Fatura, Personel..."></div>
+            <div class="mt-3"><label class="form-label">Planlanan Tutar *</label><div class="input-group"><input type="number" class="form-control" name="planned_amount" step="0.01" required><span class="input-group-text">₺</span></div></div>
+            <div class="mt-3"><label class="form-label">Gerçekleşen Tutar</label><div class="input-group"><input type="number" class="form-control" name="actual_amount" step="0.01" value="0"><span class="input-group-text">₺</span></div></div>
+            <div class="mt-3"><label class="form-label">Açıklama</label><textarea class="form-control" name="description" rows="2"></textarea></div>
+        `,
+        document: `
+            <div class="mb-3"><label class="form-label">Belge Başlığı *</label><input type="text" class="form-control" name="title" required></div>
+            <div class="mb-3"><label class="form-label">Kategori</label>
+                <select class="form-select" name="category">
+                    <option value="Resmi">Resmi Yazışma</option>
+                    <option value="Mali">Mali Belge</option>
+                    <option value="Üyelik">Üyelik Belgesi</option>
+                    <option value="Toplantı">Toplantı Tutanağı</option>
+                    <option value="Sözleşme">Sözleşme</option>
+                    <option value="Diğer">Diğer</option>
+                </select>
+            </div>
+            <div class="mb-3"><label class="form-label">Dosya Adı</label><input type="text" class="form-control" name="file_name" placeholder="belge.pdf"></div>
+            <div class="mb-3"><label class="form-label">Açıklama</label><textarea class="form-control" name="description" rows="3"></textarea></div>
+        `,
+        user: `
+            <div class="mb-3"><label class="form-label">Kullanıcı Adı *</label><input type="text" class="form-control" name="username" required></div>
+            <div class="mb-3"><label class="form-label">Ad Soyad *</label><input type="text" class="form-control" name="full_name" required></div>
+            <div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" name="email"></div>
+            <div class="mb-3"><label class="form-label">Şifre *</label><input type="password" class="form-control" name="password" required></div>
+            <div class="mb-3"><label class="form-label">Rol</label>
+                <select class="form-select" name="role">
+                    <option value="member">Üye</option>
+                    <option value="staff">Personel</option>
+                    <option value="accountant">Muhasebeci</option>
+                    <option value="manager">Yönetici</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+        `,
+        family: `
+            <div class="mb-3"><label class="form-label">Ad Soyad *</label><input type="text" class="form-control" name="full_name" required></div>
+            <div class="mb-3"><label class="form-label">Yakınlık</label>
+                <select class="form-select" name="relationship">
+                    <option value="Eş">Eş</option>
+                    <option value="Çocuk">Çocuk</option>
+                    <option value="Anne">Anne</option>
+                    <option value="Baba">Baba</option>
+                    <option value="Kardeş">Kardeş</option>
+                    <option value="Diğer">Diğer</option>
+                </select>
+            </div>
+            <div class="row g-3">
+                <div class="col-6"><label class="form-label">Doğum Tarihi</label><input type="date" class="form-control" name="birth_date"></div>
+                <div class="col-6"><label class="form-label">Cinsiyet</label><select class="form-select" name="gender"><option value="">Seçiniz</option><option value="Erkek">Erkek</option><option value="Kadın">Kadın</option></select></div>
+            </div>
+            <div class="mt-3"><label class="form-label">Telefon</label><input type="tel" class="form-control" name="phone"></div>
+            <div class="mt-3"><label class="form-label">Email</label><input type="email" class="form-control" name="email"></div>
+            <div class="mt-3"><label class="form-label">Notlar</label><textarea class="form-control" name="notes" rows="2"></textarea></div>
+        `,
+        transfer: `
+            <div class="mb-3"><label class="form-label">Tarih *</label><input type="date" class="form-control" name="date" required></div>
+            <div class="mb-3"><label class="form-label">Kaynak Kasa *</label><select class="form-select" name="from_account" id="fromCashSelect" required></select></div>
+            <div class="mb-3"><label class="form-label">Hedef Kasa *</label><select class="form-select" name="to_account" id="toCashSelect" required></select></div>
+            <div class="mb-3"><label class="form-label">Tutar *</label><div class="input-group"><input type="number" class="form-control" name="amount" step="0.01" min="0.01" required><span class="input-group-text">₺</span></div></div>
+            <div class="mb-3"><label class="form-label">Açıklama</label><input type="text" class="form-control" name="description" placeholder="Virman açıklaması..."></div>
         `
     };
     return forms[type] || '<p class="text-muted">Form bulunamadı</p>';
@@ -410,8 +534,13 @@ async function saveDrawerForm() {
             case 'income': endpoint = '/web/incomes'; break;
             case 'expense': endpoint = '/web/expenses'; break;
             case 'cash': endpoint = '/web/cash-accounts'; break;
-            case 'virman': endpoint = '/web/virman'; break;
+            case 'transfer': endpoint = '/web/transfers'; break;
             case 'meeting': endpoint = '/web/meetings'; break;
+            case 'event': endpoint = '/web/events'; break;
+            case 'budget': endpoint = '/web/budgets'; break;
+            case 'document': endpoint = '/web/documents'; break;
+            case 'user': endpoint = '/web/users'; break;
+            case 'family': endpoint = '/web/members/' + currentEditId + '/family'; currentEditId = null; break;
         }
         
         if (currentEditId) {
@@ -500,14 +629,20 @@ async function loadPage(page) {
     switch(page) {
         case 'dashboard': await renderDashboard(container); break;
         case 'members': await renderMembers(container); break;
+        case 'leftmembers': await renderLeftMembers(container); break;
         case 'incomes': await renderIncomes(container); break;
         case 'expenses': await renderExpenses(container); break;
         case 'dues': await renderDues(container); break;
         case 'cash': await renderCash(container); break;
-        case 'virman': await renderVirman(container); break;
+        case 'transfers': await renderTransfers(container); break;
+        case 'budgets': await renderBudgets(container); break;
+        case 'carryover': await renderCarryover(container); break;
         case 'reports': await renderReports(container); break;
+        case 'assessment': await renderAssessment(container); break;
         case 'documents': await renderDocuments(container); break;
         case 'meetings': await renderMeetings(container); break;
+        case 'events': await renderEvents(container); break;
+        case 'users': await renderUsers(container); break;
         case 'settings': await renderSettings(container); break;
     }
 }
@@ -567,35 +702,316 @@ async function renderCash(c) {
     c.innerHTML = `<div class="card"><div class="card-header"><span><i class="bi bi-safe me-2"></i>Kasa Hesapları</span><button class="btn btn-primary btn-sm" onclick="openDrawer('cash','Yeni Kasa Ekle')"><i class="bi bi-plus me-1"></i>Yeni Kasa</button></div><div class="card-body p-0"><table class="table table-hover"><thead><tr><th>Kasa Adı</th><th>Tip</th><th>Bakiye</th><th width="100">İşlem</th></tr></thead><tbody id="cashTable"></tbody></table></div></div>`;
     try {
         const d = await api('/web/cash-accounts');
-        $('cashTable').innerHTML = d.accounts?.length ? d.accounts.map(a=>`<tr><td><i class="bi bi-${a.type==='Banka'?'bank':'cash-coin'} me-2"></i>${a.name}</td><td>${a.type}</td><td class="fw-bold ${a.balance>=0?'text-success':'text-danger'}">${money(a.balance)}</td><td><button class="btn btn-outline-primary btn-sm action-btn"><i class="bi bi-eye"></i></button></td></tr>`).join('') : '<tr><td colspan="4" class="text-center py-4 text-muted">Henüz kasa yok</td></tr>';
+        $('cashTable').innerHTML = d.accounts?.length ? d.accounts.map(a=>`<tr><td><i class="bi bi-${a.type==='Banka'?'bank':'cash-coin'} me-2"></i>${a.name}</td><td>${a.type}</td><td class="fw-bold ${a.balance>=0?'text-success':'text-danger'}">${money(a.balance)}</td><td><button class="btn btn-outline-danger btn-sm action-btn" onclick="deleteRecord('cash-accounts','${a.id}')"><i class="bi bi-trash"></i></button></td></tr>`).join('') : '<tr><td colspan="4" class="text-center py-4 text-muted">Henüz kasa yok</td></tr>';
     } catch(e) { console.error(e); }
 }
 
-async function renderVirman(c) {
-    c.innerHTML = `<div class="card"><div class="card-header"><span><i class="bi bi-arrow-left-right me-2"></i>Virman İşlemleri</span><button class="btn btn-primary btn-sm" onclick="openDrawer('virman','Yeni Virman')"><i class="bi bi-plus me-1"></i>Virman Yap</button></div><div class="card-body p-0"><table class="table"><thead><tr><th>Tarih</th><th>Kaynak</th><th>Hedef</th><th>Tutar</th><th>Açıklama</th></tr></thead><tbody id="virmanTable"><tr><td colspan="5" class="text-center py-4 text-muted">Virman kaydı yok</td></tr></tbody></table></div></div>`;
+async function renderTransfers(c) {
+    c.innerHTML = `<div class="card"><div class="card-header"><span><i class="bi bi-arrow-left-right me-2"></i>Virman İşlemleri</span><button class="btn btn-primary btn-sm" onclick="openTransferDrawer()"><i class="bi bi-plus me-1"></i>Virman Yap</button></div><div class="card-body p-0"><table class="table"><thead><tr><th>Tarih</th><th>Kaynak</th><th>Hedef</th><th>Tutar</th><th>Açıklama</th><th width="80">İşlem</th></tr></thead><tbody id="transfersTable"></tbody></table></div></div>`;
+    try {
+        const d = await api('/web/transfers');
+        $('transfersTable').innerHTML = d.transfers?.length ? d.transfers.map(t=>`<tr><td>${t.date}</td><td>${t.from_account}</td><td>${t.to_account}</td><td class="fw-bold">${money(t.amount)}</td><td>${t.description||'-'}</td><td><button class="btn btn-outline-danger btn-sm action-btn" onclick="deleteRecord('transfers','${t.id}')"><i class="bi bi-trash"></i></button></td></tr>`).join('') : '<tr><td colspan="6" class="text-center py-4 text-muted">Virman kaydı yok</td></tr>';
+    } catch(e) { console.error(e); }
 }
 
-async function renderReports(c) {
+async function openTransferDrawer() {
+    openDrawer('transfer', 'Yeni Virman');
+    setTimeout(async () => {
+        try {
+            const d = await api('/web/cash-accounts');
+            const opts = d.accounts?.map(a => `<option value="${a.name}">${a.name} (${money(a.balance)})</option>`).join('') || '';
+            $('fromCashSelect').innerHTML = opts;
+            $('toCashSelect').innerHTML = opts;
+        } catch(e) {}
+    }, 100);
+}
+
+async function renderBudgets(c) {
+    const year = new Date().getFullYear();
+    c.innerHTML = `<div class="card"><div class="card-header"><span><i class="bi bi-pie-chart me-2"></i>Bütçe Planlama - ${year}</span><button class="btn btn-primary btn-sm" onclick="openDrawer('budget','Yeni Bütçe Kalemi')"><i class="bi bi-plus me-1"></i>Bütçe Ekle</button></div><div class="card-body p-0"><table class="table table-hover"><thead><tr><th>Kategori</th><th>Tür</th><th>Planlanan</th><th>Gerçekleşen</th><th>Fark</th><th width="80">İşlem</th></tr></thead><tbody id="budgetsTable"></tbody></table></div></div>`;
+    try {
+        const d = await api('/web/budgets?year=' + year);
+        $('budgetsTable').innerHTML = d.budgets?.length ? d.budgets.map(b=>`<tr><td>${b.category}</td><td><span class="badge ${b.budget_type==='income'?'bg-success':'bg-danger'}">${b.budget_type==='income'?'Gelir':'Gider'}</span></td><td>${money(b.planned_amount)}</td><td>${money(b.actual_amount)}</td><td class="${b.variance>=0?'text-success':'text-danger'}">${money(b.variance)}</td><td><button class="btn btn-outline-danger btn-sm action-btn" onclick="deleteRecord('budgets','${b.id}')"><i class="bi bi-trash"></i></button></td></tr>`).join('') : '<tr><td colspan="6" class="text-center py-4 text-muted">Bütçe kaydı yok</td></tr>';
+    } catch(e) { console.error(e); }
+}
+
+async function renderCarryover(c) {
     c.innerHTML = `
         <div class="row g-3">
-            <div class="col-md-4"><div class="card"><div class="card-body text-center py-5"><i class="bi bi-file-earmark-bar-graph display-3 text-primary mb-3"></i><h5>Gelir-Gider Raporu</h5><p class="text-muted small">Dönemsel mali özet</p><button class="btn btn-primary" onclick="generateReport('income-expense')"><i class="bi bi-download me-1"></i>Oluştur</button></div></div></div>
-            <div class="col-md-4"><div class="card"><div class="card-body text-center py-5"><i class="bi bi-people display-3 text-success mb-3"></i><h5>Üye Listesi Raporu</h5><p class="text-muted small">Tüm üyelerin listesi</p><button class="btn btn-success" onclick="generateReport('members')"><i class="bi bi-download me-1"></i>Oluştur</button></div></div></div>
-            <div class="col-md-4"><div class="card"><div class="card-body text-center py-5"><i class="bi bi-credit-card display-3 text-warning mb-3"></i><h5>Aidat Raporu</h5><p class="text-muted small">Aidat ödeme durumu</p><button class="btn btn-warning" onclick="generateReport('dues')"><i class="bi bi-download me-1"></i>Oluştur</button></div></div></div>
-        </div>
-        <div class="row g-3 mt-1">
-            <div class="col-md-4"><div class="card"><div class="card-body text-center py-5"><i class="bi bi-safe display-3 text-info mb-3"></i><h5>Kasa Raporu</h5><p class="text-muted small">Kasa hareketleri</p><button class="btn btn-info text-white" onclick="generateReport('cash')"><i class="bi bi-download me-1"></i>Oluştur</button></div></div></div>
-            <div class="col-md-4"><div class="card"><div class="card-body text-center py-5"><i class="bi bi-calendar-check display-3 text-secondary mb-3"></i><h5>Yıllık Özet</h5><p class="text-muted small">Yıl sonu raporu</p><button class="btn btn-secondary" onclick="generateReport('yearly')"><i class="bi bi-download me-1"></i>Oluştur</button></div></div></div>
-            <div class="col-md-4"><div class="card"><div class="card-body text-center py-5"><i class="bi bi-file-earmark-pdf display-3 text-danger mb-3"></i><h5>PDF Çıktı</h5><p class="text-muted small">Tüm raporları PDF</p><button class="btn btn-danger" onclick="generateReport('pdf')"><i class="bi bi-download me-1"></i>Oluştur</button></div></div></div>
-        </div>
-    `;
+            <div class="col-md-8">
+                <div class="card"><div class="card-header"><span><i class="bi bi-skip-forward me-2"></i>Yıl Devir İşlemleri</span></div>
+                <div class="card-body p-0"><table class="table"><thead><tr><th>Yıl</th><th>Toplam Gelir</th><th>Toplam Gider</th><th>Bakiye</th><th>Devir</th><th>Durum</th></tr></thead><tbody id="carryoverTable"></tbody></table></div></div>
+            </div>
+            <div class="col-md-4">
+                <div class="card"><div class="card-header">Yeni Devir Oluştur</div><div class="card-body">
+                    <div class="mb-3"><label class="form-label">Kaynak Yıl</label><input type="number" class="form-control" id="carryFromYear" value="${new Date().getFullYear()-1}"></div>
+                    <div class="mb-3"><label class="form-label">Hedef Yıl</label><input type="number" class="form-control" id="carryToYear" value="${new Date().getFullYear()}"></div>
+                    <button class="btn btn-primary w-100" onclick="createCarryover()"><i class="bi bi-plus me-1"></i>Devir Oluştur</button>
+                </div></div>
+            </div>
+        </div>`;
+    try {
+        const d = await api('/web/carryovers');
+        $('carryoverTable').innerHTML = d.carryovers?.length ? d.carryovers.map(c=>`<tr><td>${c.from_year} → ${c.to_year}</td><td class="text-success">${money(c.total_income)}</td><td class="text-danger">${money(c.total_expense)}</td><td>${money(c.balance)}</td><td>${money(c.carried_balance)}</td><td><span class="badge-status ${c.status==='completed'?'badge-active':'badge-pending'}">${c.status==='completed'?'Onaylandı':'Bekliyor'}</span></td></tr>`).join('') : '<tr><td colspan="6" class="text-center py-4 text-muted">Devir kaydı yok</td></tr>';
+    } catch(e) { console.error(e); }
 }
 
-async function renderDocuments(c) {
-    c.innerHTML = `<div class="card"><div class="card-header"><span><i class="bi bi-folder me-2"></i>Belgeler</span><button class="btn btn-primary btn-sm"><i class="bi bi-upload me-1"></i>Belge Yükle</button></div><div class="card-body text-center py-5"><i class="bi bi-folder-x display-1 text-muted mb-3"></i><h5>Henüz Belge Yok</h5><p class="text-muted">Belgelerinizi buraya yükleyebilirsiniz</p></div></div>`;
+async function createCarryover() {
+    try {
+        showLoading();
+        const r = await api('/web/carryovers', 'POST', {
+            from_year: parseInt($('carryFromYear').value),
+            to_year: parseInt($('carryToYear').value)
+        });
+        showToast(`Devir oluşturuldu. Bakiye: ${money(r.balance)}`);
+        loadPage('carryover');
+    } catch(e) { alert('Hata: ' + e.message); }
+    finally { hideLoading(); }
+}
+
+async function renderAssessment(c) {
+    const year = new Date().getFullYear();
+    c.innerHTML = `
+        <div class="row g-3">
+            <div class="col-md-8">
+                <div class="card"><div class="card-header"><span><i class="bi bi-clipboard-data me-2"></i>Tahakkuk Raporları</span></div>
+                <div class="card-body p-0"><table class="table"><thead><tr><th>Yıl</th><th>Tarih</th><th>Tahakkuk</th><th>Tahsilat</th><th>Kalan</th><th>Oran</th></tr></thead><tbody id="assessmentTable"></tbody></table></div></div>
+            </div>
+            <div class="col-md-4">
+                <div class="card"><div class="card-header">Yeni Rapor Oluştur</div><div class="card-body">
+                    <div class="mb-3"><label class="form-label">Yıl</label><input type="number" class="form-control" id="assessYear" value="${year}"></div>
+                    <button class="btn btn-primary w-100" onclick="generateAssessment()"><i class="bi bi-file-earmark-plus me-1"></i>Rapor Oluştur</button>
+                </div></div>
+            </div>
+        </div>`;
+    try {
+        const d = await api('/web/assessment-reports');
+        $('assessmentTable').innerHTML = d.reports?.length ? d.reports.map(r=>`<tr><td>${r.year}</td><td>${r.report_date}</td><td>${money(r.total_assessed)}</td><td class="text-success">${money(r.total_collected)}</td><td class="text-danger">${money(r.total_remaining)}</td><td><span class="badge bg-info">${r.collection_rate}%</span></td></tr>`).join('') : '<tr><td colspan="6" class="text-center py-4 text-muted">Rapor yok</td></tr>';
+    } catch(e) { console.error(e); }
+}
+
+async function generateAssessment() {
+    try {
+        showLoading();
+        const r = await api('/web/assessment-reports/generate', 'POST', { year: parseInt($('assessYear').value) });
+        showToast(`Rapor oluşturuldu. Tahsilat oranı: ${r.summary.collection_rate}%`);
+        loadPage('assessment');
+    } catch(e) { alert('Hata: ' + e.message); }
+    finally { hideLoading(); }
+}
+
+async function renderLeftMembers(c) {
+    c.innerHTML = `<div class="card"><div class="card-header"><span><i class="bi bi-person-dash me-2"></i>Ayrılan Üyeler</span></div><div class="card-body p-0"><table class="table table-hover"><thead><tr><th>Üye No</th><th>Ad Soyad</th><th>Giriş</th><th>Ayrılış</th><th>Not</th><th width="100">İşlem</th></tr></thead><tbody id="leftMembersTable"></tbody></table></div></div>`;
+    try {
+        const d = await api('/web/members/left');
+        $('leftMembersTable').innerHTML = d.members?.length ? d.members.map(m=>`<tr><td>${m.member_no||'-'}</td><td>${m.full_name}</td><td>${m.join_date||'-'}</td><td>${m.leave_date||'-'}</td><td class="small text-muted">${m.notes?.substring(0,50)||'-'}</td><td><button class="btn btn-outline-success btn-sm action-btn" onclick="reactivateMember('${m.id}')"><i class="bi bi-arrow-counterclockwise"></i></button></td></tr>`).join('') : '<tr><td colspan="6" class="text-center py-4 text-muted">Ayrılan üye yok</td></tr>';
+    } catch(e) { console.error(e); }
+}
+
+async function reactivateMember(id) {
+    if (!confirm('Bu üyeyi tekrar aktifleştirmek istiyor musunuz?')) return;
+    try {
+        await api('/web/members/' + id + '/reactivate', 'PUT');
+        showToast('Üye aktifleştirildi');
+        loadPage('leftmembers');
+    } catch(e) { alert('Hata: ' + e.message); }
+}
+
+async function renderEvents(c) {
+    c.innerHTML = `<div class="card"><div class="card-header"><span><i class="bi bi-calendar-star me-2"></i>Etkinlikler</span><button class="btn btn-primary btn-sm" onclick="openDrawer('event','Yeni Etkinlik')"><i class="bi bi-plus me-1"></i>Etkinlik Ekle</button></div><div class="card-body p-0"><table class="table table-hover"><thead><tr><th>Tarih</th><th>Etkinlik</th><th>Tür</th><th>Konum</th><th>Bütçe</th><th>Durum</th><th width="80">İşlem</th></tr></thead><tbody id="eventsTable"></tbody></table></div></div>`;
+    try {
+        const d = await api('/web/events');
+        $('eventsTable').innerHTML = d.events?.length ? d.events.map(e=>`<tr><td>${e.start_date}</td><td><strong>${e.title}</strong></td><td>${e.event_type||'-'}</td><td>${e.location||'-'}</td><td>${money(e.budget)}</td><td><span class="badge-status ${e.status==='completed'?'badge-active':e.status==='cancelled'?'badge-inactive':'badge-pending'}">${e.status==='completed'?'Tamamlandı':e.status==='cancelled'?'İptal':'Planlandı'}</span></td><td><button class="btn btn-outline-danger btn-sm action-btn" onclick="deleteRecord('events','${e.id}')"><i class="bi bi-trash"></i></button></td></tr>`).join('') : '<tr><td colspan="7" class="text-center py-4 text-muted">Etkinlik yok</td></tr>';
+    } catch(e) { console.error(e); }
 }
 
 async function renderMeetings(c) {
-    c.innerHTML = `<div class="card"><div class="card-header"><span><i class="bi bi-calendar-event me-2"></i>Toplantılar</span><button class="btn btn-primary btn-sm" onclick="openDrawer('meeting','Yeni Toplantı')"><i class="bi bi-plus me-1"></i>Toplantı Ekle</button></div><div class="card-body p-0"><table class="table"><thead><tr><th>Tarih</th><th>Başlık</th><th>Tür</th><th>Konum</th><th>Durum</th></tr></thead><tbody id="meetingsTable"><tr><td colspan="5" class="text-center py-4 text-muted">Henüz toplantı yok</td></tr></tbody></table></div></div>`;
+    c.innerHTML = `<div class="card"><div class="card-header"><span><i class="bi bi-calendar-event me-2"></i>Toplantılar</span><button class="btn btn-primary btn-sm" onclick="openDrawer('meeting','Yeni Toplantı')"><i class="bi bi-plus me-1"></i>Toplantı Ekle</button></div><div class="card-body p-0"><table class="table table-hover"><thead><tr><th>Tarih</th><th>Saat</th><th>Başlık</th><th>Tür</th><th>Konum</th><th>Durum</th><th width="80">İşlem</th></tr></thead><tbody id="meetingsTable"></tbody></table></div></div>`;
+    try {
+        const d = await api('/web/meetings');
+        $('meetingsTable').innerHTML = d.meetings?.length ? d.meetings.map(m=>`<tr><td>${m.date}</td><td>${m.time||'-'}</td><td><strong>${m.title}</strong></td><td>${m.meeting_type||'-'}</td><td>${m.location||'-'}</td><td><span class="badge-status ${m.status==='completed'?'badge-active':'badge-pending'}">${m.status==='completed'?'Tamamlandı':'Planlandı'}</span></td><td><button class="btn btn-outline-danger btn-sm action-btn" onclick="deleteRecord('meetings','${m.id}')"><i class="bi bi-trash"></i></button></td></tr>`).join('') : '<tr><td colspan="7" class="text-center py-4 text-muted">Toplantı yok</td></tr>';
+    } catch(e) { console.error(e); }
+}
+
+async function renderDocuments(c) {
+    c.innerHTML = `<div class="card"><div class="card-header"><span><i class="bi bi-folder me-2"></i>Belgeler</span><button class="btn btn-primary btn-sm" onclick="openDrawer('document','Yeni Belge')"><i class="bi bi-plus me-1"></i>Belge Ekle</button></div><div class="card-body p-0"><table class="table table-hover"><thead><tr><th>Başlık</th><th>Kategori</th><th>Dosya</th><th>Tarih</th><th width="80">İşlem</th></tr></thead><tbody id="documentsTable"></tbody></table></div></div>`;
+    try {
+        const d = await api('/web/documents');
+        $('documentsTable').innerHTML = d.documents?.length ? d.documents.map(doc=>`<tr><td><i class="bi bi-file-earmark me-2"></i>${doc.title}</td><td>${doc.category||'-'}</td><td>${doc.file_name||'-'}</td><td>${doc.created_at?.split('T')[0]||'-'}</td><td><button class="btn btn-outline-danger btn-sm action-btn" onclick="deleteRecord('documents','${doc.id}')"><i class="bi bi-trash"></i></button></td></tr>`).join('') : '<tr><td colspan="5" class="text-center py-4 text-muted">Belge yok</td></tr>';
+    } catch(e) { console.error(e); }
+}
+
+async function renderUsers(c) {
+    c.innerHTML = `<div class="card"><div class="card-header"><span><i class="bi bi-person-gear me-2"></i>Kullanıcı Yönetimi</span><button class="btn btn-primary btn-sm" onclick="openDrawer('user','Yeni Kullanıcı')"><i class="bi bi-plus me-1"></i>Kullanıcı Ekle</button></div><div class="card-body p-0"><table class="table table-hover"><thead><tr><th>Kullanıcı Adı</th><th>Ad Soyad</th><th>Email</th><th>Rol</th><th>Durum</th><th>Son Giriş</th><th width="80">İşlem</th></tr></thead><tbody id="usersTable"></tbody></table></div></div>`;
+    try {
+        const d = await api('/web/users');
+        const roleLabels = {member:'Üye',staff:'Personel',accountant:'Muhasebeci',manager:'Yönetici',admin:'Admin'};
+        $('usersTable').innerHTML = d.users?.length ? d.users.map(u=>`<tr><td>${u.username}</td><td><strong>${u.full_name}</strong></td><td>${u.email||'-'}</td><td><span class="badge bg-secondary">${roleLabels[u.role]||u.role}</span></td><td><span class="badge-status ${u.is_active?'badge-active':'badge-inactive'}">${u.is_active?'Aktif':'Pasif'}</span></td><td>${u.last_login_at?.split('T')[0]||'-'}</td><td><button class="btn btn-outline-danger btn-sm action-btn" onclick="deleteRecord('users','${u.id}')"><i class="bi bi-trash"></i></button></td></tr>`).join('') : '<tr><td colspan="7" class="text-center py-4 text-muted">Kullanıcı yok</td></tr>';
+    } catch(e) { console.error(e); }
+}
+
+async function renderReports(c) {
+    const year = new Date().getFullYear();
+    c.innerHTML = `
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+                <div class="card"><div class="card-header"><span><i class="bi bi-funnel me-2"></i>Rapor Filtresi</span></div><div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3"><label class="form-label">Başlangıç Tarihi</label><input type="date" class="form-control" id="reportStartDate" value="${year}-01-01"></div>
+                        <div class="col-md-3"><label class="form-label">Bitiş Tarihi</label><input type="date" class="form-control" id="reportEndDate" value="${year}-12-31"></div>
+                        <div class="col-md-3"><label class="form-label">Rapor Tipi</label>
+                            <select class="form-select" id="reportType">
+                                <option value="income-expense">Gelir-Gider</option>
+                                <option value="members">Üye Listesi</option>
+                                <option value="dues">Aidat Durumu</option>
+                                <option value="cash">Kasa Raporu</option>
+                                <option value="yearly">Yıllık Özet</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3"><label class="form-label">&nbsp;</label><button class="btn btn-primary w-100" onclick="generateReport($('reportType').value)"><i class="bi bi-file-earmark-bar-graph me-1"></i>Rapor Oluştur</button></div>
+                    </div>
+                </div></div>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-4"><div class="card h-100"><div class="card-body text-center py-4"><i class="bi bi-file-earmark-bar-graph display-4 text-primary mb-3"></i><h5>Gelir-Gider Raporu</h5><p class="text-muted small">Dönemsel mali özet</p><button class="btn btn-outline-primary" onclick="generateReport('income-expense')"><i class="bi bi-eye me-1"></i>Görüntüle</button></div></div></div>
+            <div class="col-md-4"><div class="card h-100"><div class="card-body text-center py-4"><i class="bi bi-people display-4 text-success mb-3"></i><h5>Üye Listesi</h5><p class="text-muted small">Tüm üyelerin listesi</p><button class="btn btn-outline-success" onclick="generateReport('members')"><i class="bi bi-eye me-1"></i>Görüntüle</button></div></div></div>
+            <div class="col-md-4"><div class="card h-100"><div class="card-body text-center py-4"><i class="bi bi-credit-card display-4 text-warning mb-3"></i><h5>Aidat Raporu</h5><p class="text-muted small">Aidat ödeme durumu</p><button class="btn btn-outline-warning" onclick="generateReport('dues')"><i class="bi bi-eye me-1"></i>Görüntüle</button></div></div></div>
+        </div>
+        <div class="row g-3 mt-1">
+            <div class="col-md-4"><div class="card h-100"><div class="card-body text-center py-4"><i class="bi bi-safe display-4 text-info mb-3"></i><h5>Kasa Raporu</h5><p class="text-muted small">Kasa hareketleri</p><button class="btn btn-outline-info" onclick="generateReport('cash')"><i class="bi bi-eye me-1"></i>Görüntüle</button></div></div></div>
+            <div class="col-md-4"><div class="card h-100"><div class="card-body text-center py-4"><i class="bi bi-calendar-check display-4 text-secondary mb-3"></i><h5>Yıllık Özet</h5><p class="text-muted small">Yıl sonu raporu</p><button class="btn btn-outline-secondary" onclick="generateReport('yearly')"><i class="bi bi-eye me-1"></i>Görüntüle</button></div></div></div>
+            <div class="col-md-4"><div class="card h-100"><div class="card-body text-center py-4"><i class="bi bi-file-earmark-arrow-down display-4 text-danger mb-3"></i><h5>Dışa Aktar</h5><p class="text-muted small">CSV/Excel olarak indir</p><button class="btn btn-outline-danger" onclick="exportData()"><i class="bi bi-download me-1"></i>İndir</button></div></div></div>
+        </div>
+        <div class="row g-3 mt-3"><div class="col-12"><div class="card" id="reportResults" style="display:none;"><div class="card-header"><span id="reportResultTitle">Rapor Sonuçları</span></div><div class="card-body" id="reportResultBody"></div></div></div></div>
+    `;
+}
+
+async function generateReport(type) {
+    showLoading();
+    const startDate = $('reportStartDate')?.value || '';
+    const endDate = $('reportEndDate')?.value || '';
+    
+    try {
+        const d = await api(`/web/reports/${type}?start_date=${startDate}&end_date=${endDate}`);
+        
+        $('reportResults').style.display = 'block';
+        $('reportResultTitle').textContent = {
+            'income-expense': 'Gelir-Gider Raporu',
+            'members': 'Üye Listesi Raporu',
+            'dues': 'Aidat Durumu Raporu',
+            'cash': 'Kasa Raporu',
+            'yearly': 'Yıllık Özet Raporu'
+        }[type] || 'Rapor Sonuçları';
+        
+        let html = '';
+        
+        if (type === 'income-expense') {
+            html = `
+                <div class="row mb-4">
+                    <div class="col-md-4"><div class="p-3 bg-success bg-opacity-10 rounded"><h6 class="text-success">Toplam Gelir</h6><h3 class="text-success mb-0">${money(d.summary?.total_income)}</h3></div></div>
+                    <div class="col-md-4"><div class="p-3 bg-danger bg-opacity-10 rounded"><h6 class="text-danger">Toplam Gider</h6><h3 class="text-danger mb-0">${money(d.summary?.total_expense)}</h3></div></div>
+                    <div class="col-md-4"><div class="p-3 bg-primary bg-opacity-10 rounded"><h6 class="text-primary">Net</h6><h3 class="text-primary mb-0">${money(d.summary?.net)}</h3></div></div>
+                </div>
+                <div class="row"><div class="col-md-6"><h6>Gelirler (${d.incomes?.length||0})</h6><table class="table table-sm"><thead><tr><th>Tarih</th><th>Kategori</th><th>Tutar</th></tr></thead><tbody>${d.incomes?.map(i=>`<tr><td>${i.date}</td><td>${i.category}</td><td class="text-success">${money(i.amount)}</td></tr>`).join('')||'<tr><td colspan="3" class="text-muted">Kayıt yok</td></tr>'}</tbody></table></div>
+                <div class="col-md-6"><h6>Giderler (${d.expenses?.length||0})</h6><table class="table table-sm"><thead><tr><th>Tarih</th><th>Kategori</th><th>Tutar</th></tr></thead><tbody>${d.expenses?.map(e=>`<tr><td>${e.date}</td><td>${e.category}</td><td class="text-danger">${money(e.amount)}</td></tr>`).join('')||'<tr><td colspan="3" class="text-muted">Kayıt yok</td></tr>'}</tbody></table></div></div>
+            `;
+        } else if (type === 'members') {
+            html = `
+                <div class="mb-3"><strong>Toplam ${d.total||0} üye</strong></div>
+                <table class="table table-sm"><thead><tr><th>Üye No</th><th>Ad Soyad</th><th>Telefon</th><th>Üyelik Türü</th><th>Giriş Tarihi</th><th>Durum</th></tr></thead>
+                <tbody>${d.members?.map(m=>`<tr><td>${m.member_no||'-'}</td><td>${m.full_name}</td><td>${m.phone||'-'}</td><td>${m.membership_type||'-'}</td><td>${m.join_date||'-'}</td><td><span class="badge-status ${m.status==='active'?'badge-active':'badge-inactive'}">${m.status==='active'?'Aktif':'Pasif'}</span></td></tr>`).join('')||'<tr><td colspan="6" class="text-muted">Üye yok</td></tr>'}</tbody></table>
+            `;
+        } else if (type === 'dues') {
+            html = `
+                <div class="row mb-4">
+                    <div class="col-md-3"><div class="p-3 bg-primary bg-opacity-10 rounded"><h6>Toplam Tahakkuk</h6><h4 class="mb-0">${money(d.summary?.total_assessed)}</h4></div></div>
+                    <div class="col-md-3"><div class="p-3 bg-success bg-opacity-10 rounded"><h6>Toplam Tahsilat</h6><h4 class="text-success mb-0">${money(d.summary?.total_collected)}</h4></div></div>
+                    <div class="col-md-3"><div class="p-3 bg-danger bg-opacity-10 rounded"><h6>Toplam Kalan</h6><h4 class="text-danger mb-0">${money(d.summary?.total_remaining)}</h4></div></div>
+                    <div class="col-md-3"><div class="p-3 bg-info bg-opacity-10 rounded"><h6>Tahsilat Oranı</h6><h4 class="text-info mb-0">${d.summary?.collection_rate||0}%</h4></div></div>
+                </div>
+                <table class="table table-sm"><thead><tr><th>Üye</th><th>Yıl</th><th>Tahakkuk</th><th>Ödenen</th><th>Kalan</th></tr></thead>
+                <tbody>${d.dues?.map(du=>`<tr><td>${du.member_name}</td><td>${du.year}</td><td>${money(du.expected)}</td><td class="text-success">${money(du.paid)}</td><td class="text-danger">${money(du.remaining)}</td></tr>`).join('')||'<tr><td colspan="5" class="text-muted">Kayıt yok</td></tr>'}</tbody></table>
+            `;
+        } else if (type === 'cash') {
+            html = `
+                <div class="mb-3"><strong>Toplam Bakiye: ${money(d.summary?.total_balance)}</strong></div>
+                <table class="table table-sm"><thead><tr><th>Kasa</th><th>Tip</th><th>Bakiye</th></tr></thead>
+                <tbody>${d.accounts?.map(a=>`<tr><td>${a.name}</td><td>${a.type}</td><td class="fw-bold ${a.balance>=0?'text-success':'text-danger'}">${money(a.balance)}</td></tr>`).join('')||'<tr><td colspan="3" class="text-muted">Kasa yok</td></tr>'}</tbody></table>
+            `;
+        } else if (type === 'yearly') {
+            html = `
+                <div class="row mb-4">
+                    <div class="col-md-2"><div class="p-3 bg-light rounded"><h6>Üye Sayısı</h6><h4 class="mb-0">${d.summary?.total_members||0}</h4></div></div>
+                    <div class="col-md-2"><div class="p-3 bg-success bg-opacity-10 rounded"><h6>Toplam Gelir</h6><h4 class="text-success mb-0">${money(d.summary?.total_income)}</h4></div></div>
+                    <div class="col-md-2"><div class="p-3 bg-danger bg-opacity-10 rounded"><h6>Toplam Gider</h6><h4 class="text-danger mb-0">${money(d.summary?.total_expense)}</h4></div></div>
+                    <div class="col-md-2"><div class="p-3 bg-primary bg-opacity-10 rounded"><h6>Net Bakiye</h6><h4 class="text-primary mb-0">${money(d.summary?.net_balance)}</h4></div></div>
+                    <div class="col-md-2"><div class="p-3 bg-warning bg-opacity-10 rounded"><h6>Aidat Tahsilatı</h6><h4 class="mb-0">${d.summary?.dues_collection_rate||0}%</h4></div></div>
+                    <div class="col-md-2"><div class="p-3 bg-info bg-opacity-10 rounded"><h6>Etkinlik</h6><h4 class="mb-0">${d.summary?.total_events||0}</h4></div></div>
+                </div>
+                <p class="text-muted">Detaylı yıllık özet raporu.</p>
+            `;
+        }
+        
+        $('reportResultBody').innerHTML = html;
+        showToast('Rapor oluşturuldu');
+    } catch(e) {
+        $('reportResults').style.display = 'none';
+        alert('Hata: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+async function exportData() {
+    const type = $('reportType')?.value || 'members';
+    showLoading();
+    try {
+        const d = await api(`/web/export/${type}`);
+        
+        // Create CSV
+        let csv = '';
+        if (d.data?.length > 0) {
+            csv = Object.keys(d.data[0]).join(',') + '\n';
+            csv += d.data.map(row => Object.values(row).map(v => `"${v||''}"`).join(',')).join('\n');
+        }
+        
+        // Download
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${type}_export_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        
+        showToast(`${d.data?.length||0} kayıt dışa aktarıldı`);
+    } catch(e) { alert('Hata: ' + e.message); }
+    finally { hideLoading(); }
+}
+
+async function globalSearchFn() {
+    const q = $('globalSearch').value.trim();
+    if (!q) return;
+    
+    showLoading();
+    try {
+        const d = await api('/web/search?q=' + encodeURIComponent(q));
+        
+        // Show results in a modal-like overlay
+        const resultsHtml = `
+            <div class="row g-3">
+                ${d.members?.length ? `<div class="col-md-6"><div class="card"><div class="card-header">Üyeler (${d.members.length})</div><div class="card-body p-0"><table class="table table-sm mb-0"><tbody>${d.members.slice(0,5).map(m=>`<tr><td>${m.full_name}</td><td>${m.phone||'-'}</td></tr>`).join('')}</tbody></table></div></div></div>` : ''}
+                ${d.incomes?.length ? `<div class="col-md-6"><div class="card"><div class="card-header">Gelirler (${d.incomes.length})</div><div class="card-body p-0"><table class="table table-sm mb-0"><tbody>${d.incomes.slice(0,5).map(i=>`<tr><td>${i.date}</td><td>${i.category}</td><td class="text-success">${money(i.amount)}</td></tr>`).join('')}</tbody></table></div></div></div>` : ''}
+                ${d.expenses?.length ? `<div class="col-md-6"><div class="card"><div class="card-header">Giderler (${d.expenses.length})</div><div class="card-body p-0"><table class="table table-sm mb-0"><tbody>${d.expenses.slice(0,5).map(e=>`<tr><td>${e.date}</td><td>${e.category}</td><td class="text-danger">${money(e.amount)}</td></tr>`).join('')}</tbody></table></div></div></div>` : ''}
+            </div>
+            ${!d.members?.length && !d.incomes?.length && !d.expenses?.length ? '<p class="text-center text-muted py-4">Sonuç bulunamadı</p>' : ''}
+        `;
+        
+        openDrawer('search', `Arama: "${q}"`);
+        $('drawerBody').innerHTML = resultsHtml;
+        $('drawerSaveBtn').style.display = 'none';
+        
+    } catch(e) { alert('Arama hatası: ' + e.message); }
+    finally { hideLoading(); }
 }
 
 async function renderSettings(c) {
@@ -640,11 +1056,6 @@ async function payDue(memberId, amount) {
             showToast('Ödeme kaydedildi');
         } catch(e) { alert('Hata: ' + e.message); }
     }
-}
-
-function generateReport(type) {
-    showToast(type.toUpperCase() + ' raporu hazırlanıyor...');
-    // TODO: Implement actual report generation
 }
 
 function saveSettings() { showToast('Ayarlar kaydedildi'); }

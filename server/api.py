@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings
 from typing import Optional, List, Any, Dict
 from datetime import datetime, date, timedelta
-from sqlalchemy import create_engine, Column, String, Integer, Boolean, DateTime, Date, Text, Numeric, ForeignKey
+from sqlalchemy import create_engine, Column, String, Integer, Boolean, DateTime, Date, Text, Numeric, ForeignKey, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.dialects.postgresql import UUID, JSONB
@@ -166,6 +166,152 @@ class Due(Base):
     paid_amount = Column(Numeric(10,2), default=0)
     paid_date = Column(Date)
     status = Column(String(20), default='pending')
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Budget(Base):
+    """Bütçe modeli"""
+    __tablename__ = "budgets"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id = Column(String(50), ForeignKey("customers.customer_id", ondelete="CASCADE"), nullable=False)
+    year = Column(Integer, nullable=False)
+    category = Column(String(100), nullable=False)
+    budget_type = Column(String(20), default='expense')  # income/expense
+    planned_amount = Column(Numeric(12,2), nullable=False)
+    actual_amount = Column(Numeric(12,2), default=0)
+    description = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Document(Base):
+    """Belge modeli"""
+    __tablename__ = "documents"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id = Column(String(50), ForeignKey("customers.customer_id", ondelete="CASCADE"), nullable=False)
+    title = Column(String(255), nullable=False)
+    file_name = Column(String(255))
+    file_path = Column(Text)
+    file_size = Column(Integer)
+    mime_type = Column(String(100))
+    category = Column(String(100))
+    description = Column(Text)
+    tags = Column(JSONB, default=[])
+    uploaded_by = Column(String(100))
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Meeting(Base):
+    """Toplantı modeli"""
+    __tablename__ = "meetings"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id = Column(String(50), ForeignKey("customers.customer_id", ondelete="CASCADE"), nullable=False)
+    title = Column(String(255), nullable=False)
+    meeting_type = Column(String(50), default='Yönetim')
+    date = Column(Date, nullable=False)
+    time = Column(String(10))
+    location = Column(String(255))
+    agenda = Column(Text)
+    minutes = Column(Text)
+    decisions = Column(Text)
+    attendees = Column(JSONB, default=[])
+    status = Column(String(20), default='planned')  # planned, completed, cancelled
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Event(Base):
+    """Etkinlik modeli"""
+    __tablename__ = "events"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id = Column(String(50), ForeignKey("customers.customer_id", ondelete="CASCADE"), nullable=False)
+    title = Column(String(255), nullable=False)
+    event_type = Column(String(50))
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date)
+    start_time = Column(String(10))
+    end_time = Column(String(10))
+    location = Column(String(255))
+    description = Column(Text)
+    organizer = Column(String(255))
+    budget = Column(Numeric(12,2), default=0)
+    actual_cost = Column(Numeric(12,2), default=0)
+    max_participants = Column(Integer)
+    participants = Column(JSONB, default=[])
+    status = Column(String(20), default='planned')  # planned, ongoing, completed, cancelled
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Transfer(Base):
+    """Virman modeli"""
+    __tablename__ = "transfers"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id = Column(String(50), ForeignKey("customers.customer_id", ondelete="CASCADE"), nullable=False)
+    from_account = Column(String(100), nullable=False)
+    to_account = Column(String(100), nullable=False)
+    amount = Column(Numeric(12,2), nullable=False)
+    date = Column(Date, nullable=False)
+    description = Column(Text)
+    created_by = Column(String(100))
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class FamilyMember(Base):
+    """Aile üyesi modeli"""
+    __tablename__ = "family_members"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id = Column(String(50), ForeignKey("customers.customer_id", ondelete="CASCADE"), nullable=False)
+    member_id = Column(UUID(as_uuid=True), ForeignKey("members.id", ondelete="CASCADE"), nullable=False)
+    full_name = Column(String(255), nullable=False)
+    relationship = Column(String(50))  # Eş, Çocuk, Anne, Baba, vb.
+    birth_date = Column(Date)
+    gender = Column(String(20))
+    phone = Column(String(50))
+    email = Column(String(255))
+    notes = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class YearlyCarryover(Base):
+    """Yıl devir modeli"""
+    __tablename__ = "yearly_carryovers"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id = Column(String(50), ForeignKey("customers.customer_id", ondelete="CASCADE"), nullable=False)
+    from_year = Column(Integer, nullable=False)
+    to_year = Column(Integer, nullable=False)
+    total_income = Column(Numeric(12,2), default=0)
+    total_expense = Column(Numeric(12,2), default=0)
+    balance = Column(Numeric(12,2), default=0)
+    carried_balance = Column(Numeric(12,2), default=0)
+    status = Column(String(20), default='pending')  # pending, completed
+    approved_by = Column(String(100))
+    approved_at = Column(DateTime)
+    notes = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AssessmentReport(Base):
+    """Tahakkuk raporu modeli"""
+    __tablename__ = "assessment_reports"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id = Column(String(50), ForeignKey("customers.customer_id", ondelete="CASCADE"), nullable=False)
+    year = Column(Integer, nullable=False)
+    report_date = Column(Date, nullable=False)
+    total_assessed = Column(Numeric(12,2), default=0)
+    total_collected = Column(Numeric(12,2), default=0)
+    total_remaining = Column(Numeric(12,2), default=0)
+    member_count = Column(Integer, default=0)
+    collection_rate = Column(Numeric(5,2), default=0)
+    details = Column(JSONB, default={})
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -1636,3 +1782,1516 @@ def api_docs():
             {"method": "GET", "path": "/admin/stats", "description": "Admin - İstatistikler"}
         ]
     }
+
+
+# ==================== BUDGET (BÜTÇE) API ====================
+
+@app.get("/web/budgets")
+def web_get_budgets(
+    year: Optional[int] = None,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Bütçe listesi"""
+    query = db.query(Budget).filter(Budget.customer_id == token["customer_id"])
+    if year:
+        query = query.filter(Budget.year == year)
+    budgets = query.order_by(Budget.year.desc(), Budget.category).all()
+    
+    return {
+        "budgets": [
+            {
+                "id": str(b.id),
+                "year": b.year,
+                "category": b.category,
+                "budget_type": b.budget_type,
+                "planned_amount": float(b.planned_amount or 0),
+                "actual_amount": float(b.actual_amount or 0),
+                "variance": float((b.planned_amount or 0) - (b.actual_amount or 0)),
+                "description": b.description,
+                "created_at": b.created_at.isoformat() if b.created_at else None
+            }
+            for b in budgets
+        ],
+        "total": len(budgets)
+    }
+
+@app.post("/web/budgets")
+def web_create_budget(
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Bütçe kalemi ekle"""
+    budget = Budget(
+        customer_id=token["customer_id"],
+        year=data.get("year", datetime.now().year),
+        category=data["category"],
+        budget_type=data.get("budget_type", "expense"),
+        planned_amount=data["planned_amount"],
+        actual_amount=data.get("actual_amount", 0),
+        description=data.get("description")
+    )
+    db.add(budget)
+    db.commit()
+    db.refresh(budget)
+    
+    return {"success": True, "budget_id": str(budget.id)}
+
+@app.put("/web/budgets/{budget_id}")
+def web_update_budget(
+    budget_id: str,
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Bütçe güncelle"""
+    budget = db.query(Budget).filter(
+        Budget.id == budget_id,
+        Budget.customer_id == token["customer_id"]
+    ).first()
+    if not budget:
+        raise HTTPException(status_code=404, detail="Bütçe bulunamadı")
+    
+    for key in ["year", "category", "budget_type", "planned_amount", "actual_amount", "description"]:
+        if key in data:
+            setattr(budget, key, data[key])
+    
+    db.commit()
+    return {"success": True}
+
+@app.delete("/web/budgets/{budget_id}")
+def web_delete_budget(
+    budget_id: str,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Bütçe sil"""
+    budget = db.query(Budget).filter(
+        Budget.id == budget_id,
+        Budget.customer_id == token["customer_id"]
+    ).first()
+    if not budget:
+        raise HTTPException(status_code=404, detail="Bütçe bulunamadı")
+    
+    db.delete(budget)
+    db.commit()
+    return {"success": True}
+
+
+# ==================== DOCUMENTS (BELGELER) API ====================
+
+@app.get("/web/documents")
+def web_get_documents(
+    category: Optional[str] = None,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Belge listesi"""
+    query = db.query(Document).filter(Document.customer_id == token["customer_id"])
+    if category:
+        query = query.filter(Document.category == category)
+    documents = query.order_by(Document.created_at.desc()).all()
+    
+    return {
+        "documents": [
+            {
+                "id": str(d.id),
+                "title": d.title,
+                "file_name": d.file_name,
+                "file_size": d.file_size,
+                "mime_type": d.mime_type,
+                "category": d.category,
+                "description": d.description,
+                "tags": d.tags or [],
+                "uploaded_by": d.uploaded_by,
+                "created_at": d.created_at.isoformat() if d.created_at else None
+            }
+            for d in documents
+        ],
+        "total": len(documents)
+    }
+
+@app.post("/web/documents")
+def web_create_document(
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Belge ekle"""
+    document = Document(
+        customer_id=token["customer_id"],
+        title=data["title"],
+        file_name=data.get("file_name"),
+        file_path=data.get("file_path"),
+        file_size=data.get("file_size"),
+        mime_type=data.get("mime_type"),
+        category=data.get("category"),
+        description=data.get("description"),
+        tags=data.get("tags", []),
+        uploaded_by=data.get("uploaded_by")
+    )
+    db.add(document)
+    db.commit()
+    db.refresh(document)
+    
+    return {"success": True, "document_id": str(document.id)}
+
+@app.delete("/web/documents/{document_id}")
+def web_delete_document(
+    document_id: str,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Belge sil"""
+    document = db.query(Document).filter(
+        Document.id == document_id,
+        Document.customer_id == token["customer_id"]
+    ).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Belge bulunamadı")
+    
+    db.delete(document)
+    db.commit()
+    return {"success": True}
+
+
+# ==================== MEETINGS (TOPLANTILAR) API ====================
+
+@app.get("/web/meetings")
+def web_get_meetings(
+    status: Optional[str] = None,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Toplantı listesi"""
+    query = db.query(Meeting).filter(Meeting.customer_id == token["customer_id"])
+    if status:
+        query = query.filter(Meeting.status == status)
+    meetings = query.order_by(Meeting.date.desc()).all()
+    
+    return {
+        "meetings": [
+            {
+                "id": str(m.id),
+                "title": m.title,
+                "meeting_type": m.meeting_type,
+                "date": m.date.isoformat() if m.date else None,
+                "time": m.time,
+                "location": m.location,
+                "agenda": m.agenda,
+                "minutes": m.minutes,
+                "decisions": m.decisions,
+                "attendees": m.attendees or [],
+                "status": m.status,
+                "created_at": m.created_at.isoformat() if m.created_at else None
+            }
+            for m in meetings
+        ],
+        "total": len(meetings)
+    }
+
+@app.post("/web/meetings")
+def web_create_meeting(
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Toplantı ekle"""
+    meeting = Meeting(
+        customer_id=token["customer_id"],
+        title=data["title"],
+        meeting_type=data.get("meeting_type", "Yönetim"),
+        date=data["date"],
+        time=data.get("time"),
+        location=data.get("location"),
+        agenda=data.get("agenda"),
+        minutes=data.get("minutes"),
+        decisions=data.get("decisions"),
+        attendees=data.get("attendees", []),
+        status=data.get("status", "planned")
+    )
+    db.add(meeting)
+    db.commit()
+    db.refresh(meeting)
+    
+    return {"success": True, "meeting_id": str(meeting.id)}
+
+@app.put("/web/meetings/{meeting_id}")
+def web_update_meeting(
+    meeting_id: str,
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Toplantı güncelle"""
+    meeting = db.query(Meeting).filter(
+        Meeting.id == meeting_id,
+        Meeting.customer_id == token["customer_id"]
+    ).first()
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Toplantı bulunamadı")
+    
+    for key in ["title", "meeting_type", "date", "time", "location", "agenda", "minutes", "decisions", "attendees", "status"]:
+        if key in data:
+            setattr(meeting, key, data[key])
+    
+    db.commit()
+    return {"success": True}
+
+@app.delete("/web/meetings/{meeting_id}")
+def web_delete_meeting(
+    meeting_id: str,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Toplantı sil"""
+    meeting = db.query(Meeting).filter(
+        Meeting.id == meeting_id,
+        Meeting.customer_id == token["customer_id"]
+    ).first()
+    if not meeting:
+        raise HTTPException(status_code=404, detail="Toplantı bulunamadı")
+    
+    db.delete(meeting)
+    db.commit()
+    return {"success": True}
+
+
+# ==================== EVENTS (ETKİNLİKLER) API ====================
+
+@app.get("/web/events")
+def web_get_events(
+    status: Optional[str] = None,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Etkinlik listesi"""
+    query = db.query(Event).filter(Event.customer_id == token["customer_id"])
+    if status:
+        query = query.filter(Event.status == status)
+    events = query.order_by(Event.start_date.desc()).all()
+    
+    return {
+        "events": [
+            {
+                "id": str(e.id),
+                "title": e.title,
+                "event_type": e.event_type,
+                "start_date": e.start_date.isoformat() if e.start_date else None,
+                "end_date": e.end_date.isoformat() if e.end_date else None,
+                "start_time": e.start_time,
+                "end_time": e.end_time,
+                "location": e.location,
+                "description": e.description,
+                "organizer": e.organizer,
+                "budget": float(e.budget or 0),
+                "actual_cost": float(e.actual_cost or 0),
+                "max_participants": e.max_participants,
+                "participants": e.participants or [],
+                "status": e.status,
+                "created_at": e.created_at.isoformat() if e.created_at else None
+            }
+            for e in events
+        ],
+        "total": len(events)
+    }
+
+@app.post("/web/events")
+def web_create_event(
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Etkinlik ekle"""
+    event = Event(
+        customer_id=token["customer_id"],
+        title=data["title"],
+        event_type=data.get("event_type"),
+        start_date=data["start_date"],
+        end_date=data.get("end_date"),
+        start_time=data.get("start_time"),
+        end_time=data.get("end_time"),
+        location=data.get("location"),
+        description=data.get("description"),
+        organizer=data.get("organizer"),
+        budget=data.get("budget", 0),
+        actual_cost=data.get("actual_cost", 0),
+        max_participants=data.get("max_participants"),
+        participants=data.get("participants", []),
+        status=data.get("status", "planned")
+    )
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+    
+    return {"success": True, "event_id": str(event.id)}
+
+@app.put("/web/events/{event_id}")
+def web_update_event(
+    event_id: str,
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Etkinlik güncelle"""
+    event = db.query(Event).filter(
+        Event.id == event_id,
+        Event.customer_id == token["customer_id"]
+    ).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Etkinlik bulunamadı")
+    
+    for key in ["title", "event_type", "start_date", "end_date", "start_time", "end_time", 
+                "location", "description", "organizer", "budget", "actual_cost", 
+                "max_participants", "participants", "status"]:
+        if key in data:
+            setattr(event, key, data[key])
+    
+    db.commit()
+    return {"success": True}
+
+@app.delete("/web/events/{event_id}")
+def web_delete_event(
+    event_id: str,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Etkinlik sil"""
+    event = db.query(Event).filter(
+        Event.id == event_id,
+        Event.customer_id == token["customer_id"]
+    ).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Etkinlik bulunamadı")
+    
+    db.delete(event)
+    db.commit()
+    return {"success": True}
+
+
+# ==================== TRANSFERS (VİRMAN) API ====================
+
+@app.get("/web/transfers")
+def web_get_transfers(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Virman listesi"""
+    query = db.query(Transfer).filter(Transfer.customer_id == token["customer_id"])
+    if start_date:
+        query = query.filter(Transfer.date >= start_date)
+    if end_date:
+        query = query.filter(Transfer.date <= end_date)
+    transfers = query.order_by(Transfer.date.desc()).all()
+    
+    return {
+        "transfers": [
+            {
+                "id": str(t.id),
+                "from_account": t.from_account,
+                "to_account": t.to_account,
+                "amount": float(t.amount or 0),
+                "date": t.date.isoformat() if t.date else None,
+                "description": t.description,
+                "created_by": t.created_by,
+                "created_at": t.created_at.isoformat() if t.created_at else None
+            }
+            for t in transfers
+        ],
+        "total": len(transfers)
+    }
+
+@app.post("/web/transfers")
+def web_create_transfer(
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Virman ekle"""
+    transfer = Transfer(
+        customer_id=token["customer_id"],
+        from_account=data["from_account"],
+        to_account=data["to_account"],
+        amount=data["amount"],
+        date=data.get("date", date.today().isoformat()),
+        description=data.get("description"),
+        created_by=data.get("created_by")
+    )
+    db.add(transfer)
+    
+    # Kasa bakiyelerini güncelle
+    from_account = db.query(CashAccount).filter(
+        CashAccount.customer_id == token["customer_id"],
+        CashAccount.name == data["from_account"]
+    ).first()
+    if from_account:
+        from_account.balance = float(from_account.balance or 0) - float(data["amount"])
+    
+    to_account = db.query(CashAccount).filter(
+        CashAccount.customer_id == token["customer_id"],
+        CashAccount.name == data["to_account"]
+    ).first()
+    if to_account:
+        to_account.balance = float(to_account.balance or 0) + float(data["amount"])
+    
+    db.commit()
+    db.refresh(transfer)
+    
+    return {"success": True, "transfer_id": str(transfer.id)}
+
+@app.delete("/web/transfers/{transfer_id}")
+def web_delete_transfer(
+    transfer_id: str,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Virman sil"""
+    transfer = db.query(Transfer).filter(
+        Transfer.id == transfer_id,
+        Transfer.customer_id == token["customer_id"]
+    ).first()
+    if not transfer:
+        raise HTTPException(status_code=404, detail="Virman bulunamadı")
+    
+    # Kasa bakiyelerini geri al
+    from_account = db.query(CashAccount).filter(
+        CashAccount.customer_id == token["customer_id"],
+        CashAccount.name == transfer.from_account
+    ).first()
+    if from_account:
+        from_account.balance = float(from_account.balance or 0) + float(transfer.amount)
+    
+    to_account = db.query(CashAccount).filter(
+        CashAccount.customer_id == token["customer_id"],
+        CashAccount.name == transfer.to_account
+    ).first()
+    if to_account:
+        to_account.balance = float(to_account.balance or 0) - float(transfer.amount)
+    
+    db.delete(transfer)
+    db.commit()
+    return {"success": True}
+
+
+# ==================== FAMILY MEMBERS (AİLE ÜYELERİ) API ====================
+
+@app.get("/web/members/{member_id}/family")
+def web_get_family_members(
+    member_id: str,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Üyenin aile üyeleri"""
+    family = db.query(FamilyMember).filter(
+        FamilyMember.member_id == member_id,
+        FamilyMember.customer_id == token["customer_id"]
+    ).all()
+    
+    return {
+        "family_members": [
+            {
+                "id": str(f.id),
+                "member_id": str(f.member_id),
+                "full_name": f.full_name,
+                "relationship": f.relationship,
+                "birth_date": f.birth_date.isoformat() if f.birth_date else None,
+                "gender": f.gender,
+                "phone": f.phone,
+                "email": f.email,
+                "notes": f.notes
+            }
+            for f in family
+        ],
+        "total": len(family)
+    }
+
+@app.post("/web/members/{member_id}/family")
+def web_add_family_member(
+    member_id: str,
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Aile üyesi ekle"""
+    family_member = FamilyMember(
+        customer_id=token["customer_id"],
+        member_id=member_id,
+        full_name=data["full_name"],
+        relationship=data.get("relationship"),
+        birth_date=data.get("birth_date"),
+        gender=data.get("gender"),
+        phone=data.get("phone"),
+        email=data.get("email"),
+        notes=data.get("notes")
+    )
+    db.add(family_member)
+    db.commit()
+    db.refresh(family_member)
+    
+    return {"success": True, "family_member_id": str(family_member.id)}
+
+@app.delete("/web/family/{family_id}")
+def web_delete_family_member(
+    family_id: str,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Aile üyesi sil"""
+    family = db.query(FamilyMember).filter(
+        FamilyMember.id == family_id,
+        FamilyMember.customer_id == token["customer_id"]
+    ).first()
+    if not family:
+        raise HTTPException(status_code=404, detail="Aile üyesi bulunamadı")
+    
+    db.delete(family)
+    db.commit()
+    return {"success": True}
+
+
+# ==================== YEARLY CARRYOVER (DEVİR) API ====================
+
+@app.get("/web/carryovers")
+def web_get_carryovers(
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Devir listesi"""
+    carryovers = db.query(YearlyCarryover).filter(
+        YearlyCarryover.customer_id == token["customer_id"]
+    ).order_by(YearlyCarryover.from_year.desc()).all()
+    
+    return {
+        "carryovers": [
+            {
+                "id": str(c.id),
+                "from_year": c.from_year,
+                "to_year": c.to_year,
+                "total_income": float(c.total_income or 0),
+                "total_expense": float(c.total_expense or 0),
+                "balance": float(c.balance or 0),
+                "carried_balance": float(c.carried_balance or 0),
+                "status": c.status,
+                "approved_by": c.approved_by,
+                "approved_at": c.approved_at.isoformat() if c.approved_at else None,
+                "notes": c.notes,
+                "created_at": c.created_at.isoformat() if c.created_at else None
+            }
+            for c in carryovers
+        ],
+        "total": len(carryovers)
+    }
+
+@app.post("/web/carryovers")
+def web_create_carryover(
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Yıl devri oluştur"""
+    from_year = data.get("from_year", datetime.now().year - 1)
+    to_year = data.get("to_year", datetime.now().year)
+    
+    # Yıl gelir/gider hesapla
+    total_income = db.query(Income).filter(
+        Income.customer_id == token["customer_id"],
+        Income.fiscal_year == from_year
+    ).with_entities(func.sum(Income.amount)).scalar() or 0
+    
+    total_expense = db.query(Expense).filter(
+        Expense.customer_id == token["customer_id"],
+        Expense.fiscal_year == from_year
+    ).with_entities(func.sum(Expense.amount)).scalar() or 0
+    
+    balance = float(total_income) - float(total_expense)
+    
+    carryover = YearlyCarryover(
+        customer_id=token["customer_id"],
+        from_year=from_year,
+        to_year=to_year,
+        total_income=total_income,
+        total_expense=total_expense,
+        balance=balance,
+        carried_balance=balance,
+        status="pending",
+        notes=data.get("notes")
+    )
+    db.add(carryover)
+    db.commit()
+    db.refresh(carryover)
+    
+    return {"success": True, "carryover_id": str(carryover.id), "balance": balance}
+
+@app.put("/web/carryovers/{carryover_id}/approve")
+def web_approve_carryover(
+    carryover_id: str,
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Devir onayla"""
+    carryover = db.query(YearlyCarryover).filter(
+        YearlyCarryover.id == carryover_id,
+        YearlyCarryover.customer_id == token["customer_id"]
+    ).first()
+    if not carryover:
+        raise HTTPException(status_code=404, detail="Devir bulunamadı")
+    
+    carryover.status = "completed"
+    carryover.approved_by = data.get("approved_by", token.get("username"))
+    carryover.approved_at = datetime.utcnow()
+    
+    # Yeni yıla devir geliri ekle
+    if carryover.carried_balance > 0:
+        income = Income(
+            customer_id=token["customer_id"],
+            category="DEVİR",
+            amount=carryover.carried_balance,
+            date=date(carryover.to_year, 1, 1),
+            description=f"{carryover.from_year} yılından devir",
+            fiscal_year=carryover.to_year,
+            cash_account="Ana Kasa"
+        )
+        db.add(income)
+    
+    db.commit()
+    return {"success": True}
+
+
+# ==================== ASSESSMENT REPORT (TAHAKKUK RAPORU) API ====================
+
+@app.get("/web/assessment-reports")
+def web_get_assessment_reports(
+    year: Optional[int] = None,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Tahakkuk raporları"""
+    query = db.query(AssessmentReport).filter(
+        AssessmentReport.customer_id == token["customer_id"]
+    )
+    if year:
+        query = query.filter(AssessmentReport.year == year)
+    reports = query.order_by(AssessmentReport.report_date.desc()).all()
+    
+    return {
+        "reports": [
+            {
+                "id": str(r.id),
+                "year": r.year,
+                "report_date": r.report_date.isoformat() if r.report_date else None,
+                "total_assessed": float(r.total_assessed or 0),
+                "total_collected": float(r.total_collected or 0),
+                "total_remaining": float(r.total_remaining or 0),
+                "member_count": r.member_count,
+                "collection_rate": float(r.collection_rate or 0),
+                "details": r.details or {},
+                "created_at": r.created_at.isoformat() if r.created_at else None
+            }
+            for r in reports
+        ],
+        "total": len(reports)
+    }
+
+@app.post("/web/assessment-reports/generate")
+def web_generate_assessment_report(
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Tahakkuk raporu oluştur"""
+    year = data.get("year", datetime.now().year)
+    
+    # Üye sayısı
+    members = db.query(Member).filter(
+        Member.customer_id == token["customer_id"],
+        Member.status == 'active'
+    ).all()
+    member_count = len(members)
+    
+    # Tahakkuk hesapla
+    total_assessed = sum([float(m.membership_fee or 0) * 12 for m in members])
+    
+    # Tahsilat hesapla
+    total_collected = db.query(Due).filter(
+        Due.customer_id == token["customer_id"],
+        Due.year == year
+    ).with_entities(func.sum(Due.paid_amount)).scalar() or 0
+    
+    total_remaining = total_assessed - float(total_collected)
+    collection_rate = (float(total_collected) / total_assessed * 100) if total_assessed > 0 else 0
+    
+    report = AssessmentReport(
+        customer_id=token["customer_id"],
+        year=year,
+        report_date=date.today(),
+        total_assessed=total_assessed,
+        total_collected=total_collected,
+        total_remaining=total_remaining,
+        member_count=member_count,
+        collection_rate=collection_rate,
+        details={"generated_at": datetime.now().isoformat()}
+    )
+    db.add(report)
+    db.commit()
+    db.refresh(report)
+    
+    return {
+        "success": True,
+        "report_id": str(report.id),
+        "summary": {
+            "year": year,
+            "member_count": member_count,
+            "total_assessed": float(total_assessed),
+            "total_collected": float(total_collected),
+            "total_remaining": float(total_remaining),
+            "collection_rate": round(collection_rate, 2)
+        }
+    }
+
+
+# ==================== LEFT MEMBERS (AYRILAN ÜYELER) API ====================
+
+@app.get("/web/members/left")
+def web_get_left_members(
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Ayrılan üyeler listesi"""
+    members = db.query(Member).filter(
+        Member.customer_id == token["customer_id"],
+        Member.status == 'inactive'
+    ).order_by(Member.leave_date.desc()).all()
+    
+    return {
+        "members": [
+            {
+                "id": str(m.id),
+                "member_no": m.member_no,
+                "full_name": m.full_name,
+                "phone": m.phone,
+                "email": m.email,
+                "join_date": m.join_date.isoformat() if m.join_date else None,
+                "leave_date": m.leave_date.isoformat() if m.leave_date else None,
+                "notes": m.notes
+            }
+            for m in members
+        ],
+        "total": len(members)
+    }
+
+@app.put("/web/members/{member_id}/leave")
+def web_member_leave(
+    member_id: str,
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Üyeyi ayrılmış olarak işaretle"""
+    member = db.query(Member).filter(
+        Member.id == member_id,
+        Member.customer_id == token["customer_id"]
+    ).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Üye bulunamadı")
+    
+    member.status = 'inactive'
+    member.leave_date = data.get("leave_date", date.today())
+    member.notes = (member.notes or "") + f"\n[Ayrılış: {data.get('reason', 'Belirtilmedi')}]"
+    
+    db.commit()
+    return {"success": True}
+
+@app.put("/web/members/{member_id}/reactivate")
+def web_member_reactivate(
+    member_id: str,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Ayrılan üyeyi tekrar aktifleştir"""
+    member = db.query(Member).filter(
+        Member.id == member_id,
+        Member.customer_id == token["customer_id"]
+    ).first()
+    if not member:
+        raise HTTPException(status_code=404, detail="Üye bulunamadı")
+    
+    member.status = 'active'
+    member.leave_date = None
+    
+    db.commit()
+    return {"success": True}
+
+
+# ==================== INCOME/EXPENSE CRUD ====================
+
+@app.put("/web/incomes/{income_id}")
+def web_update_income(
+    income_id: str,
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Gelir güncelle"""
+    income = db.query(Income).filter(
+        Income.id == income_id,
+        Income.customer_id == token["customer_id"]
+    ).first()
+    if not income:
+        raise HTTPException(status_code=404, detail="Gelir bulunamadı")
+    
+    for key in ["category", "amount", "date", "description", "receipt_no", "cash_account"]:
+        if key in data:
+            setattr(income, key, data[key])
+    
+    db.commit()
+    return {"success": True}
+
+@app.delete("/web/incomes/{income_id}")
+def web_delete_income(
+    income_id: str,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Gelir sil"""
+    income = db.query(Income).filter(
+        Income.id == income_id,
+        Income.customer_id == token["customer_id"]
+    ).first()
+    if not income:
+        raise HTTPException(status_code=404, detail="Gelir bulunamadı")
+    
+    db.delete(income)
+    db.commit()
+    return {"success": True}
+
+@app.put("/web/expenses/{expense_id}")
+def web_update_expense(
+    expense_id: str,
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Gider güncelle"""
+    expense = db.query(Expense).filter(
+        Expense.id == expense_id,
+        Expense.customer_id == token["customer_id"]
+    ).first()
+    if not expense:
+        raise HTTPException(status_code=404, detail="Gider bulunamadı")
+    
+    for key in ["category", "amount", "date", "description", "invoice_no", "vendor", "cash_account"]:
+        if key in data:
+            setattr(expense, key, data[key])
+    
+    db.commit()
+    return {"success": True}
+
+@app.delete("/web/expenses/{expense_id}")
+def web_delete_expense(
+    expense_id: str,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Gider sil"""
+    expense = db.query(Expense).filter(
+        Expense.id == expense_id,
+        Expense.customer_id == token["customer_id"]
+    ).first()
+    if not expense:
+        raise HTTPException(status_code=404, detail="Gider bulunamadı")
+    
+    db.delete(expense)
+    db.commit()
+    return {"success": True}
+
+
+# ==================== CASH ACCOUNT CRUD ====================
+
+@app.post("/web/cash-accounts")
+def web_create_cash_account(
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Kasa ekle"""
+    account = CashAccount(
+        customer_id=token["customer_id"],
+        name=data["name"],
+        type=data.get("type", "cash"),
+        balance=data.get("balance", 0),
+        bank_name=data.get("bank_name"),
+        iban=data.get("iban"),
+        is_active=True
+    )
+    db.add(account)
+    db.commit()
+    db.refresh(account)
+    
+    return {"success": True, "account_id": str(account.id)}
+
+@app.put("/web/cash-accounts/{account_id}")
+def web_update_cash_account(
+    account_id: str,
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Kasa güncelle"""
+    account = db.query(CashAccount).filter(
+        CashAccount.id == account_id,
+        CashAccount.customer_id == token["customer_id"]
+    ).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Kasa bulunamadı")
+    
+    for key in ["name", "type", "balance", "bank_name", "iban", "is_active"]:
+        if key in data:
+            setattr(account, key, data[key])
+    
+    db.commit()
+    return {"success": True}
+
+@app.delete("/web/cash-accounts/{account_id}")
+def web_delete_cash_account(
+    account_id: str,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Kasa sil"""
+    account = db.query(CashAccount).filter(
+        CashAccount.id == account_id,
+        CashAccount.customer_id == token["customer_id"]
+    ).first()
+    if not account:
+        raise HTTPException(status_code=404, detail="Kasa bulunamadı")
+    
+    db.delete(account)
+    db.commit()
+    return {"success": True}
+
+
+# ==================== SEARCH (ARAMA) API ====================
+
+@app.get("/web/search")
+def web_search(
+    q: str,
+    type: Optional[str] = None,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Genel arama"""
+    results = {"members": [], "incomes": [], "expenses": [], "total": 0}
+    search_term = f"%{q}%"
+    
+    if not type or type == "members":
+        members = db.query(Member).filter(
+            Member.customer_id == token["customer_id"],
+            (Member.full_name.ilike(search_term) | 
+             Member.member_no.ilike(search_term) |
+             Member.tc_no.ilike(search_term) |
+             Member.phone.ilike(search_term) |
+             Member.email.ilike(search_term))
+        ).limit(50).all()
+        results["members"] = [{"id": str(m.id), "full_name": m.full_name, "member_no": m.member_no, "phone": m.phone} for m in members]
+    
+    if not type or type == "incomes":
+        incomes = db.query(Income).filter(
+            Income.customer_id == token["customer_id"],
+            (Income.category.ilike(search_term) | 
+             Income.description.ilike(search_term) |
+             Income.receipt_no.ilike(search_term))
+        ).limit(50).all()
+        results["incomes"] = [{"id": str(i.id), "category": i.category, "amount": float(i.amount), "date": i.date.isoformat() if i.date else None} for i in incomes]
+    
+    if not type or type == "expenses":
+        expenses = db.query(Expense).filter(
+            Expense.customer_id == token["customer_id"],
+            (Expense.category.ilike(search_term) | 
+             Expense.description.ilike(search_term) |
+             Expense.vendor.ilike(search_term) |
+             Expense.invoice_no.ilike(search_term))
+        ).limit(50).all()
+        results["expenses"] = [{"id": str(e.id), "category": e.category, "amount": float(e.amount), "date": e.date.isoformat() if e.date else None} for e in expenses]
+    
+    results["total"] = len(results["members"]) + len(results["incomes"]) + len(results["expenses"])
+    return results
+
+
+# ==================== REPORTS (RAPORLAR) API ====================
+
+@app.get("/web/reports/income-expense")
+def web_report_income_expense(
+    year: Optional[int] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Gelir-Gider raporu"""
+    year = year or datetime.now().year
+    
+    incomes = db.query(Income).filter(
+        Income.customer_id == token["customer_id"],
+        Income.fiscal_year == year
+    ).all()
+    
+    expenses = db.query(Expense).filter(
+        Expense.customer_id == token["customer_id"],
+        Expense.fiscal_year == year
+    ).all()
+    
+    income_by_category = {}
+    for i in incomes:
+        cat = i.category or "Diğer"
+        income_by_category[cat] = income_by_category.get(cat, 0) + float(i.amount or 0)
+    
+    expense_by_category = {}
+    for e in expenses:
+        cat = e.category or "Diğer"
+        expense_by_category[cat] = expense_by_category.get(cat, 0) + float(e.amount or 0)
+    
+    total_income = sum(income_by_category.values())
+    total_expense = sum(expense_by_category.values())
+    
+    return {
+        "year": year,
+        "total_income": total_income,
+        "total_expense": total_expense,
+        "balance": total_income - total_expense,
+        "income_by_category": income_by_category,
+        "expense_by_category": expense_by_category,
+        "income_count": len(incomes),
+        "expense_count": len(expenses)
+    }
+
+@app.get("/web/reports/members")
+def web_report_members(
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Üye raporu"""
+    members = db.query(Member).filter(
+        Member.customer_id == token["customer_id"]
+    ).all()
+    
+    active = len([m for m in members if m.status == 'active'])
+    inactive = len([m for m in members if m.status == 'inactive'])
+    
+    by_type = {}
+    for m in members:
+        t = m.membership_type or "Belirsiz"
+        by_type[t] = by_type.get(t, 0) + 1
+    
+    by_gender = {}
+    for m in members:
+        g = m.gender or "Belirsiz"
+        by_gender[g] = by_gender.get(g, 0) + 1
+    
+    total_fees = sum([float(m.membership_fee or 0) for m in members if m.status == 'active'])
+    
+    return {
+        "total": len(members),
+        "active": active,
+        "inactive": inactive,
+        "by_type": by_type,
+        "by_gender": by_gender,
+        "total_monthly_fees": total_fees,
+        "total_yearly_fees": total_fees * 12
+    }
+
+@app.get("/web/reports/dues")
+def web_report_dues(
+    year: Optional[int] = None,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Aidat raporu"""
+    year = year or datetime.now().year
+    
+    dues = db.query(Due).filter(
+        Due.customer_id == token["customer_id"],
+        Due.year == year
+    ).all()
+    
+    total_amount = sum([float(d.amount or 0) for d in dues])
+    total_paid = sum([float(d.paid_amount or 0) for d in dues])
+    total_remaining = total_amount - total_paid
+    
+    paid_count = len([d for d in dues if d.status == 'paid'])
+    pending_count = len([d for d in dues if d.status == 'pending'])
+    
+    by_month = {}
+    for d in dues:
+        by_month[d.month] = by_month.get(d.month, {"amount": 0, "paid": 0})
+        by_month[d.month]["amount"] += float(d.amount or 0)
+        by_month[d.month]["paid"] += float(d.paid_amount or 0)
+    
+    return {
+        "year": year,
+        "total_amount": total_amount,
+        "total_paid": total_paid,
+        "total_remaining": total_remaining,
+        "collection_rate": round((total_paid / total_amount * 100) if total_amount > 0 else 0, 2),
+        "paid_count": paid_count,
+        "pending_count": pending_count,
+        "by_month": by_month
+    }
+
+@app.get("/web/reports/cash")
+def web_report_cash(
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Kasa raporu"""
+    accounts = db.query(CashAccount).filter(
+        CashAccount.customer_id == token["customer_id"]
+    ).all()
+    
+    total_balance = sum([float(a.balance or 0) for a in accounts])
+    
+    return {
+        "accounts": [
+            {
+                "name": a.name,
+                "type": a.type,
+                "balance": float(a.balance or 0),
+                "is_active": a.is_active
+            }
+            for a in accounts
+        ],
+        "total_balance": total_balance,
+        "account_count": len(accounts)
+    }
+
+@app.get("/web/reports/yearly")
+def web_report_yearly(
+    year: Optional[int] = None,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Yıllık özet rapor"""
+    year = year or datetime.now().year
+    
+    # Üye istatistikleri
+    members = db.query(Member).filter(
+        Member.customer_id == token["customer_id"],
+        Member.status == 'active'
+    ).count()
+    
+    # Gelir
+    total_income = db.query(Income).filter(
+        Income.customer_id == token["customer_id"],
+        Income.fiscal_year == year
+    ).with_entities(func.sum(Income.amount)).scalar() or 0
+    
+    # Gider
+    total_expense = db.query(Expense).filter(
+        Expense.customer_id == token["customer_id"],
+        Expense.fiscal_year == year
+    ).with_entities(func.sum(Expense.amount)).scalar() or 0
+    
+    # Aidat
+    dues_data = db.query(Due).filter(
+        Due.customer_id == token["customer_id"],
+        Due.year == year
+    ).with_entities(
+        func.sum(Due.amount).label('total'),
+        func.sum(Due.paid_amount).label('paid')
+    ).first()
+    
+    # Toplantı ve etkinlik
+    meeting_count = db.query(Meeting).filter(
+        Meeting.customer_id == token["customer_id"]
+    ).count()
+    
+    event_count = db.query(Event).filter(
+        Event.customer_id == token["customer_id"]
+    ).count()
+    
+    return {
+        "year": year,
+        "summary": {
+            "active_members": members,
+            "total_income": float(total_income),
+            "total_expense": float(total_expense),
+            "balance": float(total_income) - float(total_expense),
+            "dues_assessed": float(dues_data.total or 0) if dues_data else 0,
+            "dues_collected": float(dues_data.paid or 0) if dues_data else 0,
+            "meeting_count": meeting_count,
+            "event_count": event_count
+        }
+    }
+
+
+# ==================== EXPORT (DIŞA AKTARMA) API ====================
+
+@app.get("/web/export/members")
+def web_export_members(
+    format: str = "json",
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Üye listesi dışa aktar"""
+    members = db.query(Member).filter(
+        Member.customer_id == token["customer_id"]
+    ).order_by(Member.full_name).all()
+    
+    data = [
+        {
+            "uye_no": m.member_no,
+            "ad_soyad": m.full_name,
+            "tc_no": m.tc_no,
+            "telefon": m.phone,
+            "email": m.email,
+            "adres": m.address,
+            "sehir": m.city,
+            "ilce": m.district,
+            "uyelik_tipi": m.membership_type,
+            "aidat": float(m.membership_fee or 0),
+            "giris_tarihi": m.join_date.isoformat() if m.join_date else None,
+            "durum": "Aktif" if m.status == 'active' else "Pasif"
+        }
+        for m in members
+    ]
+    
+    if format == "csv":
+        import csv
+        import io
+        output = io.StringIO()
+        if data:
+            writer = csv.DictWriter(output, fieldnames=data[0].keys())
+            writer.writeheader()
+            writer.writerows(data)
+        return {"csv": output.getvalue(), "filename": f"uyeler_{date.today()}.csv"}
+    
+    return {"data": data, "count": len(data)}
+
+@app.get("/web/export/incomes")
+def web_export_incomes(
+    year: Optional[int] = None,
+    format: str = "json",
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Gelir listesi dışa aktar"""
+    query = db.query(Income).filter(Income.customer_id == token["customer_id"])
+    if year:
+        query = query.filter(Income.fiscal_year == year)
+    incomes = query.order_by(Income.date.desc()).all()
+    
+    data = [
+        {
+            "tarih": i.date.isoformat() if i.date else None,
+            "kategori": i.category,
+            "aciklama": i.description,
+            "tutar": float(i.amount or 0),
+            "kasa": i.cash_account,
+            "makbuz_no": i.receipt_no
+        }
+        for i in incomes
+    ]
+    
+    return {"data": data, "count": len(data), "total": sum([d["tutar"] for d in data])}
+
+@app.get("/web/export/expenses")
+def web_export_expenses(
+    year: Optional[int] = None,
+    format: str = "json",
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Gider listesi dışa aktar"""
+    query = db.query(Expense).filter(Expense.customer_id == token["customer_id"])
+    if year:
+        query = query.filter(Expense.fiscal_year == year)
+    expenses = query.order_by(Expense.date.desc()).all()
+    
+    data = [
+        {
+            "tarih": e.date.isoformat() if e.date else None,
+            "kategori": e.category,
+            "aciklama": e.description,
+            "tutar": float(e.amount or 0),
+            "firma": e.vendor,
+            "fatura_no": e.invoice_no,
+            "kasa": e.cash_account
+        }
+        for e in expenses
+    ]
+    
+    return {"data": data, "count": len(data), "total": sum([d["tutar"] for d in data])}
+
+
+# ==================== MULTI-YEAR DUES (ÇOKLU YIL ÖDEME) API ====================
+
+@app.post("/web/dues/multi-year")
+def web_multi_year_dues_payment(
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Çoklu yıl aidat ödemesi"""
+    member_id = data["member_id"]
+    years = data["years"]  # [2024, 2025, 2026]
+    months = data.get("months", list(range(1, 13)))  # default tüm aylar
+    amount_per_month = data["amount_per_month"]
+    payment_date = data.get("payment_date", date.today().isoformat())
+    
+    paid_dues = []
+    total_paid = 0
+    
+    for year in years:
+        for month in months:
+            # Mevcut aidat kaydını bul veya oluştur
+            due = db.query(Due).filter(
+                Due.customer_id == token["customer_id"],
+                Due.member_id == member_id,
+                Due.year == year,
+                Due.month == month
+            ).first()
+            
+            if not due:
+                due = Due(
+                    customer_id=token["customer_id"],
+                    member_id=member_id,
+                    year=year,
+                    month=month,
+                    amount=amount_per_month,
+                    paid_amount=amount_per_month,
+                    paid_date=payment_date,
+                    status='paid'
+                )
+                db.add(due)
+            else:
+                due.paid_amount = amount_per_month
+                due.paid_date = payment_date
+                due.status = 'paid'
+            
+            paid_dues.append({"year": year, "month": month})
+            total_paid += amount_per_month
+    
+    # Gelir kaydı oluştur
+    income = Income(
+        customer_id=token["customer_id"],
+        member_id=member_id,
+        category="AİDAT",
+        amount=total_paid,
+        date=payment_date,
+        description=f"Çoklu yıl aidat ödemesi: {years}",
+        cash_account=data.get("cash_account", "Ana Kasa"),
+        fiscal_year=datetime.now().year
+    )
+    db.add(income)
+    
+    db.commit()
+    
+    return {
+        "success": True,
+        "paid_dues": paid_dues,
+        "total_paid": total_paid,
+        "years": years,
+        "months": months
+    }
+
+
+# ==================== USERS (KULLANICILAR) API ====================
+
+@app.get("/web/users")
+def web_get_users(
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Kullanıcı listesi"""
+    users = db.query(User).filter(
+        User.customer_id == token["customer_id"]
+    ).order_by(User.created_at.desc()).all()
+    
+    return {
+        "users": [
+            {
+                "id": str(u.id),
+                "username": u.username,
+                "full_name": u.full_name,
+                "email": u.email,
+                "role": u.role,
+                "is_active": u.is_active,
+                "last_login_at": u.last_login_at.isoformat() if u.last_login_at else None,
+                "created_at": u.created_at.isoformat() if u.created_at else None
+            }
+            for u in users
+        ],
+        "total": len(users)
+    }
+
+@app.post("/web/users")
+def web_create_user(
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Kullanıcı ekle"""
+    # Şifre hash'le
+    password_hash = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt()).decode()
+    
+    user = User(
+        customer_id=token["customer_id"],
+        username=data["username"],
+        password_hash=password_hash,
+        full_name=data["full_name"],
+        email=data.get("email"),
+        role=data.get("role", "member"),
+        is_active=True
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    
+    return {"success": True, "user_id": str(user.id)}
+
+@app.put("/web/users/{user_id}")
+def web_update_user(
+    user_id: str,
+    data: Dict[str, Any],
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Kullanıcı güncelle"""
+    user = db.query(User).filter(
+        User.id == user_id,
+        User.customer_id == token["customer_id"]
+    ).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+    
+    for key in ["username", "full_name", "email", "role", "is_active"]:
+        if key in data:
+            setattr(user, key, data[key])
+    
+    if "password" in data and data["password"]:
+        user.password_hash = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt()).decode()
+    
+    db.commit()
+    return {"success": True}
+
+@app.delete("/web/users/{user_id}")
+def web_delete_user(
+    user_id: str,
+    token: dict = Depends(verify_token),
+    db: Session = Depends(get_db)
+):
+    """Kullanıcı sil"""
+    user = db.query(User).filter(
+        User.id == user_id,
+        User.customer_id == token["customer_id"]
+    ).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+    
+    db.delete(user)
+    db.commit()
+    return {"success": True}
+

@@ -139,11 +139,12 @@ CREATE INDEX IF NOT EXISTS idx_dues_member ON dues(member_id);
 CREATE TABLE IF NOT EXISTS transfers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     customer_id VARCHAR(50) NOT NULL REFERENCES customers(customer_id) ON DELETE CASCADE,
-    from_account_id UUID NOT NULL REFERENCES cash_accounts(id),
-    to_account_id UUID NOT NULL REFERENCES cash_accounts(id),
+    from_account VARCHAR(100) NOT NULL,
+    to_account VARCHAR(100) NOT NULL,
     amount DECIMAL(12,2) NOT NULL,
     date DATE NOT NULL,
     description TEXT,
+    created_by VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -354,6 +355,54 @@ CREATE TABLE IF NOT EXISTS member_family (
     phone VARCHAR(50),
     occupation VARCHAR(100),
     notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==================== AİLE ÜYELERİ (YENİ) ====================
+CREATE TABLE IF NOT EXISTS family_members (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    customer_id VARCHAR(50) NOT NULL REFERENCES customers(customer_id) ON DELETE CASCADE,
+    member_id UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+    full_name VARCHAR(255) NOT NULL,
+    relationship VARCHAR(50),
+    birth_date DATE,
+    gender VARCHAR(20),
+    phone VARCHAR(50),
+    email VARCHAR(255),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==================== YIL DEVİRLERİ ====================
+CREATE TABLE IF NOT EXISTS yearly_carryovers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    customer_id VARCHAR(50) NOT NULL REFERENCES customers(customer_id) ON DELETE CASCADE,
+    from_year INTEGER NOT NULL,
+    to_year INTEGER NOT NULL,
+    total_income DECIMAL(12,2) DEFAULT 0,
+    total_expense DECIMAL(12,2) DEFAULT 0,
+    balance DECIMAL(12,2) DEFAULT 0,
+    carried_balance DECIMAL(12,2) DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'pending',
+    approved_by VARCHAR(100),
+    approved_at TIMESTAMP,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(customer_id, from_year, to_year)
+);
+
+-- ==================== TAHAKKUK RAPORLARI ====================
+CREATE TABLE IF NOT EXISTS assessment_reports (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    customer_id VARCHAR(50) NOT NULL REFERENCES customers(customer_id) ON DELETE CASCADE,
+    year INTEGER NOT NULL,
+    report_date DATE NOT NULL,
+    total_assessed DECIMAL(12,2) DEFAULT 0,
+    total_collected DECIMAL(12,2) DEFAULT 0,
+    total_remaining DECIMAL(12,2) DEFAULT 0,
+    member_count INTEGER DEFAULT 0,
+    collection_rate DECIMAL(5,2) DEFAULT 0,
+    details JSONB DEFAULT '{}',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
