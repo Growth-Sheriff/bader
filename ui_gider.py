@@ -85,7 +85,8 @@ class GiderFormWidget(QWidget):
         alt_kategoriler = self.gider_yoneticisi.gider_alt_kategorileri(tur)
         if alt_kategoriler:
             self.alt_kategori_combo[1].addItems(alt_kategoriler)
-        self.alt_kategori_combo[0].setVisible(len(alt_kategoriler) > 0)
+        # Her zaman göster - kullanıcı yeni alt kategori ekleyebilir
+        self.alt_kategori_combo[0].setVisible(True)
         
     def load_kasalar(self):
         kasalar = self.kasa_yoneticisi.kasa_listesi()

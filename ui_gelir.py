@@ -100,7 +100,8 @@ class GelirFormWidget(QWidget):
         alt_kategoriler = self.gelir_yoneticisi.gelir_alt_kategorileri(tur)
         if alt_kategoriler:
             self.alt_kategori_combo[1].addItems(alt_kategoriler)
-        self.alt_kategori_combo[0].setVisible(len(alt_kategoriler) > 0)
+        # Her zaman göster - kullanıcı yeni alt kategori ekleyebilir
+        self.alt_kategori_combo[0].setVisible(True)
         
     def load_kasalar(self):
         self.kasa_combo[1].clear()

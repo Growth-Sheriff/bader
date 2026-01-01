@@ -71,6 +71,145 @@ class KasaFormWidget(QWidget):
         }
 
 
+class KasaDetayWidget(QWidget):
+    """Kasa işlem geçmişi detay widget'ı"""
+    
+    def __init__(self, db: Database, kasa_id: int, kasa_adi: str, para_birimi: str):
+        super().__init__()
+        self.db = db
+        self.kasa_id = kasa_id
+        self.kasa_adi = kasa_adi
+        self.para_birimi = para_birimi
+        self.kasa_yoneticisi = KasaYoneticisi(db)
+        self.setup_ui()
+        self.load_islemler()
+        
+    def setup_ui(self):
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(15)
+        
+        # Özet bilgiler
+        ozet = self.kasa_yoneticisi.tum_kasalar_ozet()
+        kasa_ozet = next((k for k in ozet if k['kasa_id'] == self.kasa_id), None)
+        
+        if kasa_ozet:
+            ozet_group = QGroupBox("📊 Kasa Özeti")
+            ozet_layout = QVBoxLayout()
+            
+            devir_label = QLabel(f"Devir Bakiye: {kasa_ozet['devir_bakiye']:,.2f} {self.para_birimi}")
+            ozet_layout.addWidget(devir_label)
+            
+            gelir_label = QLabel(f"Toplam Gelir: +{kasa_ozet['toplam_gelir']:,.2f} {self.para_birimi}")
+            gelir_label.setStyleSheet("color: #2E7D32;")
+            ozet_layout.addWidget(gelir_label)
+            
+            gider_label = QLabel(f"Toplam Gider: -{kasa_ozet['toplam_gider']:,.2f} {self.para_birimi}")
+            gider_label.setStyleSheet("color: #C62828;")
+            ozet_layout.addWidget(gider_label)
+            
+            virman_net = kasa_ozet['virman_gelen'] - kasa_ozet['virman_giden']
+            virman_label = QLabel(f"Virman Net: {virman_net:+,.2f} {self.para_birimi}")
+            virman_label.setStyleSheet("color: #1565C0;")
+            ozet_layout.addWidget(virman_label)
+            
+            bakiye_label = QLabel(f"Net Bakiye: {kasa_ozet['net_bakiye']:,.2f} {self.para_birimi}")
+            bakiye_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+            ozet_layout.addWidget(bakiye_label)
+            
+            ozet_group.setLayout(ozet_layout)
+            layout.addWidget(ozet_group)
+        
+        # İşlem listesi
+        islem_label = QLabel("📋 Son İşlemler")
+        islem_label.setStyleSheet("font-weight: bold; font-size: 13px;")
+        layout.addWidget(islem_label)
+        
+        self.table = QTableWidget()
+        self.table.setColumnCount(5)
+        self.table.setHorizontalHeaderLabels(["Tarih", "Tür", "Açıklama", "Tutar", "Yön"])
+        setup_resizable_table(self.table, table_id="kasa_detay_tablosu", stretch_column=2)
+        self.table.setAlternatingRowColors(True)
+        self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.table.setMinimumHeight(300)
+        layout.addWidget(self.table)
+        
+        layout.addStretch()
+        self.setLayout(layout)
+        
+    def load_islemler(self):
+        """Kasanın tüm işlemlerini yükle"""
+        self.table.setRowCount(0)
+        
+        # Gelirler
+        self.db.cursor.execute("""
+            SELECT tarih, 'GELİR' as tip, gelir_turu as tur, aciklama, tutar
+            FROM gelirler WHERE kasa_id = ?
+        """, (self.kasa_id,))
+        gelirler = self.db.cursor.fetchall()
+        
+        # Giderler
+        self.db.cursor.execute("""
+            SELECT tarih, 'GİDER' as tip, gider_turu as tur, aciklama, tutar
+            FROM giderler WHERE kasa_id = ?
+        """, (self.kasa_id,))
+        giderler = self.db.cursor.fetchall()
+        
+        # Virmanlar (gelen)
+        self.db.cursor.execute("""
+            SELECT tarih, 'VİRMAN GELEN' as tip, 'Transfer' as tur, aciklama, tutar
+            FROM virmanlar WHERE alan_kasa_id = ?
+        """, (self.kasa_id,))
+        virman_gelen = self.db.cursor.fetchall()
+        
+        # Virmanlar (giden)
+        self.db.cursor.execute("""
+            SELECT tarih, 'VİRMAN GİDEN' as tip, 'Transfer' as tur, aciklama, tutar
+            FROM virmanlar WHERE gonderen_kasa_id = ?
+        """, (self.kasa_id,))
+        virman_giden = self.db.cursor.fetchall()
+        
+        # Tüm işlemleri birleştir ve tarihe göre sırala
+        tum_islemler = []
+        for g in gelirler:
+            tum_islemler.append({'tarih': g['tarih'], 'tip': 'GELİR', 'tur': g['tur'], 
+                                'aciklama': g['aciklama'], 'tutar': g['tutar'], 'yon': '+'})
+        for g in giderler:
+            tum_islemler.append({'tarih': g['tarih'], 'tip': 'GİDER', 'tur': g['tur'], 
+                                'aciklama': g['aciklama'], 'tutar': g['tutar'], 'yon': '-'})
+        for v in virman_gelen:
+            tum_islemler.append({'tarih': v['tarih'], 'tip': 'VİRMAN', 'tur': 'Gelen', 
+                                'aciklama': v['aciklama'] or 'Transfer', 'tutar': v['tutar'], 'yon': '+'})
+        for v in virman_giden:
+            tum_islemler.append({'tarih': v['tarih'], 'tip': 'VİRMAN', 'tur': 'Giden', 
+                                'aciklama': v['aciklama'] or 'Transfer', 'tutar': v['tutar'], 'yon': '-'})
+        
+        # Tarihe göre sırala (en yeni en üstte)
+        tum_islemler.sort(key=lambda x: x['tarih'], reverse=True)
+        
+        for islem in tum_islemler:
+            row = self.table.rowCount()
+            self.table.insertRow(row)
+            
+            self.table.setItem(row, 0, QTableWidgetItem(islem['tarih']))
+            self.table.setItem(row, 1, QTableWidgetItem(f"{islem['tip']} - {islem['tur']}"))
+            self.table.setItem(row, 2, QTableWidgetItem(islem['aciklama'] or ''))
+            
+            tutar_item = QTableWidgetItem(f"{islem['tutar']:,.2f}")
+            if islem['yon'] == '+':
+                tutar_item.setForeground(QColor("#2E7D32"))
+            else:
+                tutar_item.setForeground(QColor("#C62828"))
+            self.table.setItem(row, 3, tutar_item)
+            
+            yon_item = QTableWidgetItem(islem['yon'])
+            if islem['yon'] == '+':
+                yon_item.setForeground(QColor("#2E7D32"))
+            else:
+                yon_item.setForeground(QColor("#C62828"))
+            self.table.setItem(row, 4, yon_item)
+
+
 class KasaWidget(QWidget):
     """Kasa yönetimi ana widget"""
     
@@ -123,6 +262,12 @@ class KasaWidget(QWidget):
         self.sil_btn.clicked.connect(self.kasa_sil)
         self.sil_btn.setEnabled(False)
         toolbar_layout.addWidget(self.sil_btn)
+        
+        self.detay_btn = QPushButton("👁️ Kasa Detay")
+        self.detay_btn.setToolTip("Seçili kasanın işlem geçmişini göster")
+        self.detay_btn.clicked.connect(self.kasa_detay_goster)
+        self.detay_btn.setEnabled(False)
+        toolbar_layout.addWidget(self.detay_btn)
         
         self.tahakkuk_btn = QPushButton("📊 Tahakkuk Detayı")
         self.tahakkuk_btn.setToolTip("Seçili kasanın tahakkuk detayını göster")
@@ -256,6 +401,7 @@ class KasaWidget(QWidget):
         has_selection = self.table.selectionModel().hasSelection()
         self.duzenle_btn.setEnabled(has_selection)
         self.sil_btn.setEnabled(has_selection)
+        self.detay_btn.setEnabled(has_selection)
         self.tahakkuk_btn.setEnabled(has_selection)
     
     def kasa_ekle(self):
@@ -372,6 +518,20 @@ class KasaWidget(QWidget):
                 MessageBox("Başarılı", "Kasa silindi!", self).show()
             except Exception as e:
                 MessageBox("Hata", f"Silme hatası:\n{e}", self).show()
+    
+    def kasa_detay_goster(self):
+        """Seçili kasanın işlem geçmişini göster"""
+        if not self.table.selectionModel().hasSelection():
+            return
+        
+        row = self.table.currentRow()
+        kasa_id = int(self.table.item(row, 0).text())
+        kasa_adi = self.table.item(row, 1).text()
+        para_birimi = self.table.item(row, 2).text()
+        
+        form = KasaDetayWidget(self.db, kasa_id, kasa_adi, para_birimi)
+        drawer = DrawerPanel(self, f"💰 {kasa_adi} - İşlem Geçmişi", form, width=700)
+        drawer.show()
     
     def tahakkuk_detay_goster(self):
         """Seçili kasanın tahakkuk detayını göster"""
