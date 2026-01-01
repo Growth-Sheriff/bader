@@ -1789,11 +1789,12 @@ def api_docs():
 @app.get("/web/budgets")
 def web_get_budgets(
     year: Optional[int] = None,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Bütçe listesi"""
-    query = db.query(Budget).filter(Budget.customer_id == token["customer_id"])
+    customer = get_customer_by_api_key(api_key, db)
+    query = db.query(Budget).filter(Budget.customer_id == customer.customer_id)
     if year:
         query = query.filter(Budget.year == year)
     budgets = query.order_by(Budget.year.desc(), Budget.category).all()
@@ -1819,12 +1820,13 @@ def web_get_budgets(
 @app.post("/web/budgets")
 def web_create_budget(
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Bütçe kalemi ekle"""
+    customer = get_customer_by_api_key(api_key, db)
     budget = Budget(
-        customer_id=token["customer_id"],
+        customer_id=customer.customer_id,
         year=data.get("year", datetime.now().year),
         category=data["category"],
         budget_type=data.get("budget_type", "expense"),
@@ -1842,13 +1844,14 @@ def web_create_budget(
 def web_update_budget(
     budget_id: str,
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Bütçe güncelle"""
+    customer = get_customer_by_api_key(api_key, db)
     budget = db.query(Budget).filter(
         Budget.id == budget_id,
-        Budget.customer_id == token["customer_id"]
+        Budget.customer_id == customer.customer_id
     ).first()
     if not budget:
         raise HTTPException(status_code=404, detail="Bütçe bulunamadı")
@@ -1863,13 +1866,14 @@ def web_update_budget(
 @app.delete("/web/budgets/{budget_id}")
 def web_delete_budget(
     budget_id: str,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Bütçe sil"""
+    customer = get_customer_by_api_key(api_key, db)
     budget = db.query(Budget).filter(
         Budget.id == budget_id,
-        Budget.customer_id == token["customer_id"]
+        Budget.customer_id == customer.customer_id
     ).first()
     if not budget:
         raise HTTPException(status_code=404, detail="Bütçe bulunamadı")
@@ -1884,11 +1888,12 @@ def web_delete_budget(
 @app.get("/web/documents")
 def web_get_documents(
     category: Optional[str] = None,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Belge listesi"""
-    query = db.query(Document).filter(Document.customer_id == token["customer_id"])
+    customer = get_customer_by_api_key(api_key, db)
+    query = db.query(Document).filter(Document.customer_id == customer.customer_id)
     if category:
         query = query.filter(Document.category == category)
     documents = query.order_by(Document.created_at.desc()).all()
@@ -1915,12 +1920,13 @@ def web_get_documents(
 @app.post("/web/documents")
 def web_create_document(
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Belge ekle"""
+    customer = get_customer_by_api_key(api_key, db)
     document = Document(
-        customer_id=token["customer_id"],
+        customer_id=customer.customer_id,
         title=data["title"],
         file_name=data.get("file_name"),
         file_path=data.get("file_path"),
@@ -1940,13 +1946,13 @@ def web_create_document(
 @app.delete("/web/documents/{document_id}")
 def web_delete_document(
     document_id: str,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Belge sil"""
     document = db.query(Document).filter(
         Document.id == document_id,
-        Document.customer_id == token["customer_id"]
+        Document.customer_id == customer.customer_id
     ).first()
     if not document:
         raise HTTPException(status_code=404, detail="Belge bulunamadı")
@@ -1961,11 +1967,11 @@ def web_delete_document(
 @app.get("/web/meetings")
 def web_get_meetings(
     status: Optional[str] = None,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Toplantı listesi"""
-    query = db.query(Meeting).filter(Meeting.customer_id == token["customer_id"])
+    query = db.query(Meeting).filter(Meeting.customer_id == customer.customer_id)
     if status:
         query = query.filter(Meeting.status == status)
     meetings = query.order_by(Meeting.date.desc()).all()
@@ -1994,12 +2000,12 @@ def web_get_meetings(
 @app.post("/web/meetings")
 def web_create_meeting(
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Toplantı ekle"""
     meeting = Meeting(
-        customer_id=token["customer_id"],
+        customer_id=customer.customer_id,
         title=data["title"],
         meeting_type=data.get("meeting_type", "Yönetim"),
         date=data["date"],
@@ -2021,13 +2027,13 @@ def web_create_meeting(
 def web_update_meeting(
     meeting_id: str,
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Toplantı güncelle"""
     meeting = db.query(Meeting).filter(
         Meeting.id == meeting_id,
-        Meeting.customer_id == token["customer_id"]
+        Meeting.customer_id == customer.customer_id
     ).first()
     if not meeting:
         raise HTTPException(status_code=404, detail="Toplantı bulunamadı")
@@ -2042,13 +2048,13 @@ def web_update_meeting(
 @app.delete("/web/meetings/{meeting_id}")
 def web_delete_meeting(
     meeting_id: str,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Toplantı sil"""
     meeting = db.query(Meeting).filter(
         Meeting.id == meeting_id,
-        Meeting.customer_id == token["customer_id"]
+        Meeting.customer_id == customer.customer_id
     ).first()
     if not meeting:
         raise HTTPException(status_code=404, detail="Toplantı bulunamadı")
@@ -2063,11 +2069,11 @@ def web_delete_meeting(
 @app.get("/web/events")
 def web_get_events(
     status: Optional[str] = None,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Etkinlik listesi"""
-    query = db.query(Event).filter(Event.customer_id == token["customer_id"])
+    query = db.query(Event).filter(Event.customer_id == customer.customer_id)
     if status:
         query = query.filter(Event.status == status)
     events = query.order_by(Event.start_date.desc()).all()
@@ -2100,12 +2106,12 @@ def web_get_events(
 @app.post("/web/events")
 def web_create_event(
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Etkinlik ekle"""
     event = Event(
-        customer_id=token["customer_id"],
+        customer_id=customer.customer_id,
         title=data["title"],
         event_type=data.get("event_type"),
         start_date=data["start_date"],
@@ -2131,13 +2137,13 @@ def web_create_event(
 def web_update_event(
     event_id: str,
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Etkinlik güncelle"""
     event = db.query(Event).filter(
         Event.id == event_id,
-        Event.customer_id == token["customer_id"]
+        Event.customer_id == customer.customer_id
     ).first()
     if not event:
         raise HTTPException(status_code=404, detail="Etkinlik bulunamadı")
@@ -2154,13 +2160,13 @@ def web_update_event(
 @app.delete("/web/events/{event_id}")
 def web_delete_event(
     event_id: str,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Etkinlik sil"""
     event = db.query(Event).filter(
         Event.id == event_id,
-        Event.customer_id == token["customer_id"]
+        Event.customer_id == customer.customer_id
     ).first()
     if not event:
         raise HTTPException(status_code=404, detail="Etkinlik bulunamadı")
@@ -2176,11 +2182,11 @@ def web_delete_event(
 def web_get_transfers(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Virman listesi"""
-    query = db.query(Transfer).filter(Transfer.customer_id == token["customer_id"])
+    query = db.query(Transfer).filter(Transfer.customer_id == customer.customer_id)
     if start_date:
         query = query.filter(Transfer.date >= start_date)
     if end_date:
@@ -2207,12 +2213,12 @@ def web_get_transfers(
 @app.post("/web/transfers")
 def web_create_transfer(
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Virman ekle"""
     transfer = Transfer(
-        customer_id=token["customer_id"],
+        customer_id=customer.customer_id,
         from_account=data["from_account"],
         to_account=data["to_account"],
         amount=data["amount"],
@@ -2224,14 +2230,14 @@ def web_create_transfer(
     
     # Kasa bakiyelerini güncelle
     from_account = db.query(CashAccount).filter(
-        CashAccount.customer_id == token["customer_id"],
+        CashAccount.customer_id == customer.customer_id,
         CashAccount.name == data["from_account"]
     ).first()
     if from_account:
         from_account.balance = float(from_account.balance or 0) - float(data["amount"])
     
     to_account = db.query(CashAccount).filter(
-        CashAccount.customer_id == token["customer_id"],
+        CashAccount.customer_id == customer.customer_id,
         CashAccount.name == data["to_account"]
     ).first()
     if to_account:
@@ -2245,27 +2251,27 @@ def web_create_transfer(
 @app.delete("/web/transfers/{transfer_id}")
 def web_delete_transfer(
     transfer_id: str,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Virman sil"""
     transfer = db.query(Transfer).filter(
         Transfer.id == transfer_id,
-        Transfer.customer_id == token["customer_id"]
+        Transfer.customer_id == customer.customer_id
     ).first()
     if not transfer:
         raise HTTPException(status_code=404, detail="Virman bulunamadı")
     
     # Kasa bakiyelerini geri al
     from_account = db.query(CashAccount).filter(
-        CashAccount.customer_id == token["customer_id"],
+        CashAccount.customer_id == customer.customer_id,
         CashAccount.name == transfer.from_account
     ).first()
     if from_account:
         from_account.balance = float(from_account.balance or 0) + float(transfer.amount)
     
     to_account = db.query(CashAccount).filter(
-        CashAccount.customer_id == token["customer_id"],
+        CashAccount.customer_id == customer.customer_id,
         CashAccount.name == transfer.to_account
     ).first()
     if to_account:
@@ -2281,13 +2287,13 @@ def web_delete_transfer(
 @app.get("/web/members/{member_id}/family")
 def web_get_family_members(
     member_id: str,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Üyenin aile üyeleri"""
     family = db.query(FamilyMember).filter(
         FamilyMember.member_id == member_id,
-        FamilyMember.customer_id == token["customer_id"]
+        FamilyMember.customer_id == customer.customer_id
     ).all()
     
     return {
@@ -2312,12 +2318,12 @@ def web_get_family_members(
 def web_add_family_member(
     member_id: str,
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Aile üyesi ekle"""
     family_member = FamilyMember(
-        customer_id=token["customer_id"],
+        customer_id=customer.customer_id,
         member_id=member_id,
         full_name=data["full_name"],
         relationship=data.get("relationship"),
@@ -2336,13 +2342,13 @@ def web_add_family_member(
 @app.delete("/web/family/{family_id}")
 def web_delete_family_member(
     family_id: str,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Aile üyesi sil"""
     family = db.query(FamilyMember).filter(
         FamilyMember.id == family_id,
-        FamilyMember.customer_id == token["customer_id"]
+        FamilyMember.customer_id == customer.customer_id
     ).first()
     if not family:
         raise HTTPException(status_code=404, detail="Aile üyesi bulunamadı")
@@ -2356,12 +2362,12 @@ def web_delete_family_member(
 
 @app.get("/web/carryovers")
 def web_get_carryovers(
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Devir listesi"""
     carryovers = db.query(YearlyCarryover).filter(
-        YearlyCarryover.customer_id == token["customer_id"]
+        YearlyCarryover.customer_id == customer.customer_id
     ).order_by(YearlyCarryover.from_year.desc()).all()
     
     return {
@@ -2388,7 +2394,7 @@ def web_get_carryovers(
 @app.post("/web/carryovers")
 def web_create_carryover(
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Yıl devri oluştur"""
@@ -2397,19 +2403,19 @@ def web_create_carryover(
     
     # Yıl gelir/gider hesapla
     total_income = db.query(Income).filter(
-        Income.customer_id == token["customer_id"],
+        Income.customer_id == customer.customer_id,
         Income.fiscal_year == from_year
     ).with_entities(func.sum(Income.amount)).scalar() or 0
     
     total_expense = db.query(Expense).filter(
-        Expense.customer_id == token["customer_id"],
+        Expense.customer_id == customer.customer_id,
         Expense.fiscal_year == from_year
     ).with_entities(func.sum(Expense.amount)).scalar() or 0
     
     balance = float(total_income) - float(total_expense)
     
     carryover = YearlyCarryover(
-        customer_id=token["customer_id"],
+        customer_id=customer.customer_id,
         from_year=from_year,
         to_year=to_year,
         total_income=total_income,
@@ -2429,13 +2435,13 @@ def web_create_carryover(
 def web_approve_carryover(
     carryover_id: str,
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Devir onayla"""
     carryover = db.query(YearlyCarryover).filter(
         YearlyCarryover.id == carryover_id,
-        YearlyCarryover.customer_id == token["customer_id"]
+        YearlyCarryover.customer_id == customer.customer_id
     ).first()
     if not carryover:
         raise HTTPException(status_code=404, detail="Devir bulunamadı")
@@ -2447,7 +2453,7 @@ def web_approve_carryover(
     # Yeni yıla devir geliri ekle
     if carryover.carried_balance > 0:
         income = Income(
-            customer_id=token["customer_id"],
+            customer_id=customer.customer_id,
             category="DEVİR",
             amount=carryover.carried_balance,
             date=date(carryover.to_year, 1, 1),
@@ -2466,12 +2472,12 @@ def web_approve_carryover(
 @app.get("/web/assessment-reports")
 def web_get_assessment_reports(
     year: Optional[int] = None,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Tahakkuk raporları"""
     query = db.query(AssessmentReport).filter(
-        AssessmentReport.customer_id == token["customer_id"]
+        AssessmentReport.customer_id == customer.customer_id
     )
     if year:
         query = query.filter(AssessmentReport.year == year)
@@ -2499,7 +2505,7 @@ def web_get_assessment_reports(
 @app.post("/web/assessment-reports/generate")
 def web_generate_assessment_report(
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Tahakkuk raporu oluştur"""
@@ -2507,7 +2513,7 @@ def web_generate_assessment_report(
     
     # Üye sayısı
     members = db.query(Member).filter(
-        Member.customer_id == token["customer_id"],
+        Member.customer_id == customer.customer_id,
         Member.status == 'active'
     ).all()
     member_count = len(members)
@@ -2517,7 +2523,7 @@ def web_generate_assessment_report(
     
     # Tahsilat hesapla
     total_collected = db.query(Due).filter(
-        Due.customer_id == token["customer_id"],
+        Due.customer_id == customer.customer_id,
         Due.year == year
     ).with_entities(func.sum(Due.paid_amount)).scalar() or 0
     
@@ -2525,7 +2531,7 @@ def web_generate_assessment_report(
     collection_rate = (float(total_collected) / total_assessed * 100) if total_assessed > 0 else 0
     
     report = AssessmentReport(
-        customer_id=token["customer_id"],
+        customer_id=customer.customer_id,
         year=year,
         report_date=date.today(),
         total_assessed=total_assessed,
@@ -2557,12 +2563,12 @@ def web_generate_assessment_report(
 
 @app.get("/web/members/left")
 def web_get_left_members(
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Ayrılan üyeler listesi"""
     members = db.query(Member).filter(
-        Member.customer_id == token["customer_id"],
+        Member.customer_id == customer.customer_id,
         Member.status == 'inactive'
     ).order_by(Member.leave_date.desc()).all()
     
@@ -2587,13 +2593,13 @@ def web_get_left_members(
 def web_member_leave(
     member_id: str,
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Üyeyi ayrılmış olarak işaretle"""
     member = db.query(Member).filter(
         Member.id == member_id,
-        Member.customer_id == token["customer_id"]
+        Member.customer_id == customer.customer_id
     ).first()
     if not member:
         raise HTTPException(status_code=404, detail="Üye bulunamadı")
@@ -2608,13 +2614,13 @@ def web_member_leave(
 @app.put("/web/members/{member_id}/reactivate")
 def web_member_reactivate(
     member_id: str,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Ayrılan üyeyi tekrar aktifleştir"""
     member = db.query(Member).filter(
         Member.id == member_id,
-        Member.customer_id == token["customer_id"]
+        Member.customer_id == customer.customer_id
     ).first()
     if not member:
         raise HTTPException(status_code=404, detail="Üye bulunamadı")
@@ -2632,13 +2638,13 @@ def web_member_reactivate(
 def web_update_income(
     income_id: str,
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Gelir güncelle"""
     income = db.query(Income).filter(
         Income.id == income_id,
-        Income.customer_id == token["customer_id"]
+        Income.customer_id == customer.customer_id
     ).first()
     if not income:
         raise HTTPException(status_code=404, detail="Gelir bulunamadı")
@@ -2653,13 +2659,13 @@ def web_update_income(
 @app.delete("/web/incomes/{income_id}")
 def web_delete_income(
     income_id: str,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Gelir sil"""
     income = db.query(Income).filter(
         Income.id == income_id,
-        Income.customer_id == token["customer_id"]
+        Income.customer_id == customer.customer_id
     ).first()
     if not income:
         raise HTTPException(status_code=404, detail="Gelir bulunamadı")
@@ -2672,13 +2678,13 @@ def web_delete_income(
 def web_update_expense(
     expense_id: str,
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Gider güncelle"""
     expense = db.query(Expense).filter(
         Expense.id == expense_id,
-        Expense.customer_id == token["customer_id"]
+        Expense.customer_id == customer.customer_id
     ).first()
     if not expense:
         raise HTTPException(status_code=404, detail="Gider bulunamadı")
@@ -2693,13 +2699,13 @@ def web_update_expense(
 @app.delete("/web/expenses/{expense_id}")
 def web_delete_expense(
     expense_id: str,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Gider sil"""
     expense = db.query(Expense).filter(
         Expense.id == expense_id,
-        Expense.customer_id == token["customer_id"]
+        Expense.customer_id == customer.customer_id
     ).first()
     if not expense:
         raise HTTPException(status_code=404, detail="Gider bulunamadı")
@@ -2714,12 +2720,12 @@ def web_delete_expense(
 @app.post("/web/cash-accounts")
 def web_create_cash_account(
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Kasa ekle"""
     account = CashAccount(
-        customer_id=token["customer_id"],
+        customer_id=customer.customer_id,
         name=data["name"],
         type=data.get("type", "cash"),
         balance=data.get("balance", 0),
@@ -2737,13 +2743,13 @@ def web_create_cash_account(
 def web_update_cash_account(
     account_id: str,
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Kasa güncelle"""
     account = db.query(CashAccount).filter(
         CashAccount.id == account_id,
-        CashAccount.customer_id == token["customer_id"]
+        CashAccount.customer_id == customer.customer_id
     ).first()
     if not account:
         raise HTTPException(status_code=404, detail="Kasa bulunamadı")
@@ -2758,13 +2764,13 @@ def web_update_cash_account(
 @app.delete("/web/cash-accounts/{account_id}")
 def web_delete_cash_account(
     account_id: str,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Kasa sil"""
     account = db.query(CashAccount).filter(
         CashAccount.id == account_id,
-        CashAccount.customer_id == token["customer_id"]
+        CashAccount.customer_id == customer.customer_id
     ).first()
     if not account:
         raise HTTPException(status_code=404, detail="Kasa bulunamadı")
@@ -2780,7 +2786,7 @@ def web_delete_cash_account(
 def web_search(
     q: str,
     type: Optional[str] = None,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Genel arama"""
@@ -2789,7 +2795,7 @@ def web_search(
     
     if not type or type == "members":
         members = db.query(Member).filter(
-            Member.customer_id == token["customer_id"],
+            Member.customer_id == customer.customer_id,
             (Member.full_name.ilike(search_term) | 
              Member.member_no.ilike(search_term) |
              Member.tc_no.ilike(search_term) |
@@ -2800,7 +2806,7 @@ def web_search(
     
     if not type or type == "incomes":
         incomes = db.query(Income).filter(
-            Income.customer_id == token["customer_id"],
+            Income.customer_id == customer.customer_id,
             (Income.category.ilike(search_term) | 
              Income.description.ilike(search_term) |
              Income.receipt_no.ilike(search_term))
@@ -2809,7 +2815,7 @@ def web_search(
     
     if not type or type == "expenses":
         expenses = db.query(Expense).filter(
-            Expense.customer_id == token["customer_id"],
+            Expense.customer_id == customer.customer_id,
             (Expense.category.ilike(search_term) | 
              Expense.description.ilike(search_term) |
              Expense.vendor.ilike(search_term) |
@@ -2828,19 +2834,19 @@ def web_report_income_expense(
     year: Optional[int] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Gelir-Gider raporu"""
     year = year or datetime.now().year
     
     incomes = db.query(Income).filter(
-        Income.customer_id == token["customer_id"],
+        Income.customer_id == customer.customer_id,
         Income.fiscal_year == year
     ).all()
     
     expenses = db.query(Expense).filter(
-        Expense.customer_id == token["customer_id"],
+        Expense.customer_id == customer.customer_id,
         Expense.fiscal_year == year
     ).all()
     
@@ -2870,12 +2876,12 @@ def web_report_income_expense(
 
 @app.get("/web/reports/members")
 def web_report_members(
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Üye raporu"""
     members = db.query(Member).filter(
-        Member.customer_id == token["customer_id"]
+        Member.customer_id == customer.customer_id
     ).all()
     
     active = len([m for m in members if m.status == 'active'])
@@ -2906,14 +2912,14 @@ def web_report_members(
 @app.get("/web/reports/dues")
 def web_report_dues(
     year: Optional[int] = None,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Aidat raporu"""
     year = year or datetime.now().year
     
     dues = db.query(Due).filter(
-        Due.customer_id == token["customer_id"],
+        Due.customer_id == customer.customer_id,
         Due.year == year
     ).all()
     
@@ -2943,12 +2949,12 @@ def web_report_dues(
 
 @app.get("/web/reports/cash")
 def web_report_cash(
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Kasa raporu"""
     accounts = db.query(CashAccount).filter(
-        CashAccount.customer_id == token["customer_id"]
+        CashAccount.customer_id == customer.customer_id
     ).all()
     
     total_balance = sum([float(a.balance or 0) for a in accounts])
@@ -2970,7 +2976,7 @@ def web_report_cash(
 @app.get("/web/reports/yearly")
 def web_report_yearly(
     year: Optional[int] = None,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Yıllık özet rapor"""
@@ -2978,25 +2984,25 @@ def web_report_yearly(
     
     # Üye istatistikleri
     members = db.query(Member).filter(
-        Member.customer_id == token["customer_id"],
+        Member.customer_id == customer.customer_id,
         Member.status == 'active'
     ).count()
     
     # Gelir
     total_income = db.query(Income).filter(
-        Income.customer_id == token["customer_id"],
+        Income.customer_id == customer.customer_id,
         Income.fiscal_year == year
     ).with_entities(func.sum(Income.amount)).scalar() or 0
     
     # Gider
     total_expense = db.query(Expense).filter(
-        Expense.customer_id == token["customer_id"],
+        Expense.customer_id == customer.customer_id,
         Expense.fiscal_year == year
     ).with_entities(func.sum(Expense.amount)).scalar() or 0
     
     # Aidat
     dues_data = db.query(Due).filter(
-        Due.customer_id == token["customer_id"],
+        Due.customer_id == customer.customer_id,
         Due.year == year
     ).with_entities(
         func.sum(Due.amount).label('total'),
@@ -3005,11 +3011,11 @@ def web_report_yearly(
     
     # Toplantı ve etkinlik
     meeting_count = db.query(Meeting).filter(
-        Meeting.customer_id == token["customer_id"]
+        Meeting.customer_id == customer.customer_id
     ).count()
     
     event_count = db.query(Event).filter(
-        Event.customer_id == token["customer_id"]
+        Event.customer_id == customer.customer_id
     ).count()
     
     return {
@@ -3032,12 +3038,12 @@ def web_report_yearly(
 @app.get("/web/export/members")
 def web_export_members(
     format: str = "json",
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Üye listesi dışa aktar"""
     members = db.query(Member).filter(
-        Member.customer_id == token["customer_id"]
+        Member.customer_id == customer.customer_id
     ).order_by(Member.full_name).all()
     
     data = [
@@ -3074,11 +3080,11 @@ def web_export_members(
 def web_export_incomes(
     year: Optional[int] = None,
     format: str = "json",
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Gelir listesi dışa aktar"""
-    query = db.query(Income).filter(Income.customer_id == token["customer_id"])
+    query = db.query(Income).filter(Income.customer_id == customer.customer_id)
     if year:
         query = query.filter(Income.fiscal_year == year)
     incomes = query.order_by(Income.date.desc()).all()
@@ -3101,11 +3107,11 @@ def web_export_incomes(
 def web_export_expenses(
     year: Optional[int] = None,
     format: str = "json",
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Gider listesi dışa aktar"""
-    query = db.query(Expense).filter(Expense.customer_id == token["customer_id"])
+    query = db.query(Expense).filter(Expense.customer_id == customer.customer_id)
     if year:
         query = query.filter(Expense.fiscal_year == year)
     expenses = query.order_by(Expense.date.desc()).all()
@@ -3131,7 +3137,7 @@ def web_export_expenses(
 @app.post("/web/dues/multi-year")
 def web_multi_year_dues_payment(
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Çoklu yıl aidat ödemesi"""
@@ -3148,7 +3154,7 @@ def web_multi_year_dues_payment(
         for month in months:
             # Mevcut aidat kaydını bul veya oluştur
             due = db.query(Due).filter(
-                Due.customer_id == token["customer_id"],
+                Due.customer_id == customer.customer_id,
                 Due.member_id == member_id,
                 Due.year == year,
                 Due.month == month
@@ -3156,7 +3162,7 @@ def web_multi_year_dues_payment(
             
             if not due:
                 due = Due(
-                    customer_id=token["customer_id"],
+                    customer_id=customer.customer_id,
                     member_id=member_id,
                     year=year,
                     month=month,
@@ -3176,7 +3182,7 @@ def web_multi_year_dues_payment(
     
     # Gelir kaydı oluştur
     income = Income(
-        customer_id=token["customer_id"],
+        customer_id=customer.customer_id,
         member_id=member_id,
         category="AİDAT",
         amount=total_paid,
@@ -3202,12 +3208,12 @@ def web_multi_year_dues_payment(
 
 @app.get("/web/users")
 def web_get_users(
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Kullanıcı listesi"""
     users = db.query(User).filter(
-        User.customer_id == token["customer_id"]
+        User.customer_id == customer.customer_id
     ).order_by(User.created_at.desc()).all()
     
     return {
@@ -3230,7 +3236,7 @@ def web_get_users(
 @app.post("/web/users")
 def web_create_user(
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Kullanıcı ekle"""
@@ -3238,7 +3244,7 @@ def web_create_user(
     password_hash = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt()).decode()
     
     user = User(
-        customer_id=token["customer_id"],
+        customer_id=customer.customer_id,
         username=data["username"],
         password_hash=password_hash,
         full_name=data["full_name"],
@@ -3256,13 +3262,13 @@ def web_create_user(
 def web_update_user(
     user_id: str,
     data: Dict[str, Any],
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Kullanıcı güncelle"""
     user = db.query(User).filter(
         User.id == user_id,
-        User.customer_id == token["customer_id"]
+        User.customer_id == customer.customer_id
     ).first()
     if not user:
         raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
@@ -3280,13 +3286,13 @@ def web_update_user(
 @app.delete("/web/users/{user_id}")
 def web_delete_user(
     user_id: str,
-    token: dict = Depends(verify_token),
+    api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
 ):
     """Kullanıcı sil"""
     user = db.query(User).filter(
         User.id == user_id,
-        User.customer_id == token["customer_id"]
+        User.customer_id == customer.customer_id
     ).first()
     if not user:
         raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
