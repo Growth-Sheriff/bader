@@ -980,12 +980,12 @@ def get_dashboard(
     total_income = db.query(Income).filter(
         Income.customer_id == cid, 
         Income.fiscal_year == current_year
-    ).with_entities(db.func.sum(Income.amount)).scalar() or 0
+    ).with_entities(func.sum(Income.amount)).scalar() or 0
     
     total_expense = db.query(Expense).filter(
         Expense.customer_id == cid,
         Expense.fiscal_year == current_year
-    ).with_entities(db.func.sum(Expense.amount)).scalar() or 0
+    ).with_entities(func.sum(Expense.amount)).scalar() or 0
     
     pending_dues = db.query(Due).filter(
         Due.customer_id == cid,
