@@ -149,6 +149,8 @@ class Database:
         self.cursor: Optional[sqlite3.Cursor] = None
         self.online_mode = get_license_mode() == 'online'
         self.online_db = OnlineDatabase() if self.online_mode else None
+        # Otomatik bağlantı kur
+        self.connect()
         
     def is_online(self):
         """Online mod aktif mi?"""
