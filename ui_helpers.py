@@ -6,9 +6,119 @@ Ortak kullanılan UI yardımcı fonksiyonları
 from PyQt5.QtWidgets import (QComboBox, QCompleter, QTableWidget, QHeaderView, 
                              QMenu, QAction, QCheckBox, QWidgetAction, QFrame,
                              QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QDialog,
-                             QListWidget, QListWidgetItem, QMessageBox, QFileDialog)
+                             QListWidget, QListWidgetItem, QMessageBox, QFileDialog,
+                             QAbstractItemView, QDialogButtonBox)
 from PyQt5.QtCore import Qt, QSettings
 from PyQt5.QtGui import QCursor
+
+
+class SutunAyarDialog(QDialog):
+    """Sütun ayarları dialogu - Görünürlük ve sıralama"""
+    
+    def __init__(self, table: QTableWidget, table_id: str = None, parent=None):
+        super().__init__(parent)
+        self.table = table
+        self.table_id = table_id
+        self.setWindowTitle("⚙️ Sütun Ayarları")
+        self.setMinimumSize(350, 450)
+        self.setup_ui()
+        self.load_columns()
+    
+    def setup_ui(self):
+        layout = QVBoxLayout()
+        layout.setSpacing(15)
+        layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Başlık
+        title = QLabel("Sütunları göster/gizle ve sıralayın")
+        title.setStyleSheet("font-size: 14px; color: #666;")
+        layout.addWidget(title)
+        
+        # İpucu
+        tip = QLabel("💡 Sürükleyerek sıralayabilirsiniz")
+        tip.setStyleSheet("font-size: 12px; color: #999; font-style: italic;")
+        layout.addWidget(tip)
+        
+        # Sütun listesi
+        self.column_list = QListWidget()
+        self.column_list.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+        self.column_list.setDefaultDropAction(Qt.DropAction.MoveAction)
+        self.column_list.setStyleSheet("""
+            QListWidget {
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 5px;
+                background: white;
+            }
+            QListWidget::item {
+                padding: 10px;
+                border-bottom: 1px solid #eee;
+            }
+            QListWidget::item:selected {
+                background-color: #E3F2FD;
+                color: #1976D2;
+            }
+        """)
+        layout.addWidget(self.column_list)
+        
+        # Butonlar
+        btn_layout = QHBoxLayout()
+        
+        show_all_btn = QPushButton("✅ Tümünü Göster")
+        show_all_btn.clicked.connect(self.show_all)
+        btn_layout.addWidget(show_all_btn)
+        
+        hide_all_btn = QPushButton("❌ Tümünü Gizle")
+        hide_all_btn.clicked.connect(self.hide_all)
+        btn_layout.addWidget(hide_all_btn)
+        
+        layout.addLayout(btn_layout)
+        
+        # Dialog butonları
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        button_box.accepted.connect(self.apply_changes)
+        button_box.rejected.connect(self.reject)
+        layout.addWidget(button_box)
+        
+        self.setLayout(layout)
+    
+    def load_columns(self):
+        """Mevcut sütunları yükle"""
+        for col in range(self.table.columnCount()):
+            header = self.table.horizontalHeaderItem(col)
+            col_name = header.text() if header else f"Sütun {col+1}"
+            
+            item = QListWidgetItem(col_name)
+            item.setCheckState(Qt.CheckState.Unchecked if self.table.isColumnHidden(col) else Qt.CheckState.Checked)
+            item.setData(Qt.ItemDataRole.UserRole, col)
+            self.column_list.addItem(item)
+    
+    def show_all(self):
+        """Tüm sütunları göster"""
+        for i in range(self.column_list.count()):
+            self.column_list.item(i).setCheckState(Qt.CheckState.Checked)
+    
+    def hide_all(self):
+        """Tüm sütunları gizle (ilk sütun hariç)"""
+        for i in range(self.column_list.count()):
+            if i == 0:  # İlk sütun her zaman görünür
+                self.column_list.item(i).setCheckState(Qt.CheckState.Checked)
+            else:
+                self.column_list.item(i).setCheckState(Qt.CheckState.Unchecked)
+    
+    def apply_changes(self):
+        """Değişiklikleri uygula"""
+        for i in range(self.column_list.count()):
+            item = self.column_list.item(i)
+            col = item.data(Qt.ItemDataRole.UserRole)
+            visible = item.checkState() == Qt.CheckState.Checked
+            self.table.setColumnHidden(col, not visible)
+        
+        # Ayarları kaydet
+        if self.table_id:
+            save_table_settings(self.table, self.table_id)
+        
+        self.accept()
 
 
 def make_searchable_combobox(combobox: QComboBox):
@@ -352,7 +462,19 @@ def show_column_menu(table: QTableWidget, pos, table_id: str = None):
     reset_action.triggered.connect(lambda: reset_table_settings(table, table_id))
     menu.addAction(reset_action)
     
+    # Gelişmiş ayarlar
+    menu.addSeparator()
+    advanced_action = QAction("⚙️ Gelişmiş Ayarlar...", table)
+    advanced_action.triggered.connect(lambda: open_column_settings(table, table_id))
+    menu.addAction(advanced_action)
+    
     menu.exec_(table.horizontalHeader().mapToGlobal(pos))
+
+
+def open_column_settings(table: QTableWidget, table_id: str = None):
+    """Gelişmiş sütun ayarları dialogunu aç"""
+    dialog = SutunAyarDialog(table, table_id, table)
+    dialog.exec()
 
 
 def toggle_column(table: QTableWidget, col: int, visible: bool, table_id: str = None):

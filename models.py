@@ -296,6 +296,145 @@ class UyeYoneticisi:
         return [dict(row) for row in self.db.cursor.fetchall()]
 
 
+class AileUyeYoneticisi:
+    """Üye aile bilgileri yönetimi - Online/Offline hybrid"""
+    
+    def __init__(self, db: Database):
+        self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None):
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                resp = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                resp = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                resp = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                resp = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if resp.status_code in [200, 201]:
+                return resp.json()
+            return None
+        except:
+            return None
+    
+    def aile_uyesi_ekle(self, uye_id: int, yakinlik: str, ad_soyad: str,
+                        dogum_tarihi: str = None, telefon: str = "",
+                        meslek: str = "", notlar: str = "") -> int:
+        """Yeni aile üyesi ekle"""
+        if self.online_mode:
+            data = {
+                'uye_id': uye_id, 'yakinlik': yakinlik, 'ad_soyad': ad_soyad,
+                'dogum_tarihi': dogum_tarihi, 'telefon': telefon,
+                'meslek': meslek, 'notlar': notlar
+            }
+            result = self._api_request('POST', '/db/aile_uyeleri', data)
+            if result and result.get('aile_uye_id'):
+                return result.get('aile_uye_id', 0)
+        
+        self.db.cursor.execute("""
+            INSERT INTO uye_aile_uyeleri 
+            (uye_id, yakinlik, ad_soyad, dogum_tarihi, telefon, meslek, notlar)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (uye_id, yakinlik, ad_soyad, dogum_tarihi, telefon, meslek, notlar))
+        self.db.commit()
+        return self.db.cursor.lastrowid
+    
+    def aile_uyesi_guncelle(self, aile_uye_id: int, yakinlik: str, ad_soyad: str,
+                            dogum_tarihi: str = None, telefon: str = "",
+                            meslek: str = "", notlar: str = ""):
+        """Aile üyesi güncelle"""
+        if self.online_mode:
+            data = {
+                'yakinlik': yakinlik, 'ad_soyad': ad_soyad,
+                'dogum_tarihi': dogum_tarihi, 'telefon': telefon,
+                'meslek': meslek, 'notlar': notlar
+            }
+            result = self._api_request('PUT', f'/db/aile_uyeleri/{aile_uye_id}', data)
+            if result and result.get('success'):
+                return
+        
+        self.db.cursor.execute("""
+            UPDATE uye_aile_uyeleri 
+            SET yakinlik = ?, ad_soyad = ?, dogum_tarihi = ?, telefon = ?, 
+                meslek = ?, notlar = ?, guncelleme_tarihi = CURRENT_TIMESTAMP
+            WHERE aile_uye_id = ?
+        """, (yakinlik, ad_soyad, dogum_tarihi, telefon, meslek, notlar, aile_uye_id))
+        self.db.commit()
+    
+    def aile_uyesi_sil(self, aile_uye_id: int):
+        """Aile üyesi sil"""
+        if self.online_mode:
+            result = self._api_request('DELETE', f'/db/aile_uyeleri/{aile_uye_id}')
+            if result and result.get('success'):
+                return
+        
+        self.db.cursor.execute("DELETE FROM uye_aile_uyeleri WHERE aile_uye_id = ?", (aile_uye_id,))
+        self.db.commit()
+    
+    def aile_uyeleri_listesi(self, uye_id: int) -> List[Dict]:
+        """Belirli bir üyenin aile üyelerini listele"""
+        if self.online_mode:
+            result = self._api_request('GET', '/db/aile_uyeleri', {'uye_id': uye_id})
+            if result:
+                if isinstance(result, list):
+                    return result
+                elif isinstance(result, dict) and 'data' in result:
+                    return result['data']
+        
+        self.db.cursor.execute("""
+            SELECT * FROM uye_aile_uyeleri 
+            WHERE uye_id = ?
+            ORDER BY 
+                CASE yakinlik 
+                    WHEN 'Eş' THEN 1 
+                    WHEN 'Çocuk' THEN 2 
+                    WHEN 'Anne' THEN 3 
+                    WHEN 'Baba' THEN 4 
+                    WHEN 'Kardeş' THEN 5 
+                    ELSE 6 
+                END,
+                ad_soyad
+        """, (uye_id,))
+        return [dict(row) for row in self.db.cursor.fetchall()]
+    
+    def aile_uyesi_getir(self, aile_uye_id: int) -> Optional[Dict]:
+        """Tek aile üyesi getir"""
+        if self.online_mode:
+            result = self._api_request('GET', f'/db/aile_uyeleri/{aile_uye_id}')
+            if result:
+                return result.get('data') if isinstance(result, dict) else result
+        
+        self.db.cursor.execute("SELECT * FROM uye_aile_uyeleri WHERE aile_uye_id = ?", (aile_uye_id,))
+        row = self.db.cursor.fetchone()
+        return dict(row) if row else None
+    
+    def aile_istatistikleri(self, uye_id: int) -> Dict:
+        """Üyenin aile istatistikleri"""
+        self.db.cursor.execute("""
+            SELECT 
+                COUNT(*) as toplam,
+                SUM(CASE WHEN yakinlik = 'Eş' THEN 1 ELSE 0 END) as es_sayisi,
+                SUM(CASE WHEN yakinlik = 'Çocuk' THEN 1 ELSE 0 END) as cocuk_sayisi
+            FROM uye_aile_uyeleri 
+            WHERE uye_id = ?
+        """, (uye_id,))
+        row = self.db.cursor.fetchone()
+        return dict(row) if row else {'toplam': 0, 'es_sayisi': 0, 'cocuk_sayisi': 0}
+
+
 class AidatYoneticisi:
     """Aidat takip ve ödeme işlemleri - Online/Offline hybrid"""
     

@@ -6,12 +6,13 @@ Tek üyenin tüm bilgilerini gösteren tam sayfa
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                              QLabel, QFrame, QGridLayout, QScrollArea,
                              QGroupBox, QTableWidget, QTableWidgetItem,
-                             QHeaderView)
-from PyQt5.QtCore import Qt, pyqtSignal
+                             QHeaderView, QDialog, QFormLayout, QLineEdit,
+                             QComboBox, QDateEdit)
+from PyQt5.QtCore import Qt, pyqtSignal, QDate
 from qfluentwidgets import MessageBox
 from PyQt5.QtGui import QFont
 from database import Database
-from models import UyeYoneticisi, AidatYoneticisi
+from models import UyeYoneticisi, AidatYoneticisi, AileUyeYoneticisi
 from typing import Optional
 
 
@@ -96,6 +97,7 @@ class UyeDetayWidget(QWidget):
         self.db = db
         self.uye_yoneticisi = UyeYoneticisi(db)
         self.aidat_yoneticisi = AidatYoneticisi(db)
+        self.aile_yoneticisi = AileUyeYoneticisi(db)
         self.uye_id = uye_id
         self.uye_data = None
         
@@ -235,6 +237,68 @@ class UyeDetayWidget(QWidget):
         
         content_layout.addLayout(bottom_row)
         
+        # Aile Üyeleri Tablosu
+        aile_group = QGroupBox("AİLE ÜYELERİ")
+        aile_group.setStyleSheet("""
+            QGroupBox {
+                background-color: white;
+                border: 1px solid rgba(47, 43, 61, 0.08);
+                border-radius: 10px;
+                font-size: 16px;
+                font-weight: 600;
+                color: #444050;
+                padding-top: 20px;
+                margin-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 20px;
+                padding: 0 10px;
+            }
+        """)
+        
+        aile_layout = QVBoxLayout()
+        aile_layout.setContentsMargins(15, 25, 15, 15)
+        
+        # Aile üyesi ekleme butonu
+        aile_btn_layout = QHBoxLayout()
+        aile_btn_layout.addStretch()
+        
+        self.aile_ekle_btn = QPushButton("➕ Aile Üyesi Ekle")
+        self.aile_ekle_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #66BB6A;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 16px;
+                font-size: 13px;
+            }
+            QPushButton:hover {
+                background-color: #4CAF50;
+            }
+        """)
+        self.aile_ekle_btn.clicked.connect(self.aile_uyesi_ekle)
+        aile_btn_layout.addWidget(self.aile_ekle_btn)
+        
+        aile_layout.addLayout(aile_btn_layout)
+        
+        self.aile_table = QTableWidget()
+        self.aile_table.setColumnCount(6)
+        self.aile_table.setHorizontalHeaderLabels([
+            "ID", "Yakınlık", "Ad Soyad", "Doğum Tarihi", "Telefon", "İşlemler"
+        ])
+        self.aile_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.aile_table.setColumnHidden(0, True)  # ID gizli
+        self.aile_table.setAlternatingRowColors(True)
+        self.aile_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.aile_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.aile_table.setMinimumHeight(150)
+        
+        aile_layout.addWidget(self.aile_table)
+        aile_group.setLayout(aile_layout)
+        content_layout.addWidget(aile_group)
+        
         # Aidat Geçmişi Tablosu
         aidat_group = QGroupBox("AİDAT GEÇMİŞİ")
         aidat_group.setStyleSheet("""
@@ -299,6 +363,7 @@ class UyeDetayWidget(QWidget):
         self._fill_adres_bilgileri()
         self._fill_iletisim_bilgileri()
         self._fill_aidat_ozeti()
+        self._fill_aile_uyeleri()
         self._fill_aidat_gecmisi()
         
     def _clear_cards(self):
@@ -419,5 +484,189 @@ class UyeDetayWidget(QWidget):
     def aidat_sayfasina_git(self):
         """Aidat sayfasına git"""
         self.aidat_sayfasi_ac.emit(self.uye_id)
+    
+    def _fill_aile_uyeleri(self):
+        """Aile üyeleri tablosunu doldur"""
+        aile_uyeleri = self.aile_yoneticisi.aile_uyeleri_listesi(self.uye_id)
+        
+        self.aile_table.setRowCount(len(aile_uyeleri))
+        
+        for row, aile in enumerate(aile_uyeleri):
+            self.aile_table.setItem(row, 0, QTableWidgetItem(str(aile['aile_uye_id'])))
+            self.aile_table.setItem(row, 1, QTableWidgetItem(aile['yakinlik']))
+            self.aile_table.setItem(row, 2, QTableWidgetItem(aile['ad_soyad']))
+            self.aile_table.setItem(row, 3, QTableWidgetItem(aile.get('dogum_tarihi') or '-'))
+            self.aile_table.setItem(row, 4, QTableWidgetItem(aile.get('telefon') or '-'))
+            
+            # İşlem butonları
+            btn_widget = QWidget()
+            btn_layout = QHBoxLayout()
+            btn_layout.setContentsMargins(5, 2, 5, 2)
+            btn_layout.setSpacing(5)
+            
+            edit_btn = QPushButton("✏️")
+            edit_btn.setFixedSize(30, 26)
+            edit_btn.setStyleSheet("QPushButton { background: #64B5F6; color: white; border: none; border-radius: 4px; } QPushButton:hover { background: #42A5F5; }")
+            edit_btn.clicked.connect(lambda checked, aid=aile['aile_uye_id']: self.aile_uyesi_duzenle(aid))
+            btn_layout.addWidget(edit_btn)
+            
+            del_btn = QPushButton("🗑️")
+            del_btn.setFixedSize(30, 26)
+            del_btn.setStyleSheet("QPushButton { background: #EF5350; color: white; border: none; border-radius: 4px; } QPushButton:hover { background: #F44336; }")
+            del_btn.clicked.connect(lambda checked, aid=aile['aile_uye_id']: self.aile_uyesi_sil(aid))
+            btn_layout.addWidget(del_btn)
+            
+            btn_layout.addStretch()
+            btn_widget.setLayout(btn_layout)
+            self.aile_table.setCellWidget(row, 5, btn_widget)
+    
+    def aile_uyesi_ekle(self):
+        """Yeni aile üyesi ekle"""
+        dialog = AileUyeDialog(self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            data = dialog.get_data()
+            try:
+                self.aile_yoneticisi.aile_uyesi_ekle(
+                    uye_id=self.uye_id,
+                    yakinlik=data['yakinlik'],
+                    ad_soyad=data['ad_soyad'],
+                    dogum_tarihi=data['dogum_tarihi'],
+                    telefon=data['telefon'],
+                    meslek=data['meslek'],
+                    notlar=data['notlar']
+                )
+                self._fill_aile_uyeleri()
+                MessageBox("Başarılı", "Aile üyesi eklendi!", self).show()
+            except Exception as e:
+                MessageBox("Hata", f"Ekleme hatası:\n{e}", self).show()
+    
+    def aile_uyesi_duzenle(self, aile_uye_id: int):
+        """Aile üyesi düzenle"""
+        aile_data = self.aile_yoneticisi.aile_uyesi_getir(aile_uye_id)
+        if not aile_data:
+            return
+        
+        dialog = AileUyeDialog(self, aile_data)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            data = dialog.get_data()
+            try:
+                self.aile_yoneticisi.aile_uyesi_guncelle(
+                    aile_uye_id=aile_uye_id,
+                    yakinlik=data['yakinlik'],
+                    ad_soyad=data['ad_soyad'],
+                    dogum_tarihi=data['dogum_tarihi'],
+                    telefon=data['telefon'],
+                    meslek=data['meslek'],
+                    notlar=data['notlar']
+                )
+                self._fill_aile_uyeleri()
+                MessageBox("Başarılı", "Aile üyesi güncellendi!", self).show()
+            except Exception as e:
+                MessageBox("Hata", f"Güncelleme hatası:\n{e}", self).show()
+    
+    def aile_uyesi_sil(self, aile_uye_id: int):
+        """Aile üyesi sil"""
+        msg = MessageBox("Silme Onayı", "Bu aile üyesini silmek istediğinize emin misiniz?", self)
+        if msg.exec():
+            try:
+                self.aile_yoneticisi.aile_uyesi_sil(aile_uye_id)
+                self._fill_aile_uyeleri()
+                MessageBox("Başarılı", "Aile üyesi silindi!", self).show()
+            except Exception as e:
+                MessageBox("Hata", f"Silme hatası:\n{e}", self).show()
 
 
+class AileUyeDialog(QDialog):
+    """Aile üyesi ekleme/düzenleme dialog'u"""
+    
+    def __init__(self, parent=None, aile_data: dict = None):
+        super().__init__(parent)
+        self.aile_data = aile_data
+        self.setWindowTitle("Aile Üyesi Ekle" if not aile_data else "Aile Üyesi Düzenle")
+        self.setMinimumWidth(400)
+        self.setup_ui()
+        
+        if aile_data:
+            self.load_data()
+    
+    def setup_ui(self):
+        layout = QFormLayout()
+        layout.setSpacing(15)
+        layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Yakınlık
+        self.yakinlik_combo = QComboBox()
+        self.yakinlik_combo.addItems(['Eş', 'Çocuk', 'Anne', 'Baba', 'Kardeş', 'Diğer'])
+        layout.addRow("Yakınlık:", self.yakinlik_combo)
+        
+        # Ad Soyad
+        self.ad_soyad_edit = QLineEdit()
+        self.ad_soyad_edit.setPlaceholderText("Ad Soyad")
+        layout.addRow("Ad Soyad:", self.ad_soyad_edit)
+        
+        # Doğum Tarihi
+        self.dogum_tarihi_edit = QDateEdit()
+        self.dogum_tarihi_edit.setCalendarPopup(True)
+        self.dogum_tarihi_edit.setDate(QDate(1990, 1, 1))
+        layout.addRow("Doğum Tarihi:", self.dogum_tarihi_edit)
+        
+        # Telefon
+        self.telefon_edit = QLineEdit()
+        self.telefon_edit.setPlaceholderText("05XX XXX XX XX")
+        layout.addRow("Telefon:", self.telefon_edit)
+        
+        # Meslek
+        self.meslek_edit = QLineEdit()
+        self.meslek_edit.setPlaceholderText("Meslek")
+        layout.addRow("Meslek:", self.meslek_edit)
+        
+        # Notlar
+        self.notlar_edit = QLineEdit()
+        self.notlar_edit.setPlaceholderText("Notlar")
+        layout.addRow("Notlar:", self.notlar_edit)
+        
+        # Butonlar
+        btn_layout = QHBoxLayout()
+        
+        iptal_btn = QPushButton("İptal")
+        iptal_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(iptal_btn)
+        
+        kaydet_btn = QPushButton("Kaydet")
+        kaydet_btn.setStyleSheet("background-color: #64B5F6; color: white; border: none; padding: 10px 20px; border-radius: 6px;")
+        kaydet_btn.clicked.connect(self.validate_and_accept)
+        btn_layout.addWidget(kaydet_btn)
+        
+        layout.addRow("", btn_layout)
+        self.setLayout(layout)
+    
+    def load_data(self):
+        """Mevcut verileri yükle"""
+        if self.aile_data:
+            self.yakinlik_combo.setCurrentText(self.aile_data.get('yakinlik', 'Diğer'))
+            self.ad_soyad_edit.setText(self.aile_data.get('ad_soyad', ''))
+            
+            if self.aile_data.get('dogum_tarihi'):
+                self.dogum_tarihi_edit.setDate(QDate.fromString(self.aile_data['dogum_tarihi'], "yyyy-MM-dd"))
+            
+            self.telefon_edit.setText(self.aile_data.get('telefon', ''))
+            self.meslek_edit.setText(self.aile_data.get('meslek', ''))
+            self.notlar_edit.setText(self.aile_data.get('notlar', ''))
+    
+    def validate_and_accept(self):
+        """Doğrulama ve kabul"""
+        if not self.ad_soyad_edit.text().strip():
+            MessageBox("Uyarı", "Ad Soyad alanı zorunludur!", self).show()
+            return
+        self.accept()
+    
+    def get_data(self) -> dict:
+        """Form verilerini döndür"""
+        return {
+            'yakinlik': self.yakinlik_combo.currentText(),
+            'ad_soyad': self.ad_soyad_edit.text().strip(),
+            'dogum_tarihi': self.dogum_tarihi_edit.date().toString("yyyy-MM-dd"),
+            'telefon': self.telefon_edit.text().strip(),
+            'meslek': self.meslek_edit.text().strip(),
+            'notlar': self.notlar_edit.text().strip()
+        }

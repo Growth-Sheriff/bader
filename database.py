@@ -845,6 +845,23 @@ class Database:
                 FOREIGN KEY (odeme_id) REFERENCES aidat_odemeleri(odeme_id) ON DELETE CASCADE
             )
         """)
+        
+        # UYE_AILE_UYELERI tablosu - Üye aile bilgileri
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS uye_aile_uyeleri (
+                aile_uye_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                uye_id INTEGER NOT NULL,
+                yakinlik TEXT NOT NULL CHECK(yakinlik IN ('Eş', 'Çocuk', 'Anne', 'Baba', 'Kardeş', 'Diğer')),
+                ad_soyad TEXT NOT NULL,
+                dogum_tarihi DATE,
+                telefon TEXT,
+                meslek TEXT,
+                notlar TEXT,
+                olusturma_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                guncelleme_tarihi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (uye_id) REFERENCES uyeler(uye_id) ON DELETE CASCADE
+            )
+        """)
     
     def log_islem(self, kullanici: str, islem_turu: str, tablo_adi: str, 
                   kayit_id: int, aciklama: str, eski_deger: str = "", yeni_deger: str = ""):

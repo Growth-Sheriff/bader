@@ -40,6 +40,7 @@ from ui_kullanicilar import KullanicilarWidget
 from ui_ayarlar import AyarlarWidget
 from ui_belgeler import BelgelerWidget
 from ui_ocr import OCRWidget
+from ui_arama import GelismisAramaWidget
 # Köy modülleri
 from ui_koy_dashboard import KoyDashboardWidget
 from ui_koy_islemler import KoyGelirWidget, KoyGiderWidget, KoyKasaWidget, KoyVirmanWidget
@@ -98,6 +99,16 @@ class FluentBADERWindow(FluentWindow):
             self.dashboard_widget,
             FIF.HOME,
             'Dashboard',
+            NavigationItemPosition.TOP
+        )
+        
+        # Gelişmiş Arama
+        self.arama_widget = GelismisAramaWidget(self.db)
+        self.arama_widget.setObjectName("arama_widget")
+        self.addSubInterface(
+            self.arama_widget,
+            FIF.SEARCH,
+            'Arama',
             NavigationItemPosition.TOP
         )
         
@@ -396,6 +407,11 @@ class FluentBADERWindow(FluentWindow):
         # Ayrılan üyeler
         self.ayrilan_widget.uye_detay_ac.connect(self.show_uye_detay)
         self.ayrilan_widget.uye_aidat_ac.connect(self.show_uye_aidat)
+        
+        # Gelişmiş Arama sinyalleri
+        self.arama_widget.uye_secildi.connect(self.show_uye_detay)
+        self.arama_widget.gelir_secildi.connect(lambda gid: self.switchTo(self.gelir_widget))
+        self.arama_widget.gider_secildi.connect(lambda gid: self.switchTo(self.gider_widget))
     
     def show_uye_detay(self, uye_id: int):
         """Üye detay sayfasını göster"""
