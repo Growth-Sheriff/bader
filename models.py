@@ -72,7 +72,9 @@ class UyeYoneticisi:
             }
             data = {k: v for k, v in data.items() if v is not None and v != ''}
             result = self._api_request('POST', '/db/uyeler', data)
-            return result.get('uye_id', 0) if result else 0
+            if result and result.get('uye_id'):
+                return result.get('uye_id', 0)
+            # API başarısız - offline'a devam et
         
         self.db.cursor.execute("""
             INSERT INTO uyeler (ad_soyad, telefon, telefon2, email, durum, notlar,
@@ -120,8 +122,10 @@ class UyeYoneticisi:
                 'ozel_aidat_tutari': ozel_aidat_tutari,
                 'aidat_indirimi_yuzde': aidat_indirimi_yuzde
             }
-            self._api_request('PUT', f'/db/uyeler/{uye_id}', data)
-            return
+            result = self._api_request('PUT', f'/db/uyeler/{uye_id}', data)
+            if result and result.get('success'):
+                return
+            # API başarısız - offline'a devam et
         
         self.db.cursor.execute("""
             UPDATE uyeler 
@@ -144,8 +148,10 @@ class UyeYoneticisi:
     def uye_ayir(self, uye_id: int):
         """Üyeyi ayrılan olarak işaretle (soft delete)"""
         if self.online_mode:
-            self._api_request('PUT', f'/db/uyeler/{uye_id}', {'durum': 'Ayrıldı'})
-            return
+            result = self._api_request('PUT', f'/db/uyeler/{uye_id}', {'durum': 'Ayrıldı'})
+            if result and result.get('success'):
+                return
+            # API başarısız - offline'a devam et
         
         self.db.cursor.execute("SELECT ad_soyad FROM uyeler WHERE uye_id = ?", (uye_id,))
         result = self.db.cursor.fetchone()
@@ -167,10 +173,13 @@ class UyeYoneticisi:
         """
         if self.online_mode:
             if mode == "cascade":
-                self._api_request('DELETE', f'/db/uyeler/{uye_id}')
+                result = self._api_request('DELETE', f'/db/uyeler/{uye_id}')
+                if result and result.get('success'):
+                    return
             else:
                 self.uye_ayir(uye_id)
-            return
+                return
+            # API başarısız - offline'a devam et
         
         self.db.cursor.execute("SELECT ad_soyad FROM uyeler WHERE uye_id = ?", (uye_id,))
         result = self.db.cursor.fetchone()
@@ -194,7 +203,9 @@ class UyeYoneticisi:
             elif dahil_ayrilan:
                 params['dahil_ayrilan'] = 'true'
             result = self._api_request('GET', '/db/uyeler', params)
-            return result.get('data', []) if result else []
+            if result and (result.get('data') or isinstance(result, list)):
+                return result.get('data', result) if isinstance(result, dict) else result
+            # API başarısız - offline'a devam et
         
         if durum:
             self.db.cursor.execute("""
@@ -213,7 +224,9 @@ class UyeYoneticisi:
         """Ayrılan üyeleri listele"""
         if self.online_mode:
             result = self._api_request('GET', '/db/uyeler', {'durum': 'Ayrıldı'})
-            return result.get('data', []) if result else []
+            if result and (result.get('data') or isinstance(result, list)):
+                return result.get('data', result) if isinstance(result, dict) else result
+            # API başarısız - offline'a devam et
         
         self.db.cursor.execute("""
             SELECT * FROM uyeler WHERE durum = 'Ayrıldı' ORDER BY ayrilma_tarihi DESC
@@ -321,7 +334,9 @@ class AidatYoneticisi:
                 'odenecek_tutar': yillik_aidat_tutari
             }
             result = self._api_request('POST', '/db/aidat_takip', data)
-            return result.get('aidat_id', -1) if result else -1
+            if result and result.get('aidat_id'):
+                return result.get('aidat_id', -1)
+            # API başarısız - offline'a devam et
             
         try:
             self.db.cursor.execute("""
@@ -355,7 +370,9 @@ class AidatYoneticisi:
                 'dekont_no': dekont_no
             }
             result = self._api_request('POST', '/db/aidat_odemeleri', data)
-            return result.get('odeme_id', -1) if result else -1
+            if result and result.get('odeme_id'):
+                return result.get('odeme_id', -1)
+            # API başarısız - offline'a devam et
         
         self.db.cursor.execute("""
             INSERT INTO aidat_odemeleri (aidat_id, tarih, tutar, aciklama, tahsilat_turu, dekont_no)
@@ -374,8 +391,10 @@ class AidatYoneticisi:
     def aidat_odeme_sil(self, odeme_id: int):
         """Aidat ödemesini sil"""
         if self.online_mode:
-            self._api_request('DELETE', f'/db/aidat_odemeleri/{odeme_id}')
-            return
+            result = self._api_request('DELETE', f'/db/aidat_odemeleri/{odeme_id}')
+            if result and result.get('success'):
+                return
+            # API başarısız - offline'a devam et
             
         # Önce aidat_id'yi al
         self.db.cursor.execute("SELECT aidat_id, tutar FROM aidat_odemeleri WHERE odeme_id = ?", (odeme_id,))
@@ -627,7 +646,9 @@ class GelirYoneticisi:
             }
             data = {k: v for k, v in data.items() if v is not None and v != ''}
             result = self._api_request('POST', '/db/gelirler', data)
-            return result.get('gelir_id', 0) if result else 0
+            if result and result.get('gelir_id'):
+                return result.get('gelir_id', 0)
+            # API başarısız - offline'a devam et
         
         belge_no = self.db.get_next_belge_no()
         
@@ -654,6 +675,17 @@ class GelirYoneticisi:
                       aciklama: str, tutar: float, kasa_id: int, 
                       tahsil_eden: str = "", notlar: str = "", dekont_no: str = ""):
         """Gelir kaydını güncelle"""
+        if self.online_mode:
+            data = {
+                'tarih': tarih, 'gelir_turu': gelir_turu, 'aciklama': aciklama,
+                'tutar': tutar, 'kasa_id': kasa_id, 'tahsil_eden': tahsil_eden,
+                'notlar': notlar, 'dekont_no': dekont_no
+            }
+            result = self._api_request('PUT', f'/db/gelirler/{gelir_id}', data)
+            if result and result.get('success'):
+                return
+            # API başarısız - offline'a devam et
+            
         self.db.cursor.execute("""
             UPDATE gelirler
             SET tarih = ?, gelir_turu = ?, aciklama = ?, tutar = ?, 
@@ -666,6 +698,12 @@ class GelirYoneticisi:
         
     def gelir_sil(self, gelir_id: int):
         """Gelir kaydını sil"""
+        if self.online_mode:
+            result = self._api_request('DELETE', f'/db/gelirler/{gelir_id}')
+            if result and result.get('success'):
+                return
+            # API başarısız - offline'a devam et
+            
         # Önce gelir bilgilerini al
         self.db.cursor.execute("SELECT tutar, gelir_turu, aidat_id FROM gelirler WHERE gelir_id = ?", (gelir_id,))
         result = self.db.cursor.fetchone()
@@ -918,7 +956,9 @@ class GiderYoneticisi:
                 'tahakkuk_durumu': tahakkuk_durumu
             }
             result = self._api_request('POST', '/db/giderler', data)
-            return result.get('gider_id', 0) if result else 0
+            if result and result.get('gider_id'):
+                return result.get('gider_id', 0)
+            # API başarısız - offline'a devam et
         
         islem_no = self.db.get_next_islem_no()
         self.db.cursor.execute("""
@@ -948,8 +988,10 @@ class GiderYoneticisi:
                 'odeyen': odeyen,
                 'notlar': notlar
             }
-            self._api_request('PUT', f'/db/giderler/{gider_id}', data)
-            return
+            result = self._api_request('PUT', f'/db/giderler/{gider_id}', data)
+            if result and result.get('success'):
+                return
+            # API başarısız - offline'a devam et
             
         self.db.cursor.execute("""
             UPDATE giderler
@@ -964,8 +1006,10 @@ class GiderYoneticisi:
     def gider_sil(self, gider_id: int):
         """Gider kaydını sil"""
         if self.online_mode:
-            self._api_request('DELETE', f'/db/giderler/{gider_id}')
-            return
+            result = self._api_request('DELETE', f'/db/giderler/{gider_id}')
+            if result and result.get('success'):
+                return
+            # API başarısız - offline'a devam et
             
         self.db.cursor.execute("SELECT tutar, gider_turu FROM giderler WHERE gider_id = ?", (gider_id,))
         result = self.db.cursor.fetchone()
@@ -1114,7 +1158,9 @@ class VirmanYoneticisi:
                 'aciklama': aciklama
             }
             result = self._api_request('POST', '/db/virmanlar', data)
-            return result.get('virman_id', 0) if result else 0
+            if result and result.get('virman_id'):
+                return result.get('virman_id', 0)
+            # API başarısız - offline'a devam et
             
         self.db.cursor.execute("""
             INSERT INTO virmanlar (tarih, gonderen_kasa_id, alan_kasa_id, tutar, aciklama)
@@ -1130,8 +1176,10 @@ class VirmanYoneticisi:
     def virman_sil(self, virman_id: int):
         """Virman işlemini sil"""
         if self.online_mode:
-            self._api_request('DELETE', f'/db/virmanlar/{virman_id}')
-            return
+            result = self._api_request('DELETE', f'/db/virmanlar/{virman_id}')
+            if result and result.get('success'):
+                return
+            # API başarısız - offline'a devam et
             
         self.db.cursor.execute("SELECT tutar FROM virmanlar WHERE virman_id = ?", (virman_id,))
         result = self.db.cursor.fetchone()
@@ -1231,7 +1279,9 @@ class KasaYoneticisi:
                 'aciklama': aciklama
             }
             result = self._api_request('POST', '/db/kasalar', data)
-            return result.get('kasa_id', -1) if result else -1
+            if result and result.get('kasa_id'):
+                return result.get('kasa_id', -1)
+            # API başarısız - offline'a devam et
             
         try:
             self.db.cursor.execute("""
@@ -1256,8 +1306,10 @@ class KasaYoneticisi:
                 'devir_bakiye': devir_bakiye,
                 'aciklama': aciklama
             }
-            self._api_request('PUT', f'/db/kasalar/{kasa_id}', data)
-            return
+            result = self._api_request('PUT', f'/db/kasalar/{kasa_id}', data)
+            if result and result.get('success'):
+                return
+            # API başarısız - offline'a devam et
             
         self.db.cursor.execute("""
             UPDATE kasalar
