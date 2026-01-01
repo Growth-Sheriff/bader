@@ -1666,10 +1666,35 @@ class KasaYoneticisi:
 
 
 class DevirYoneticisi:
-    """Yıl sonu devir işlemleri yöneticisi"""
+    """Yıl sonu devir işlemleri yöneticisi - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
     
     def yil_sonu_devir(self, yil: int, onay: bool = False) -> Dict:
         """
@@ -1778,10 +1803,35 @@ class DevirYoneticisi:
 
 
 class TahakkukYoneticisi:
-    """Tahakkuk takip ve raporlama yöneticisi"""
+    """Tahakkuk takip ve raporlama yöneticisi - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
     
     def tahakkuk_listesi(self, yil: int = None, durum: str = None) -> List[Dict]:
         """Tahakkuk listesi"""
@@ -1830,10 +1880,33 @@ class TahakkukYoneticisi:
 
 
 class RaporYoneticisi:
-    """Raporlama ve istatistik işlemleri"""
+    """Raporlama ve istatistik işlemleri - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
         
     def genel_ozet(self, yil: Optional[int] = None) -> Dict:
         """Genel mali durum özeti"""
@@ -1992,10 +2065,33 @@ class RaporYoneticisi:
 
 
 class MaliTabloYoneticisi:
-    """Mali tablolar ve bilanço işlemleri"""
+    """Mali tablolar ve bilanço işlemleri - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
         
     def bilanco_raporu(self, tarih: str = None) -> Dict:
         """
@@ -2230,10 +2326,39 @@ class MaliTabloYoneticisi:
 # ========================================
 
 class KoyKasaYoneticisi:
-    """Köy kasa yönetim ve hesaplama işlemleri"""
+    """Köy kasa yönetim ve hesaplama işlemleri - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
         
     def kasa_ekle(self, kasa_adi: str, para_birimi: str = "TL", 
                   devir_bakiye: float = 0, aciklama: str = "") -> int:
@@ -2326,10 +2451,39 @@ class KoyKasaYoneticisi:
 
 
 class KoyGelirYoneticisi:
-    """Köy gelir yönetim işlemleri"""
+    """Köy gelir yönetim işlemleri - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
         
     def gelir_ekle(self, tarih: str, gelir_turu: str, aciklama: str, 
                    tutar: float, kasa_id: int, tahsil_eden: str = "", 
@@ -2425,10 +2579,39 @@ class KoyGelirYoneticisi:
 
 
 class KoyGiderYoneticisi:
-    """Köy gider yönetim işlemleri"""
+    """Köy gider yönetim işlemleri - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
         
     def gider_ekle(self, tarih: str, gider_turu: str, aciklama: str, 
                    tutar: float, kasa_id: int, odeyen: str = "", 
@@ -2510,10 +2693,37 @@ class KoyGiderYoneticisi:
 
 
 class KoyVirmanYoneticisi:
-    """Köy virman (kasa transfer) işlemleri"""
+    """Köy virman (kasa transfer) işlemleri - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
         
     def virman_ekle(self, tarih: str, gonderen_kasa_id: int, alan_kasa_id: int, 
                     tutar: float, aciklama: str = "") -> int:
@@ -2573,10 +2783,39 @@ class KoyVirmanYoneticisi:
 # ========================================
 
 class KullaniciYoneticisi:
-    """Kullanıcı ve yetki yönetimi"""
+    """Kullanıcı ve yetki yönetimi - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
         
     def kullanici_ekle(self, kullanici_adi: str, sifre: str, ad_soyad: str,
                        email: str = "", rol: str = "görüntüleyici") -> int:
@@ -2657,10 +2896,39 @@ class KullaniciYoneticisi:
 # ========================================
 
 class EtkinlikYoneticisi:
-    """Etkinlik yönetimi"""
+    """Etkinlik yönetimi - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
         
     def etkinlik_ekle(self, etkinlik_turu: str, baslik: str, tarih: str,
                       aciklama: str = "", saat: str = "", bitis_tarihi: str = None,
@@ -2784,10 +3052,39 @@ class EtkinlikYoneticisi:
 # ========================================
 
 class ToplantiYoneticisi:
-    """Toplantı yönetimi"""
+    """Toplantı yönetimi - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
         
     def toplanti_ekle(self, toplanti_turu: str, baslik: str, tarih: str,
                       saat: str = "", mekan: str = "", gundem: str = "",
@@ -2846,10 +3143,39 @@ class ToplantiYoneticisi:
 # ========================================
 
 class ButceYoneticisi:
-    """Bütçe planlama yönetimi"""
+    """Bütçe planlama yönetimi - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
         
     def butce_ekle(self, yil: int, kategori: str, tur: str, 
                    planlanan_tutar: float, ay: int = None, aciklama: str = "") -> int:
@@ -2922,10 +3248,37 @@ class ButceYoneticisi:
 # ========================================
 
 class BelgeYoneticisi:
-    """Belge/dosya yönetimi"""
+    """Belge/dosya yönetimi - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
         
     def belge_ekle(self, belge_turu: str, baslik: str, dosya_adi: str, 
                    dosya_yolu: str, dosya_boyutu: int = 0,
@@ -2978,12 +3331,41 @@ class BelgeYoneticisi:
 # ========================================
 
 class AlacakYoneticisi:
-    """Alacak takip yöneticisi"""
+    """Alacak takip yöneticisi - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
         from models import GelirYoneticisi
         self.gelir_yoneticisi = GelirYoneticisi(db)
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
     
     def alacak_ekle(self, alacak_turu: str, aciklama: str, kisi_kurum: str,
                     toplam_tutar: float, para_birimi: str = 'TRY',
@@ -3191,12 +3573,41 @@ class AlacakYoneticisi:
 
 
 class VerecekYoneticisi:
-    """Verecek (borç) takip yöneticisi"""
+    """Verecek (borç) takip yöneticisi - Online/Offline hybrid"""
     
     def __init__(self, db: Database):
         self.db = db
+        self.online_mode = get_license_mode() == 'online'
+        if self.online_mode:
+            config = get_api_config()
+            self.api_url = config.get('api_url', '')
+            self.api_key = config.get('api_key', '')
+            self.headers = {'X-API-Key': self.api_key, 'Content-Type': 'application/json'}
         from models import GiderYoneticisi
         self.gider_yoneticisi = GiderYoneticisi(db)
+    
+    def _api_request(self, method: str, endpoint: str, data: dict = None) -> Optional[dict]:
+        """API isteği gönder"""
+        if not self.online_mode:
+            return None
+        try:
+            url = f"{self.api_url}{endpoint}"
+            if method == 'GET':
+                response = requests.get(url, headers=self.headers, params=data, timeout=10)
+            elif method == 'POST':
+                response = requests.post(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'PUT':
+                response = requests.put(url, headers=self.headers, json=data, timeout=10)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=self.headers, timeout=10)
+            else:
+                return None
+            if response.status_code in [200, 201]:
+                return response.json()
+            return None
+        except Exception as e:
+            print(f"API Error: {e}")
+            return None
     
     def verecek_ekle(self, verecek_turu: str, aciklama: str, kisi_kurum: str,
                      toplam_tutar: float, para_birimi: str = 'TRY',

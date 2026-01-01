@@ -896,3 +896,631 @@ def sync_download(
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+# ==================== DB API - DESKTOP İÇİN TAM CRUD ====================
+
+@app.get("/db/uyeler")
+def db_get_members(
+    durum: str = "Aktif",
+    dahil_ayrilan: bool = False,
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Desktop için üye listesi"""
+    customer = get_customer_by_api_key(api_key, db)
+    
+    query = db.query(Member).filter(Member.customer_id == customer.customer_id)
+    if durum and not dahil_ayrilan:
+        query = query.filter(Member.status == durum.lower())
+    
+    members = query.order_by(Member.full_name).all()
+    
+    return {
+        "success": True,
+        "data": [
+            {
+                "uye_id": str(m.id),
+                "uye_no": m.member_no,
+                "ad_soyad": m.full_name,
+                "tc_kimlik": m.tc_no,
+                "telefon": m.phone,
+                "telefon2": m.phone2,
+                "email": m.email,
+                "adres": m.address,
+                "il": m.city,
+                "ilce": m.district,
+                "dogum_tarihi": m.birth_date.isoformat() if m.birth_date else None,
+                "cinsiyet": m.gender,
+                "meslek": m.occupation,
+                "uyelik_tipi": m.membership_type,
+                "ozel_aidat_tutari": float(m.membership_fee) if m.membership_fee else 0,
+                "durum": m.status.capitalize() if m.status else 'Aktif',
+                "notlar": m.notes
+            }
+            for m in members
+        ]
+    }
+
+@app.get("/db/uyeler/{uye_id}")
+def db_get_member(
+    uye_id: str,
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Desktop için üye detayı"""
+    customer = get_customer_by_api_key(api_key, db)
+    
+    member = db.query(Member).filter(
+        Member.id == uye_id,
+        Member.customer_id == customer.customer_id
+    ).first()
+    
+    if not member:
+        raise HTTPException(status_code=404, detail="Üye bulunamadı")
+    
+    return {
+        "success": True,
+        "data": {
+            "uye_id": str(member.id),
+            "uye_no": member.member_no,
+            "ad_soyad": member.full_name,
+            "tc_kimlik": member.tc_no,
+            "telefon": member.phone,
+            "telefon2": member.phone2,
+            "email": member.email,
+            "adres": member.address,
+            "il": member.city,
+            "ilce": member.district,
+            "dogum_tarihi": member.birth_date.isoformat() if member.birth_date else None,
+            "cinsiyet": member.gender,
+            "meslek": member.occupation,
+            "uyelik_tipi": member.membership_type,
+            "ozel_aidat_tutari": float(member.membership_fee) if member.membership_fee else 0,
+            "durum": member.status.capitalize() if member.status else 'Aktif',
+            "notlar": member.notes
+        }
+    }
+
+@app.post("/db/uyeler")
+def db_create_member(
+    data: MemberCreate,
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Desktop için üye ekle"""
+    customer = get_customer_by_api_key(api_key, db)
+    
+    member = Member(
+        customer_id=customer.customer_id,
+        member_no=data.member_no,
+        full_name=data.full_name,
+        tc_no=data.tc_no,
+        phone=data.phone,
+        phone2=data.phone2,
+        email=data.email,
+        address=data.address,
+        city=data.city,
+        district=data.district,
+        birth_date=data.birth_date,
+        gender=data.gender,
+        occupation=data.occupation,
+        membership_type=data.membership_type,
+        membership_fee=data.membership_fee,
+        status=data.status.lower() if data.status else 'active',
+        notes=data.notes
+    )
+    db.add(member)
+    db.commit()
+    db.refresh(member)
+    
+    return {"success": True, "uye_id": str(member.id)}
+
+@app.put("/db/uyeler/{uye_id}")
+def db_update_member(
+    uye_id: str,
+    data: MemberCreate,
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Desktop için üye güncelle"""
+    customer = get_customer_by_api_key(api_key, db)
+    
+    member = db.query(Member).filter(
+        Member.id == uye_id,
+        Member.customer_id == customer.customer_id
+    ).first()
+    
+    if not member:
+        raise HTTPException(status_code=404, detail="Üye bulunamadı")
+    
+    for key, value in data.dict(exclude_unset=True).items():
+        setattr(member, key, value)
+    
+    db.commit()
+    return {"success": True}
+
+@app.delete("/db/uyeler/{uye_id}")
+def db_delete_member(
+    uye_id: str,
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Desktop için üye sil"""
+    customer = get_customer_by_api_key(api_key, db)
+    
+    member = db.query(Member).filter(
+        Member.id == uye_id,
+        Member.customer_id == customer.customer_id
+    ).first()
+    
+    if not member:
+        raise HTTPException(status_code=404, detail="Üye bulunamadı")
+    
+    db.delete(member)
+    db.commit()
+    return {"success": True}
+
+
+@app.get("/db/kasalar")
+def db_get_cash_accounts(
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Desktop için kasa listesi"""
+    customer = get_customer_by_api_key(api_key, db)
+    
+    accounts = db.query(CashAccount).filter(
+        CashAccount.customer_id == customer.customer_id,
+        CashAccount.is_active == True
+    ).all()
+    
+    return {
+        "success": True,
+        "kasalar": [
+            {
+                "kasa_id": str(a.id),
+                "kasa_adi": a.name,
+                "para_birimi": "TL" if a.type == "cash" else a.type.upper(),
+                "devir_bakiye": float(a.balance) if a.balance else 0,
+                "banka_adi": a.bank_name,
+                "iban": a.iban,
+                "aktif": a.is_active
+            }
+            for a in accounts
+        ]
+    }
+
+@app.post("/db/kasalar")
+def db_create_cash_account(
+    data: Dict[str, Any],
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Desktop için kasa ekle"""
+    customer = get_customer_by_api_key(api_key, db)
+    
+    account = CashAccount(
+        customer_id=customer.customer_id,
+        name=data.get('kasa_adi'),
+        type=data.get('para_birimi', 'TL').lower(),
+        balance=data.get('devir_bakiye', 0),
+        bank_name=data.get('banka_adi'),
+        iban=data.get('iban')
+    )
+    db.add(account)
+    db.commit()
+    db.refresh(account)
+    
+    return {"success": True, "kasa_id": str(account.id)}
+
+
+@app.get("/db/gelirler")
+def db_get_incomes(
+    baslangic_tarih: Optional[str] = None,
+    bitis_tarih: Optional[str] = None,
+    gelir_turu: Optional[str] = None,
+    kasa_id: Optional[str] = None,
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Desktop için gelir listesi"""
+    customer = get_customer_by_api_key(api_key, db)
+    
+    query = db.query(Income).filter(Income.customer_id == customer.customer_id)
+    
+    if baslangic_tarih:
+        query = query.filter(Income.date >= baslangic_tarih)
+    if bitis_tarih:
+        query = query.filter(Income.date <= bitis_tarih)
+    if gelir_turu:
+        query = query.filter(Income.category == gelir_turu)
+    
+    incomes = query.order_by(Income.date.desc()).all()
+    
+    return {
+        "success": True,
+        "gelirler": [
+            {
+                "gelir_id": str(i.id),
+                "tarih": i.date.isoformat(),
+                "gelir_turu": i.category,
+                "aciklama": i.description,
+                "tutar": float(i.amount),
+                "kasa_id": str(i.cash_account),
+                "dekont_no": i.receipt_no
+            }
+            for i in incomes
+        ]
+    }
+
+@app.post("/db/gelirler")
+def db_create_income(
+    data: Dict[str, Any],
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Desktop için gelir ekle"""
+    customer = get_customer_by_api_key(api_key, db)
+    
+    income = Income(
+        customer_id=customer.customer_id,
+        category=data.get('gelir_turu'),
+        amount=data.get('tutar'),
+        date=data.get('tarih'),
+        description=data.get('aciklama'),
+        receipt_no=data.get('dekont_no'),
+        cash_account=data.get('kasa_id', 'Ana Kasa'),
+        fiscal_year=data.get('ait_oldugu_yil')
+    )
+    db.add(income)
+    db.commit()
+    db.refresh(income)
+    
+    return {"success": True, "gelir_id": str(income.id)}
+
+
+@app.get("/db/giderler")
+def db_get_expenses(
+    baslangic_tarih: Optional[str] = None,
+    bitis_tarih: Optional[str] = None,
+    gider_turu: Optional[str] = None,
+    kasa_id: Optional[str] = None,
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Desktop için gider listesi"""
+    customer = get_customer_by_api_key(api_key, db)
+    
+    query = db.query(Expense).filter(Expense.customer_id == customer.customer_id)
+    
+    if baslangic_tarih:
+        query = query.filter(Expense.date >= baslangic_tarih)
+    if bitis_tarih:
+        query = query.filter(Expense.date <= bitis_tarih)
+    if gider_turu:
+        query = query.filter(Expense.category == gider_turu)
+    
+    expenses = query.order_by(Expense.date.desc()).all()
+    
+    return {
+        "success": True,
+        "giderler": [
+            {
+                "gider_id": str(e.id),
+                "tarih": e.date.isoformat(),
+                "gider_turu": e.category,
+                "aciklama": e.description,
+                "tutar": float(e.amount),
+                "kasa_id": str(e.cash_account),
+                "fatura_no": e.invoice_no
+            }
+            for e in expenses
+        ]
+    }
+
+@app.post("/db/giderler")
+def db_create_expense(
+    data: Dict[str, Any],
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Desktop için gider ekle"""
+    customer = get_customer_by_api_key(api_key, db)
+    
+    expense = Expense(
+        customer_id=customer.customer_id,
+        category=data.get('gider_turu'),
+        amount=data.get('tutar'),
+        date=data.get('tarih'),
+        description=data.get('aciklama'),
+        invoice_no=data.get('fatura_no'),
+        vendor=data.get('odeyen'),
+        cash_account=data.get('kasa_id', 'Ana Kasa'),
+        fiscal_year=data.get('ait_oldugu_yil')
+    )
+    db.add(expense)
+    db.commit()
+    db.refresh(expense)
+    
+    return {"success": True, "gider_id": str(expense.id)}
+
+
+@app.get("/db/aidat_takip")
+def db_get_dues(
+    uye_id: Optional[str] = None,
+    yil: Optional[int] = None,
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Desktop için aidat listesi"""
+    customer = get_customer_by_api_key(api_key, db)
+    
+    query = db.query(Due).filter(Due.customer_id == customer.customer_id)
+    
+    if uye_id:
+        query = query.filter(Due.member_id == uye_id)
+    if yil:
+        query = query.filter(Due.year == yil)
+    
+    dues = query.order_by(Due.year.desc()).all()
+    
+    return {
+        "success": True,
+        "data": [
+            {
+                "aidat_id": str(d.id),
+                "uye_id": str(d.member_id),
+                "yil": d.year,
+                "ay": d.month,
+                "yillik_aidat_tutari": float(d.amount),
+                "odenecek_tutar": float(d.amount) - float(d.paid_amount or 0),
+                "durum": "Tamamlandı" if d.status == "paid" else "Eksik" if d.status == "pending" else "Kısmi"
+            }
+            for d in dues
+        ]
+    }
+
+@app.post("/db/aidat_takip")
+def db_create_due(
+    data: Dict[str, Any],
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Desktop için aidat kaydı oluştur"""
+    customer = get_customer_by_api_key(api_key, db)
+    
+    due = Due(
+        customer_id=customer.customer_id,
+        member_id=data.get('uye_id'),
+        year=data.get('yil'),
+        month=data.get('ay', 1),
+        amount=data.get('yillik_aidat_tutari'),
+        status='pending'
+    )
+    db.add(due)
+    db.commit()
+    db.refresh(due)
+    
+    return {"success": True, "aidat_id": str(due.id)}
+
+
+@app.get("/db/virmanlar")
+def db_get_transfers(
+    baslangic_tarih: Optional[str] = None,
+    bitis_tarih: Optional[str] = None,
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Desktop için virman listesi"""
+    # Virman tablosu PostgreSQL'de yok, boş döndür
+    return {"success": True, "virmanlar": []}
+
+@app.post("/db/virmanlar")
+def db_create_transfer(
+    data: Dict[str, Any],
+    api_key: str = Depends(verify_api_key),
+    db: Session = Depends(get_db)
+):
+    """Desktop için virman ekle"""
+    # PostgreSQL'de virman tablosu şimdilik yok
+    return {"success": True, "virman_id": 0, "message": "Virman kaydı sunucu tarafında desteklenmiyor"}
+
+
+# ==================== SUPER ADMIN API ====================
+
+class SuperAdminAuth:
+    """Super Admin yetkilendirme"""
+    
+    @staticmethod
+    def verify(admin_key: str = Header(None, alias="X-Admin-Key")):
+        if admin_key != settings.admin_secret:
+            raise HTTPException(status_code=403, detail="Yetkisiz erişim")
+        return True
+
+
+@app.get("/admin/customers")
+def admin_list_customers(
+    _: bool = Depends(SuperAdminAuth.verify),
+    db: Session = Depends(get_db)
+):
+    """Tüm müşterileri listele"""
+    customers = db.query(Customer).order_by(Customer.created_at.desc()).all()
+    
+    return {
+        "customers": [
+            {
+                "id": str(c.id),
+                "customer_id": c.customer_id,
+                "name": c.name,
+                "email": c.email,
+                "phone": c.phone,
+                "plan": c.plan,
+                "max_users": c.max_users,
+                "max_members": c.max_members,
+                "is_active": c.is_active,
+                "expires_at": c.expires_at.isoformat() if c.expires_at else None,
+                "features": c.features,
+                "last_seen_at": c.last_seen_at.isoformat() if c.last_seen_at else None,
+                "created_at": c.created_at.isoformat() if c.created_at else None
+            }
+            for c in customers
+        ],
+        "total": len(customers)
+    }
+
+@app.post("/admin/customers")
+def admin_create_customer(
+    data: Dict[str, Any],
+    _: bool = Depends(SuperAdminAuth.verify),
+    db: Session = Depends(get_db)
+):
+    """Yeni müşteri oluştur"""
+    customer_id = data.get('customer_id', f"BADER-{secrets.token_hex(4).upper()}")
+    api_key = data.get('api_key', f"bader_{secrets.token_hex(16)}")
+    
+    customer = Customer(
+        customer_id=customer_id,
+        api_key=api_key,
+        name=data.get('name'),
+        email=data.get('email'),
+        phone=data.get('phone'),
+        plan=data.get('plan', 'basic'),
+        max_users=data.get('max_users', 5),
+        max_members=data.get('max_members', 500),
+        is_active=True,
+        expires_at=data.get('expires_at'),
+        features=data.get('features', ["ocr", "sync", "backup"])
+    )
+    db.add(customer)
+    db.commit()
+    db.refresh(customer)
+    
+    return {
+        "success": True,
+        "customer": {
+            "id": str(customer.id),
+            "customer_id": customer.customer_id,
+            "api_key": customer.api_key,
+            "name": customer.name
+        }
+    }
+
+@app.put("/admin/customers/{customer_id}")
+def admin_update_customer(
+    customer_id: str,
+    data: Dict[str, Any],
+    _: bool = Depends(SuperAdminAuth.verify),
+    db: Session = Depends(get_db)
+):
+    """Müşteri bilgilerini güncelle"""
+    customer = db.query(Customer).filter(Customer.customer_id == customer_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Müşteri bulunamadı")
+    
+    for key, value in data.items():
+        if hasattr(customer, key):
+            setattr(customer, key, value)
+    
+    db.commit()
+    return {"success": True}
+
+@app.delete("/admin/customers/{customer_id}")
+def admin_delete_customer(
+    customer_id: str,
+    _: bool = Depends(SuperAdminAuth.verify),
+    db: Session = Depends(get_db)
+):
+    """Müşteri sil"""
+    customer = db.query(Customer).filter(Customer.customer_id == customer_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Müşteri bulunamadı")
+    
+    db.delete(customer)
+    db.commit()
+    return {"success": True}
+
+@app.get("/admin/stats")
+def admin_stats(
+    _: bool = Depends(SuperAdminAuth.verify),
+    db: Session = Depends(get_db)
+):
+    """Admin istatistikleri"""
+    total_customers = db.query(Customer).count()
+    active_customers = db.query(Customer).filter(Customer.is_active == True).count()
+    total_members = db.query(Member).count()
+    total_incomes = db.query(Income).count()
+    total_expenses = db.query(Expense).count()
+    
+    return {
+        "stats": {
+            "total_customers": total_customers,
+            "active_customers": active_customers,
+            "total_members": total_members,
+            "total_incomes": total_incomes,
+            "total_expenses": total_expenses
+        }
+    }
+
+@app.post("/admin/customers/{customer_id}/reset-api-key")
+def admin_reset_api_key(
+    customer_id: str,
+    _: bool = Depends(SuperAdminAuth.verify),
+    db: Session = Depends(get_db)
+):
+    """Müşteri API anahtarını sıfırla"""
+    customer = db.query(Customer).filter(Customer.customer_id == customer_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Müşteri bulunamadı")
+    
+    new_api_key = f"bader_{secrets.token_hex(16)}"
+    customer.api_key = new_api_key
+    db.commit()
+    
+    return {"success": True, "new_api_key": new_api_key}
+
+
+# ==================== WEB APP API ====================
+
+@app.get("/api/health")
+def api_health():
+    """API Health Check"""
+    return {
+        "status": "healthy",
+        "version": "5.0.0",
+        "timestamp": datetime.now().isoformat(),
+        "endpoints": {
+            "web": "/web/*",
+            "db": "/db/*",
+            "admin": "/admin/*",
+            "sync": "/sync/*"
+        }
+    }
+
+@app.get("/api/docs")
+def api_docs():
+    """API Dökümantasyonu"""
+    return {
+        "title": "BADER API",
+        "version": "5.0.0",
+        "description": "BADER Dernek Yönetim Sistemi API",
+        "endpoints": [
+            {"method": "GET", "path": "/health", "description": "Sistem sağlık kontrolü"},
+            {"method": "POST", "path": "/activate", "description": "Lisans aktivasyonu"},
+            {"method": "POST", "path": "/auth/login", "description": "Kullanıcı girişi"},
+            {"method": "GET", "path": "/web/members", "description": "Üye listesi"},
+            {"method": "POST", "path": "/web/members", "description": "Üye ekle"},
+            {"method": "GET", "path": "/web/incomes", "description": "Gelir listesi"},
+            {"method": "POST", "path": "/web/incomes", "description": "Gelir ekle"},
+            {"method": "GET", "path": "/web/expenses", "description": "Gider listesi"},
+            {"method": "POST", "path": "/web/expenses", "description": "Gider ekle"},
+            {"method": "GET", "path": "/web/dashboard", "description": "Dashboard özeti"},
+            {"method": "GET", "path": "/db/uyeler", "description": "Desktop - Üye listesi"},
+            {"method": "GET", "path": "/db/kasalar", "description": "Desktop - Kasa listesi"},
+            {"method": "GET", "path": "/db/gelirler", "description": "Desktop - Gelir listesi"},
+            {"method": "GET", "path": "/db/giderler", "description": "Desktop - Gider listesi"},
+            {"method": "GET", "path": "/admin/customers", "description": "Admin - Müşteri listesi"},
+            {"method": "POST", "path": "/admin/customers", "description": "Admin - Müşteri ekle"},
+            {"method": "GET", "path": "/admin/stats", "description": "Admin - İstatistikler"}
+        ]
+    }
