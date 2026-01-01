@@ -803,7 +803,7 @@ async function generateAssessment() {
 async function renderLeftMembers(c) {
     c.innerHTML = `<div class="card"><div class="card-header"><span><i class="bi bi-person-dash me-2"></i>Ayrılan Üyeler</span></div><div class="card-body p-0"><table class="table table-hover"><thead><tr><th>Üye No</th><th>Ad Soyad</th><th>Giriş</th><th>Ayrılış</th><th>Not</th><th width="100">İşlem</th></tr></thead><tbody id="leftMembersTable"></tbody></table></div></div>`;
     try {
-        const d = await api('/web/members/left');
+        const d = await api('/web/left-members');
         $('leftMembersTable').innerHTML = d.members?.length ? d.members.map(m=>`<tr><td>${m.member_no||'-'}</td><td>${m.full_name}</td><td>${m.join_date||'-'}</td><td>${m.leave_date||'-'}</td><td class="small text-muted">${m.notes?.substring(0,50)||'-'}</td><td><button class="btn btn-outline-success btn-sm action-btn" onclick="reactivateMember('${m.id}')"><i class="bi bi-arrow-counterclockwise"></i></button></td></tr>`).join('') : '<tr><td colspan="6" class="text-center py-4 text-muted">Ayrılan üye yok</td></tr>';
     } catch(e) { console.error(e); }
 }

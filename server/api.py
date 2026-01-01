@@ -2583,7 +2583,7 @@ def web_generate_assessment_report(
 
 # ==================== LEFT MEMBERS (AYRILAN ÜYELER) API ====================
 
-@app.get("/web/members/left")
+@app.get("/web/left-members")
 def web_get_left_members(
     api_key: str = Depends(verify_api_key),
     db: Session = Depends(get_db)
