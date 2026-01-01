@@ -1532,6 +1532,7 @@ def db_get_transfers(
     db: Session = Depends(get_db)
 ):
     """Desktop için virman listesi"""
+    customer = get_customer_by_api_key(api_key, db)
     # Virman tablosu PostgreSQL'de yok, boş döndür
     return {"success": True, "virmanlar": []}
 
@@ -1542,6 +1543,7 @@ def db_create_transfer(
     db: Session = Depends(get_db)
 ):
     """Desktop için virman ekle"""
+    customer = get_customer_by_api_key(api_key, db)
     # PostgreSQL'de virman tablosu şimdilik yok
     return {"success": True, "virman_id": 0, "message": "Virman kaydı sunucu tarafında desteklenmiyor"}
 
@@ -1950,6 +1952,7 @@ def web_delete_document(
     db: Session = Depends(get_db)
 ):
     """Belge sil"""
+    customer = get_customer_by_api_key(api_key, db)
     document = db.query(Document).filter(
         Document.id == document_id,
         Document.customer_id == customer.customer_id
@@ -1971,6 +1974,7 @@ def web_get_meetings(
     db: Session = Depends(get_db)
 ):
     """Toplantı listesi"""
+    customer = get_customer_by_api_key(api_key, db)
     query = db.query(Meeting).filter(Meeting.customer_id == customer.customer_id)
     if status:
         query = query.filter(Meeting.status == status)
@@ -2004,6 +2008,7 @@ def web_create_meeting(
     db: Session = Depends(get_db)
 ):
     """Toplantı ekle"""
+    customer = get_customer_by_api_key(api_key, db)
     meeting = Meeting(
         customer_id=customer.customer_id,
         title=data["title"],
@@ -2031,6 +2036,7 @@ def web_update_meeting(
     db: Session = Depends(get_db)
 ):
     """Toplantı güncelle"""
+    customer = get_customer_by_api_key(api_key, db)
     meeting = db.query(Meeting).filter(
         Meeting.id == meeting_id,
         Meeting.customer_id == customer.customer_id
@@ -2052,6 +2058,7 @@ def web_delete_meeting(
     db: Session = Depends(get_db)
 ):
     """Toplantı sil"""
+    customer = get_customer_by_api_key(api_key, db)
     meeting = db.query(Meeting).filter(
         Meeting.id == meeting_id,
         Meeting.customer_id == customer.customer_id
@@ -2073,6 +2080,7 @@ def web_get_events(
     db: Session = Depends(get_db)
 ):
     """Etkinlik listesi"""
+    customer = get_customer_by_api_key(api_key, db)
     query = db.query(Event).filter(Event.customer_id == customer.customer_id)
     if status:
         query = query.filter(Event.status == status)
@@ -2110,6 +2118,7 @@ def web_create_event(
     db: Session = Depends(get_db)
 ):
     """Etkinlik ekle"""
+    customer = get_customer_by_api_key(api_key, db)
     event = Event(
         customer_id=customer.customer_id,
         title=data["title"],
@@ -2141,6 +2150,7 @@ def web_update_event(
     db: Session = Depends(get_db)
 ):
     """Etkinlik güncelle"""
+    customer = get_customer_by_api_key(api_key, db)
     event = db.query(Event).filter(
         Event.id == event_id,
         Event.customer_id == customer.customer_id
@@ -2164,6 +2174,7 @@ def web_delete_event(
     db: Session = Depends(get_db)
 ):
     """Etkinlik sil"""
+    customer = get_customer_by_api_key(api_key, db)
     event = db.query(Event).filter(
         Event.id == event_id,
         Event.customer_id == customer.customer_id
@@ -2186,6 +2197,7 @@ def web_get_transfers(
     db: Session = Depends(get_db)
 ):
     """Virman listesi"""
+    customer = get_customer_by_api_key(api_key, db)
     query = db.query(Transfer).filter(Transfer.customer_id == customer.customer_id)
     if start_date:
         query = query.filter(Transfer.date >= start_date)
@@ -2217,6 +2229,7 @@ def web_create_transfer(
     db: Session = Depends(get_db)
 ):
     """Virman ekle"""
+    customer = get_customer_by_api_key(api_key, db)
     transfer = Transfer(
         customer_id=customer.customer_id,
         from_account=data["from_account"],
@@ -2255,6 +2268,7 @@ def web_delete_transfer(
     db: Session = Depends(get_db)
 ):
     """Virman sil"""
+    customer = get_customer_by_api_key(api_key, db)
     transfer = db.query(Transfer).filter(
         Transfer.id == transfer_id,
         Transfer.customer_id == customer.customer_id
@@ -2291,6 +2305,7 @@ def web_get_family_members(
     db: Session = Depends(get_db)
 ):
     """Üyenin aile üyeleri"""
+    customer = get_customer_by_api_key(api_key, db)
     family = db.query(FamilyMember).filter(
         FamilyMember.member_id == member_id,
         FamilyMember.customer_id == customer.customer_id
@@ -2322,6 +2337,7 @@ def web_add_family_member(
     db: Session = Depends(get_db)
 ):
     """Aile üyesi ekle"""
+    customer = get_customer_by_api_key(api_key, db)
     family_member = FamilyMember(
         customer_id=customer.customer_id,
         member_id=member_id,
@@ -2346,6 +2362,7 @@ def web_delete_family_member(
     db: Session = Depends(get_db)
 ):
     """Aile üyesi sil"""
+    customer = get_customer_by_api_key(api_key, db)
     family = db.query(FamilyMember).filter(
         FamilyMember.id == family_id,
         FamilyMember.customer_id == customer.customer_id
@@ -2366,6 +2383,7 @@ def web_get_carryovers(
     db: Session = Depends(get_db)
 ):
     """Devir listesi"""
+    customer = get_customer_by_api_key(api_key, db)
     carryovers = db.query(YearlyCarryover).filter(
         YearlyCarryover.customer_id == customer.customer_id
     ).order_by(YearlyCarryover.from_year.desc()).all()
@@ -2398,6 +2416,7 @@ def web_create_carryover(
     db: Session = Depends(get_db)
 ):
     """Yıl devri oluştur"""
+    customer = get_customer_by_api_key(api_key, db)
     from_year = data.get("from_year", datetime.now().year - 1)
     to_year = data.get("to_year", datetime.now().year)
     
@@ -2439,6 +2458,7 @@ def web_approve_carryover(
     db: Session = Depends(get_db)
 ):
     """Devir onayla"""
+    customer = get_customer_by_api_key(api_key, db)
     carryover = db.query(YearlyCarryover).filter(
         YearlyCarryover.id == carryover_id,
         YearlyCarryover.customer_id == customer.customer_id
@@ -2476,6 +2496,7 @@ def web_get_assessment_reports(
     db: Session = Depends(get_db)
 ):
     """Tahakkuk raporları"""
+    customer = get_customer_by_api_key(api_key, db)
     query = db.query(AssessmentReport).filter(
         AssessmentReport.customer_id == customer.customer_id
     )
@@ -2509,6 +2530,7 @@ def web_generate_assessment_report(
     db: Session = Depends(get_db)
 ):
     """Tahakkuk raporu oluştur"""
+    customer = get_customer_by_api_key(api_key, db)
     year = data.get("year", datetime.now().year)
     
     # Üye sayısı
@@ -2567,6 +2589,7 @@ def web_get_left_members(
     db: Session = Depends(get_db)
 ):
     """Ayrılan üyeler listesi"""
+    customer = get_customer_by_api_key(api_key, db)
     members = db.query(Member).filter(
         Member.customer_id == customer.customer_id,
         Member.status == 'inactive'
@@ -2597,6 +2620,7 @@ def web_member_leave(
     db: Session = Depends(get_db)
 ):
     """Üyeyi ayrılmış olarak işaretle"""
+    customer = get_customer_by_api_key(api_key, db)
     member = db.query(Member).filter(
         Member.id == member_id,
         Member.customer_id == customer.customer_id
@@ -2618,6 +2642,7 @@ def web_member_reactivate(
     db: Session = Depends(get_db)
 ):
     """Ayrılan üyeyi tekrar aktifleştir"""
+    customer = get_customer_by_api_key(api_key, db)
     member = db.query(Member).filter(
         Member.id == member_id,
         Member.customer_id == customer.customer_id
@@ -2642,6 +2667,7 @@ def web_update_income(
     db: Session = Depends(get_db)
 ):
     """Gelir güncelle"""
+    customer = get_customer_by_api_key(api_key, db)
     income = db.query(Income).filter(
         Income.id == income_id,
         Income.customer_id == customer.customer_id
@@ -2663,6 +2689,7 @@ def web_delete_income(
     db: Session = Depends(get_db)
 ):
     """Gelir sil"""
+    customer = get_customer_by_api_key(api_key, db)
     income = db.query(Income).filter(
         Income.id == income_id,
         Income.customer_id == customer.customer_id
@@ -2682,6 +2709,7 @@ def web_update_expense(
     db: Session = Depends(get_db)
 ):
     """Gider güncelle"""
+    customer = get_customer_by_api_key(api_key, db)
     expense = db.query(Expense).filter(
         Expense.id == expense_id,
         Expense.customer_id == customer.customer_id
@@ -2703,6 +2731,7 @@ def web_delete_expense(
     db: Session = Depends(get_db)
 ):
     """Gider sil"""
+    customer = get_customer_by_api_key(api_key, db)
     expense = db.query(Expense).filter(
         Expense.id == expense_id,
         Expense.customer_id == customer.customer_id
@@ -2724,6 +2753,7 @@ def web_create_cash_account(
     db: Session = Depends(get_db)
 ):
     """Kasa ekle"""
+    customer = get_customer_by_api_key(api_key, db)
     account = CashAccount(
         customer_id=customer.customer_id,
         name=data["name"],
@@ -2747,6 +2777,7 @@ def web_update_cash_account(
     db: Session = Depends(get_db)
 ):
     """Kasa güncelle"""
+    customer = get_customer_by_api_key(api_key, db)
     account = db.query(CashAccount).filter(
         CashAccount.id == account_id,
         CashAccount.customer_id == customer.customer_id
@@ -2768,6 +2799,7 @@ def web_delete_cash_account(
     db: Session = Depends(get_db)
 ):
     """Kasa sil"""
+    customer = get_customer_by_api_key(api_key, db)
     account = db.query(CashAccount).filter(
         CashAccount.id == account_id,
         CashAccount.customer_id == customer.customer_id
@@ -2790,6 +2822,7 @@ def web_search(
     db: Session = Depends(get_db)
 ):
     """Genel arama"""
+    customer = get_customer_by_api_key(api_key, db)
     results = {"members": [], "incomes": [], "expenses": [], "total": 0}
     search_term = f"%{q}%"
     
@@ -2838,6 +2871,7 @@ def web_report_income_expense(
     db: Session = Depends(get_db)
 ):
     """Gelir-Gider raporu"""
+    customer = get_customer_by_api_key(api_key, db)
     year = year or datetime.now().year
     
     incomes = db.query(Income).filter(
@@ -2880,6 +2914,7 @@ def web_report_members(
     db: Session = Depends(get_db)
 ):
     """Üye raporu"""
+    customer = get_customer_by_api_key(api_key, db)
     members = db.query(Member).filter(
         Member.customer_id == customer.customer_id
     ).all()
@@ -2916,6 +2951,7 @@ def web_report_dues(
     db: Session = Depends(get_db)
 ):
     """Aidat raporu"""
+    customer = get_customer_by_api_key(api_key, db)
     year = year or datetime.now().year
     
     dues = db.query(Due).filter(
@@ -2953,6 +2989,7 @@ def web_report_cash(
     db: Session = Depends(get_db)
 ):
     """Kasa raporu"""
+    customer = get_customer_by_api_key(api_key, db)
     accounts = db.query(CashAccount).filter(
         CashAccount.customer_id == customer.customer_id
     ).all()
@@ -2980,6 +3017,7 @@ def web_report_yearly(
     db: Session = Depends(get_db)
 ):
     """Yıllık özet rapor"""
+    customer = get_customer_by_api_key(api_key, db)
     year = year or datetime.now().year
     
     # Üye istatistikleri
@@ -3042,6 +3080,7 @@ def web_export_members(
     db: Session = Depends(get_db)
 ):
     """Üye listesi dışa aktar"""
+    customer = get_customer_by_api_key(api_key, db)
     members = db.query(Member).filter(
         Member.customer_id == customer.customer_id
     ).order_by(Member.full_name).all()
@@ -3084,6 +3123,7 @@ def web_export_incomes(
     db: Session = Depends(get_db)
 ):
     """Gelir listesi dışa aktar"""
+    customer = get_customer_by_api_key(api_key, db)
     query = db.query(Income).filter(Income.customer_id == customer.customer_id)
     if year:
         query = query.filter(Income.fiscal_year == year)
@@ -3111,6 +3151,7 @@ def web_export_expenses(
     db: Session = Depends(get_db)
 ):
     """Gider listesi dışa aktar"""
+    customer = get_customer_by_api_key(api_key, db)
     query = db.query(Expense).filter(Expense.customer_id == customer.customer_id)
     if year:
         query = query.filter(Expense.fiscal_year == year)
@@ -3141,6 +3182,7 @@ def web_multi_year_dues_payment(
     db: Session = Depends(get_db)
 ):
     """Çoklu yıl aidat ödemesi"""
+    customer = get_customer_by_api_key(api_key, db)
     member_id = data["member_id"]
     years = data["years"]  # [2024, 2025, 2026]
     months = data.get("months", list(range(1, 13)))  # default tüm aylar
@@ -3212,6 +3254,7 @@ def web_get_users(
     db: Session = Depends(get_db)
 ):
     """Kullanıcı listesi"""
+    customer = get_customer_by_api_key(api_key, db)
     users = db.query(User).filter(
         User.customer_id == customer.customer_id
     ).order_by(User.created_at.desc()).all()
@@ -3240,6 +3283,7 @@ def web_create_user(
     db: Session = Depends(get_db)
 ):
     """Kullanıcı ekle"""
+    customer = get_customer_by_api_key(api_key, db)
     # Şifre hash'le
     password_hash = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt()).decode()
     
@@ -3266,6 +3310,7 @@ def web_update_user(
     db: Session = Depends(get_db)
 ):
     """Kullanıcı güncelle"""
+    customer = get_customer_by_api_key(api_key, db)
     user = db.query(User).filter(
         User.id == user_id,
         User.customer_id == customer.customer_id
@@ -3290,6 +3335,7 @@ def web_delete_user(
     db: Session = Depends(get_db)
 ):
     """Kullanıcı sil"""
+    customer = get_customer_by_api_key(api_key, db)
     user = db.query(User).filter(
         User.id == user_id,
         User.customer_id == customer.customer_id
