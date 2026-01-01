@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QTextEdit, QHeaderView, QProgressBar)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QColor
+from qfluentwidgets import MessageBox
 from database import Database
 from models import KasaYoneticisi
 from datetime import datetime
